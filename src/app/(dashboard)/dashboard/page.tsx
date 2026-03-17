@@ -5,7 +5,7 @@ import { KPICard } from "@/components/dashboard/KPICard";
 import { MonthlyChart } from "@/components/dashboard/MonthlyChart";
 import { SpendingDonut } from "@/components/dashboard/SpendingDonut";
 import { RecentTransactions } from "@/components/dashboard/RecentTransactions";
-import { DollarSign, TrendingUp, TrendingDown, BarChart2 } from "lucide-react";
+import { Wallet, ArrowUpRight, ArrowDownRight, Scale } from "lucide-react";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function toNumber(val: any): number {
@@ -146,28 +146,28 @@ export default async function DashboardPage() {
         <KPICard
           title="Total Balance"
           value={data.totalBalance}
-          icon={<DollarSign size={20} />}
+          icon={<Wallet size={20} />}
           type="neutral"
         />
         <KPICard
           title="Income"
           value={data.income}
           change={data.incomeChange}
-          icon={<TrendingUp size={20} />}
+          icon={<ArrowUpRight size={20} />}
           type="income"
         />
         <KPICard
           title="Expenses"
           value={data.expenses}
           change={data.expensesChange}
-          icon={<TrendingDown size={20} />}
+          icon={<ArrowDownRight size={20} />}
           type="expense"
         />
         <KPICard
           title="Net Difference"
           value={data.netDifference}
           change={data.netDiffChange}
-          icon={<BarChart2 size={20} />}
+          icon={<Scale size={20} />}
           type={data.netDifference >= 0 ? "income" : "expense"}
         />
       </div>

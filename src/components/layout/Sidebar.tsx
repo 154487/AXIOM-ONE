@@ -6,20 +6,20 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
-  ArrowLeftRight,
-  BarChart2,
-  Upload,
-  Settings,
+  Receipt,
+  BarChart3,
+  FileUp,
+  Settings2,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/transactions", label: "Transactions", icon: ArrowLeftRight },
-  { href: "/reports", label: "Reports", icon: BarChart2 },
-  { href: "/import", label: "Import", icon: Upload },
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/transactions", label: "Transactions", icon: Receipt },
+  { href: "/reports", label: "Reports", icon: BarChart3 },
+  { href: "/import", label: "Import", icon: FileUp },
+  { href: "/settings", label: "Settings", icon: Settings2 },
 ];
 
 export function Sidebar() {

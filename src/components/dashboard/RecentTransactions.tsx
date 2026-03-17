@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { ArrowUpRight, ArrowDownLeft } from "lucide-react";
 
 interface Transaction {
   id: string;
@@ -34,9 +34,9 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
                 style={{ backgroundColor: tx.category.color + "20" }}
               >
                 {tx.type === "INCOME" ? (
-                  <TrendingUp size={16} style={{ color: "#10B981" }} />
+                  <ArrowUpRight size={16} style={{ color: "#10B981" }} />
                 ) : (
-                  <TrendingDown size={16} style={{ color: "#FF6B35" }} />
+                  <ArrowDownLeft size={16} style={{ color: "#EF4444" }} />
                 )}
               </div>
               <div>
