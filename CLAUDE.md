@@ -172,7 +172,7 @@ const data = await prisma.xxx.findMany({ where: { userId: session.user.id } });
 | Versão | Nome | Status |
 |--------|------|--------|
 | v0.1 | Foundation | ✅ concluída |
-| v0.2 | Settings | ✅ concluída (branch: feature/v0.2-settings, pendente merge) |
+| v0.2 | Settings | ✅ concluída — release v0.2.0 |
 | v0.3 | — | planejamento |
 
 ---
