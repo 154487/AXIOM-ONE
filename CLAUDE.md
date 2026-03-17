@@ -67,7 +67,7 @@ src/
 │   │   └── layout.tsx
 │   ├── (dashboard)/               # Rotas protegidas pelo middleware
 │   │   ├── dashboard/page.tsx
-│   │   ├── transactions/page.tsx  # placeholder — v0.3
+│   │   ├── transactions/page.tsx  # Server Component — auth + fetch transactions+categories → TransactionList
 │   │   ├── reports/page.tsx       # placeholder — futuro
 │   │   ├── import/page.tsx        # placeholder — futuro
 │   │   ├── settings/page.tsx
@@ -77,6 +77,8 @@ src/
 │   │   ├── auth/register/         # POST criar usuário
 │   │   ├── categories/            # GET list, POST create
 │   │   ├── categories/[id]/       # PATCH update, DELETE
+│   │   ├── transactions/          # GET list (max 200 desc + category), POST create
+│   │   ├── transactions/[id]/     # PATCH update, DELETE (ownership check)
 │   │   ├── settings/profile/      # PATCH update name/email
 │   │   └── settings/password/     # PATCH change password
 │   ├── layout.tsx                 # Root layout (fonte, html, body)
@@ -96,9 +98,14 @@ src/
 │   │   ├── ProfileForm.tsx        # Form nome/email + form senha (router.refresh após salvar)
 │   │   ├── CategoriesManager.tsx  # Grid de categorias + estado local
 │   │   └── CategoryDialog.tsx     # shadcn Dialog criar/editar categoria
+│   ├── transactions/
+│   │   ├── TransactionList.tsx    # "use client" — container: estado filtros + dialog + transactions local
+│   │   ├── TransactionFilters.tsx # Selects: tipo (ALL/INCOME/EXPENSE), categoria, mês (12 meses fixos)
+│   │   ├── TransactionTable.tsx   # shadcn Table: Data|Descrição|Categoria|Tipo|Valor|Ações
+│   │   └── TransactionDialog.tsx  # shadcn Dialog criar/editar: 5 campos, validação client-side
 │   └── ui/                        # shadcn/ui instalados: button, card, input, label,
 │                                  # dropdown-menu, badge, separator, avatar, switch,
-│                                  # table, tabs, dialog
+│                                  # table, tabs, dialog, select
 └── lib/
     ├── auth.ts          # NextAuth config COMPLETA (server-only, usa Prisma)
     ├── auth.config.ts   # Config LEVE sem Prisma — usada no middleware (Edge Runtime)
@@ -145,6 +152,36 @@ if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { st
 // retorno
 ```
 
+### Padrão de Serialização Prisma → Client
+
+Campos que precisam de conversão antes de passar ao Client Component ou retornar via API:
+
+```ts
+// Decimal → number
+amount: parseFloat(String(tx.amount))
+
+// Date → string ISO
+date: tx.date.toISOString()
+```
+
+Sempre serializar em **dois lugares**: na API Route (resposta JSON) e no Server Component (props para Client Component).
+
+### Padrão de Client Component com Estado Local
+
+```ts
+// Inicializar com props do servidor, atualizar localmente após mutações
+const [items, setItems] = useState(initialItems);
+
+// Após create → adicionar no topo
+setItems((prev) => [newItem, ...prev]);
+
+// Após update → substituir in-place
+setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
+
+// Após delete → remover
+setItems((prev) => prev.filter((i) => i.id !== id));
+```
+
 ### Padrão de Server Components (dashboard)
 
 ```ts
@@ -173,7 +210,7 @@ const data = await prisma.xxx.findMany({ where: { userId: session.user.id } });
 |--------|------|--------|
 | v0.1 | Foundation | ✅ concluída |
 | v0.2 | Settings | ✅ concluída — release v0.2.0 |
-| v0.3 | — | planejamento |
+| v0.3 | Transactions | ✅ concluída — release v0.3.0 |
 
 ---
 
