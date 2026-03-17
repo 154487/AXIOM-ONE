@@ -18,7 +18,7 @@ Dark theme com acento laranja. Interface premium estilo fintech.
 | Auth | NextAuth.js v5 (Auth.js) | beta |
 | Gráficos | Recharts | 3 |
 | Ícones | lucide-react | 0.577 |
-| Fonte | Plus Jakarta Sans | — |
+| Fonte | system-ui / SF Pro (nativa do OS) | — |
 | Package mgr | npm | — |
 
 ---
