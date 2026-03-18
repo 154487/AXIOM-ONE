@@ -19,7 +19,7 @@ async function getDashboardData(userId: string, locale: string) {
   const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
 
-  const [allTransactions, thisMonthTx, lastMonthTx, recentTx, categoryTx] =
+  const [allTransactions, thisMonthTx, lastMonthTx, recentTx, categoryTx, defaultCurrency] =
     await Promise.all([
       // All-time for total balance
       prisma.transaction.findMany({ where: { userId } }),
@@ -42,6 +42,10 @@ async function getDashboardData(userId: string, locale: string) {
       prisma.transaction.findMany({
         where: { userId, type: "EXPENSE", date: { gte: startOfMonth } },
         include: { category: true },
+      }),
+      // Default currency
+      prisma.userCurrency.findFirst({
+        where: { userId, isDefault: true },
       }),
     ]);
 
@@ -113,6 +117,8 @@ async function getDashboardData(userId: string, locale: string) {
     (a, b) => b.value - a.value
   );
 
+  const currency = defaultCurrency?.code ?? "BRL";
+
   return {
     totalBalance,
     income,
@@ -123,6 +129,7 @@ async function getDashboardData(userId: string, locale: string) {
     netDiffChange,
     monthlyData,
     categorySpending,
+    currency,
     recentTransactions: recentTx.map((tx) => ({
       id: tx.id,
       description: tx.description,
@@ -153,6 +160,8 @@ export default async function DashboardPage() {
           value={data.totalBalance}
           icon={<Wallet size={20} />}
           type="neutral"
+          locale={locale}
+          currency={data.currency}
         />
         <KPICard
           title={t("income")}
@@ -160,6 +169,8 @@ export default async function DashboardPage() {
           change={data.incomeChange}
           icon={<ArrowUpRight size={20} />}
           type="income"
+          locale={locale}
+          currency={data.currency}
         />
         <KPICard
           title={t("expenses")}
@@ -167,6 +178,8 @@ export default async function DashboardPage() {
           change={data.expensesChange}
           icon={<ArrowDownRight size={20} />}
           type="expense"
+          locale={locale}
+          currency={data.currency}
         />
         <KPICard
           title={t("netDifference")}
@@ -174,19 +187,21 @@ export default async function DashboardPage() {
           change={data.netDiffChange}
           icon={<Scale size={20} />}
           type={data.netDifference >= 0 ? "income" : "expense"}
+          locale={locale}
+          currency={data.currency}
         />
       </div>
 
       {/* Charts row */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         <div className="xl:col-span-2">
-          <MonthlyChart data={data.monthlyData} />
+          <MonthlyChart data={data.monthlyData} currency={data.currency} />
         </div>
-        <SpendingDonut data={data.categorySpending} />
+        <SpendingDonut data={data.categorySpending} currency={data.currency} />
       </div>
 
       {/* Recent Transactions */}
-      <RecentTransactions transactions={data.recentTransactions} />
+      <RecentTransactions transactions={data.recentTransactions} currency={data.currency} />
     </div>
   );
 }

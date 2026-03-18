@@ -14,9 +14,10 @@ interface Transaction {
 
 interface RecentTransactionsProps {
   transactions: Transaction[];
+  currency?: string;
 }
 
-export async function RecentTransactions({ transactions }: RecentTransactionsProps) {
+export async function RecentTransactions({ transactions, currency = "BRL" }: RecentTransactionsProps) {
   const [t, locale] = await Promise.all([
     getTranslations("RecentTransactions"),
     getLocale(),
@@ -57,7 +58,7 @@ export async function RecentTransactions({ transactions }: RecentTransactionsPro
                   tx.type === "INCOME" ? "text-axiom-income" : "text-axiom-expense"
                 )}
               >
-                {tx.type === "INCOME" ? "+" : ""}{formatCurrency(tx.amount, locale)}
+                {tx.type === "INCOME" ? "+" : ""}{formatCurrency(tx.amount, locale, currency)}
               </p>
               <p className="text-axiom-muted text-xs">{formatDate(tx.date, locale)}</p>
             </div>

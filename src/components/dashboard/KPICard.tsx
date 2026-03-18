@@ -7,9 +7,11 @@ interface KPICardProps {
   change?: number;
   icon: React.ReactNode;
   type?: "income" | "expense" | "neutral";
+  locale?: string;
+  currency?: string;
 }
 
-export function KPICard({ title, value, change, icon, type = "neutral" }: KPICardProps) {
+export function KPICard({ title, value, change, icon, type = "neutral", locale = "pt-BR", currency = "BRL" }: KPICardProps) {
   const isPositive = (change ?? 0) >= 0;
 
   return (
@@ -42,7 +44,7 @@ export function KPICard({ title, value, change, icon, type = "neutral" }: KPICar
       </div>
 
       <p className="text-axiom-muted text-sm mb-1">{title}</p>
-      <p className="text-white text-2xl font-bold">{formatCurrency(value)}</p>
+      <p className="text-white text-2xl font-bold">{formatCurrency(value, locale, currency)}</p>
     </div>
   );
 }
