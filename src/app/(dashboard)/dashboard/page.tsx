@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { getLocale } from "next-intl/server";
 import { KPICard } from "@/components/dashboard/KPICard";
 import { MonthlyChart } from "@/components/dashboard/MonthlyChart";
 import { SpendingDonut } from "@/components/dashboard/SpendingDonut";
@@ -12,7 +13,7 @@ function toNumber(val: any): number {
   return parseFloat(String(val));
 }
 
-async function getDashboardData(userId: string) {
+async function getDashboardData(userId: string, locale: string) {
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -83,7 +84,7 @@ async function getDashboardData(userId: string) {
       (t) => t.date >= d && t.date <= end
     );
     return {
-      month: d.toLocaleString("en-US", { month: "short" }),
+      month: d.toLocaleString(locale, { month: "short" }),
       income: monthTx
         .filter((t) => t.type === "INCOME")
         .reduce((acc, t) => acc + toNumber(t.amount), 0),
@@ -137,7 +138,8 @@ export default async function DashboardPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
 
-  const data = await getDashboardData(session.user.id);
+  const locale = await getLocale();
+  const data = await getDashboardData(session.user.id, locale);
 
   return (
     <div className="space-y-6">
