@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.3.0",
+    "@formatjs/intl-localematcher": "^0.8.2",
     "@prisma/adapter-pg": "^7.5.0",
     "@prisma/client": "^7.5.0",
     "@types/bcryptjs": "^2.4.6",
@@ -20,8 +21,10 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.577.0",
+    "negotiator": "^1.0.0",
     "next": "^15.5.13",
     "next-auth": "^5.0.0-beta.29",
+    "next-intl": "^4.8.3",
     "pg": "^8.20.0",
     "prisma": "^7.5.0",
     "react": "19.2.3",
@@ -36,6 +39,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/negotiator": "^0.6.4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
