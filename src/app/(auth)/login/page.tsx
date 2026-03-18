@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 export default function LoginPage() {
   const router = useRouter();
+  const t = useTranslations("Auth.login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -30,7 +32,7 @@ export default function LoginPage() {
     setLoading(false);
 
     if (result?.error) {
-      setError("Email ou senha inválidos");
+      setError(t("error"));
     } else {
       router.push("/dashboard");
       router.refresh();
@@ -40,19 +42,19 @@ export default function LoginPage() {
   return (
     <Card className="bg-axiom-card border-axiom-border">
       <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl text-white">Entrar</CardTitle>
+        <CardTitle className="text-2xl text-white">{t("title")}</CardTitle>
         <CardDescription className="text-axiom-muted">
-          Acesse sua conta para gerenciar suas finanças
+          {t("subtitle")}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-white">Email</Label>
+            <Label htmlFor="email" className="text-white">{t("emailLabel")}</Label>
             <Input
               id="email"
               type="email"
-              placeholder="seu@email.com"
+              placeholder={t("emailPlaceholder")}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -60,11 +62,11 @@ export default function LoginPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password" className="text-white">Senha</Label>
+            <Label htmlFor="password" className="text-white">{t("passwordLabel")}</Label>
             <Input
               id="password"
               type="password"
-              placeholder="••••••••"
+              placeholder={t("passwordPlaceholder")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -81,14 +83,14 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full bg-axiom-primary hover:bg-axiom-primary/90 text-white font-medium"
           >
-            {loading ? "Entrando..." : "Entrar"}
+            {loading ? t("loadingButton") : t("submitButton")}
           </Button>
         </form>
 
         <p className="text-center text-axiom-muted text-sm mt-4">
-          Não tem uma conta?{" "}
+          {t("registerLink")}{" "}
           <Link href="/register" className="text-axiom-primary hover:underline">
-            Cadastre-se
+            {t("registerLinkText")}
           </Link>
         </p>
       </CardContent>
