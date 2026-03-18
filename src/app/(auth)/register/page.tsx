@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 export default function RegisterPage() {
   const router = useRouter();
+  const t = useTranslations("Auth.register");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,12 +24,12 @@ export default function RegisterPage() {
     setError("");
 
     if (password !== confirmPassword) {
-      setError("As senhas não coincidem");
+      setError(t("errorPasswordMismatch"));
       return;
     }
 
     if (password.length < 6) {
-      setError("A senha deve ter pelo menos 6 caracteres");
+      setError(t("errorPasswordLength"));
       return;
     }
 
@@ -43,7 +45,7 @@ export default function RegisterPage() {
     setLoading(false);
 
     if (!res.ok) {
-      setError(data.error ?? "Erro ao criar conta");
+      setError(data.error ?? t("errorCreate"));
     } else {
       router.push("/login");
     }
@@ -52,30 +54,30 @@ export default function RegisterPage() {
   return (
     <Card className="bg-axiom-card border-axiom-border">
       <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl text-white">Criar conta</CardTitle>
+        <CardTitle className="text-2xl text-white">{t("title")}</CardTitle>
         <CardDescription className="text-axiom-muted">
-          Comece a construir seu patrimônio hoje
+          {t("subtitle")}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name" className="text-white">Nome</Label>
+            <Label htmlFor="name" className="text-white">{t("nameLabel")}</Label>
             <Input
               id="name"
               type="text"
-              placeholder="Seu nome"
+              placeholder={t("namePlaceholder")}
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="bg-axiom-hover border-axiom-border text-white placeholder:text-axiom-muted focus:border-axiom-primary"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-white">Email</Label>
+            <Label htmlFor="email" className="text-white">{t("emailLabel")}</Label>
             <Input
               id="email"
               type="email"
-              placeholder="seu@email.com"
+              placeholder={t("emailPlaceholder")}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -83,11 +85,11 @@ export default function RegisterPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password" className="text-white">Senha</Label>
+            <Label htmlFor="password" className="text-white">{t("passwordLabel")}</Label>
             <Input
               id="password"
               type="password"
-              placeholder="••••••••"
+              placeholder={t("passwordPlaceholder")}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -95,11 +97,11 @@ export default function RegisterPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword" className="text-white">Confirmar senha</Label>
+            <Label htmlFor="confirmPassword" className="text-white">{t("confirmPasswordLabel")}</Label>
             <Input
               id="confirmPassword"
               type="password"
-              placeholder="••••••••"
+              placeholder={t("confirmPasswordPlaceholder")}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
@@ -116,14 +118,14 @@ export default function RegisterPage() {
             disabled={loading}
             className="w-full bg-axiom-primary hover:bg-axiom-primary/90 text-white font-medium"
           >
-            {loading ? "Criando conta..." : "Criar conta"}
+            {loading ? t("loadingButton") : t("submitButton")}
           </Button>
         </form>
 
         <p className="text-center text-axiom-muted text-sm mt-4">
-          Já tem uma conta?{" "}
+          {t("loginLink")}{" "}
           <Link href="/login" className="text-axiom-primary hover:underline">
-            Entrar
+            {t("loginLinkText")}
           </Link>
         </p>
       </CardContent>
