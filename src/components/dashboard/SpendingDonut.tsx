@@ -1,6 +1,7 @@
 "use client";
 
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
+import { useTranslations, useLocale } from "next-intl";
 import { formatCurrency } from "@/lib/utils";
 
 interface CategorySpending {
@@ -14,10 +15,12 @@ interface SpendingDonutProps {
 }
 
 export function SpendingDonut({ data }: SpendingDonutProps) {
+  const t = useTranslations("SpendingDonut");
+  const locale = useLocale();
 
   return (
     <div className="bg-axiom-card border border-axiom-border rounded-xl p-5">
-      <h3 className="text-white font-semibold mb-4">Spending by Category</h3>
+      <h3 className="text-white font-semibold mb-4">{t("title")}</h3>
       <ResponsiveContainer width="100%" height={200}>
         <PieChart>
           <Pie
@@ -41,7 +44,7 @@ export function SpendingDonut({ data }: SpendingDonutProps) {
               color: "#fff",
             }}
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            formatter={(value: any) => formatCurrency(Number(value))}
+            formatter={(value: any) => formatCurrency(Number(value), locale)}
           />
         </PieChart>
       </ResponsiveContainer>
@@ -54,7 +57,7 @@ export function SpendingDonut({ data }: SpendingDonutProps) {
               <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
               <span className="text-axiom-muted">{item.name}</span>
             </div>
-            <span className="text-white font-medium">{formatCurrency(item.value)}</span>
+            <span className="text-white font-medium">{formatCurrency(item.value, locale)}</span>
           </div>
         ))}
       </div>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import { ArrowUpRight, ArrowDownLeft } from "lucide-react";
+import { getLocale, getTranslations } from "next-intl/server";
 
 interface Transaction {
   id: string;
@@ -15,13 +16,18 @@ interface RecentTransactionsProps {
   transactions: Transaction[];
 }
 
-export function RecentTransactions({ transactions }: RecentTransactionsProps) {
+export async function RecentTransactions({ transactions }: RecentTransactionsProps) {
+  const [t, locale] = await Promise.all([
+    getTranslations("RecentTransactions"),
+    getLocale(),
+  ]);
+
   return (
     <div className="bg-axiom-card border border-axiom-border rounded-xl p-5">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-white font-semibold">Recent Transactions</h3>
+        <h3 className="text-white font-semibold">{t("title")}</h3>
         <Link href="/transactions" className="text-axiom-primary text-sm hover:underline">
-          View All
+          {t("viewAll")}
         </Link>
       </div>
 
@@ -51,9 +57,9 @@ export function RecentTransactions({ transactions }: RecentTransactionsProps) {
                   tx.type === "INCOME" ? "text-axiom-income" : "text-axiom-expense"
                 )}
               >
-                {tx.type === "INCOME" ? "+" : ""}{formatCurrency(tx.amount)}
+                {tx.type === "INCOME" ? "+" : ""}{formatCurrency(tx.amount, locale)}
               </p>
-              <p className="text-axiom-muted text-xs">{formatDate(tx.date)}</p>
+              <p className="text-axiom-muted text-xs">{formatDate(tx.date, locale)}</p>
             </div>
           </div>
         ))}

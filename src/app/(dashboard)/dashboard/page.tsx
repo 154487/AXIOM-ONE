@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getLocale } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { KPICard } from "@/components/dashboard/KPICard";
 import { MonthlyChart } from "@/components/dashboard/MonthlyChart";
 import { SpendingDonut } from "@/components/dashboard/SpendingDonut";
@@ -138,7 +138,10 @@ export default async function DashboardPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
 
-  const locale = await getLocale();
+  const [locale, t] = await Promise.all([
+    getLocale(),
+    getTranslations("Dashboard"),
+  ]);
   const data = await getDashboardData(session.user.id, locale);
 
   return (
@@ -146,27 +149,27 @@ export default async function DashboardPage() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <KPICard
-          title="Total Balance"
+          title={t("totalBalance")}
           value={data.totalBalance}
           icon={<Wallet size={20} />}
           type="neutral"
         />
         <KPICard
-          title="Income"
+          title={t("income")}
           value={data.income}
           change={data.incomeChange}
           icon={<ArrowUpRight size={20} />}
           type="income"
         />
         <KPICard
-          title="Expenses"
+          title={t("expenses")}
           value={data.expenses}
           change={data.expensesChange}
           icon={<ArrowDownRight size={20} />}
           type="expense"
         />
         <KPICard
-          title="Net Difference"
+          title={t("netDifference")}
           value={data.netDifference}
           change={data.netDiffChange}
           icon={<Scale size={20} />}
