@@ -11,14 +11,50 @@ datasource db {
 }
 
 model User {
-  id           String        @id @default(cuid())
-  name         String?
-  email        String        @unique
-  password     String
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  transactions Transaction[]
-  categories   Category[]
+  id                  String         @id @default(cuid())
+  name                String?
+  email               String         @unique
+  password            String
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  notifTransactions   Boolean        @default(true)
+  notifBudgetAlerts   Boolean        @default(true)
+  notifMonthlyReport  Boolean        @default(false)
+  transactions        Transaction[]
+  categories          Category[]
+  currencies          UserCurrency[]
+  notifications       Notification[]
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  message   String
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+}
+
+enum NotificationType {
+  TRANSACTION
+  BUDGET_ALERT
+  MONTHLY_REPORT
+  SYSTEM
+}
+
+model UserCurrency {
+  id        String   @id @default(cuid())
+  code      String   // e.g. "USD", "EUR", "BRL"
+  symbol    String   // e.g. "$", "€", "R$"
+  name      String   // e.g. "US Dollar"
+  isDefault Boolean  @default(false)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, code])
 }
 
 model Category {

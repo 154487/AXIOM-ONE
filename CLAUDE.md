@@ -69,8 +69,8 @@ src/
 │   │   ├── dashboard/page.tsx
 │   │   ├── transactions/page.tsx  # Server Component — auth + fetch transactions+categories → TransactionList
 │   │   ├── reports/page.tsx       # placeholder — futuro
-│   │   ├── import/page.tsx        # placeholder — futuro
-│   │   ├── settings/page.tsx
+│   │   ├── import/page.tsx        # Server Component — fetch categories → ImportWizard
+│   │   ├── settings/page.tsx      # Server Component — fetch user+categories+currencies → SettingsPage
 │   │   └── layout.tsx
 │   ├── api/
 │   │   ├── auth/[...nextauth]/    # Handler NextAuth
@@ -79,8 +79,18 @@ src/
 │   │   ├── categories/[id]/       # PATCH update, DELETE
 │   │   ├── transactions/          # GET list (max 200 desc + category), POST create
 │   │   ├── transactions/[id]/     # PATCH update, DELETE (ownership check)
-│   │   ├── settings/profile/      # PATCH update name/email
-│   │   └── settings/password/     # PATCH change password
+│   │   ├── settings/profile/      # PATCH update name/email (envia email ao old email)
+│   │   ├── settings/password/     # PATCH change password (envia email de alerta)
+│   │   ├── settings/theme/        # PATCH set AXIOM_THEME cookie (dark|light)
+│   │   ├── settings/locale/       # PATCH set NEXT_LOCALE cookie
+│   │   ├── settings/notifications/ # PATCH save 3 boolean notification prefs
+│   │   ├── currencies/            # GET list, POST create (auto-default se primeira)
+│   │   ├── currencies/[id]/       # DELETE (promove próxima), PATCH (set default)
+│   │   ├── notifications/         # GET últimas 30
+│   │   ├── notifications/[id]/    # PATCH mark as read
+│   │   ├── notifications/read-all/ # PATCH mark all read
+│   │   ├── import/parse/          # POST multipart/form-data → ParsedRow[] (OFX/CSV/XLSX)
+│   │   └── import/confirm/        # POST bulk createMany transactions
 │   ├── layout.tsx                 # Root layout (fonte, html, body)
 │   ├── globals.css                # Tailwind v4 + tokens Axiom + shadcn overrides
 │   └── page.tsx                   # Redirect: autenticado → /dashboard, anon → /login
@@ -94,15 +104,21 @@ src/
 │   │   ├── SpendingDonut.tsx      # Recharts PieChart por categoria
 │   │   └── RecentTransactions.tsx # Lista últimas 6 transações
 │   ├── settings/
-│   │   ├── SettingsTabs.tsx       # shadcn Tabs (Perfil | Categorias)
+│   │   ├── SettingsPage.tsx       # "use client" — container com dark/lang/currency/notifs
 │   │   ├── ProfileForm.tsx        # Form nome/email + form senha (router.refresh após salvar)
 │   │   ├── CategoriesManager.tsx  # Grid de categorias + estado local
-│   │   └── CategoryDialog.tsx     # shadcn Dialog criar/editar categoria
+│   │   ├── CategoryDialog.tsx     # shadcn Dialog criar/editar categoria
+│   │   └── CurrencyManager.tsx    # Gerenciar moedas do usuário (add/remove/default)
 │   ├── transactions/
 │   │   ├── TransactionList.tsx    # "use client" — container: estado filtros + dialog + transactions local
 │   │   ├── TransactionFilters.tsx # Selects: tipo (ALL/INCOME/EXPENSE), categoria, mês (12 meses fixos)
 │   │   ├── TransactionTable.tsx   # shadcn Table: Data|Descrição|Categoria|Tipo|Valor|Ações
 │   │   └── TransactionDialog.tsx  # shadcn Dialog criar/editar: 5 campos, validação client-side
+│   ├── import/
+│   │   ├── ImportWizard.tsx       # "use client" — wizard 3 etapas: upload → preview → sucesso
+│   │   ├── ImportDropzone.tsx     # Drag-and-drop, posts para /api/import/parse
+│   │   ├── ImportPreviewTable.tsx # Tabela editável com skip, descrição, tipo, categoria
+│   │   └── ImportInlineCategorySelect.tsx # Select com "+ Nova categoria..." inline
 │   └── ui/                        # shadcn/ui instalados: button, card, input, label,
 │                                  # dropdown-menu, badge, separator, avatar, switch,
 │                                  # table, tabs, dialog, select
@@ -110,7 +126,16 @@ src/
     ├── auth.ts          # NextAuth config COMPLETA (server-only, usa Prisma)
     ├── auth.config.ts   # Config LEVE sem Prisma — usada no middleware (Edge Runtime)
     ├── prisma.ts        # Singleton PrismaClient (server-only, adapter PrismaPg)
-    └── utils.ts         # cn(), formatCurrency(), formatDate()
+    ├── utils.ts         # cn(), formatCurrency(), formatDate()
+    ├── email.ts         # Resend lazy init + templates de email (senha, perfil)
+    └── import/
+        ├── types.ts           # ParsedRow, ReviewedRow interfaces
+        ├── parseFile.ts       # Dispatcher por extensão
+        ├── parseOFX.ts        # Parser SGML OFX (bancos BR)
+        ├── parseCSV.ts        # papaparse + detecção de colunas flexível
+        ├── parseXLSX.ts       # xlsx + detecção de colunas flexível
+        ├── cleanDescription.ts # Normaliza nomes de transações bancárias
+        └── matchCategory.ts   # Auto-match de categoria por keywords
 ```
 
 ---
@@ -122,7 +147,9 @@ src/
 ```
 User
   id, name?, email (unique), password (bcrypt), createdAt, updatedAt
-  → relations: transactions[], categories[]
+  notifTransactions (bool, default true), notifBudgetAlerts (bool, default true),
+  notifMonthlyReport (bool, default false)
+  → relations: transactions[], categories[], currencies[], notifications[]
 
 Category
   id, name, color (#hex), icon?, userId, createdAt
@@ -132,6 +159,16 @@ Transaction
   id, description, amount (Decimal 10,2), type (INCOME|EXPENSE),
   date, userId, categoryId, createdAt, updatedAt
   → relations: user, category
+
+UserCurrency
+  id, code, symbol, name, isDefault (bool), userId, createdAt
+  → unique [userId, code]
+  → relations: user
+
+Notification
+  id, userId, type (TRANSACTION|BUDGET_ALERT|MONTHLY_REPORT|SYSTEM),
+  title, message, read (bool, default false), createdAt
+  → relations: user
 ```
 
 ### Auth
@@ -212,6 +249,7 @@ const data = await prisma.xxx.findMany({ where: { userId: session.user.id } });
 | v0.2 | Settings | ✅ concluída — release v0.2.0 |
 | v0.3 | Transactions | ✅ concluída — release v0.3.0 |
 | v0.4 | i18n | ✅ concluída — release v0.4.0 |
+| v0.5 | Import | ✅ concluída — release v0.5.0 |
 
 ---
 

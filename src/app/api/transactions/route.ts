@@ -2,6 +2,70 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
+async function generateTransactionNotifications(
+  userId: string,
+  tx: { description: string; amount: number; type: string; categoryName: string }
+) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { notifTransactions: true, notifBudgetAlerts: true },
+  });
+  if (!user) return;
+
+  const formatted = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(tx.amount);
+  const typeLabel = tx.type === "INCOME" ? "Receita" : "Despesa";
+
+  if (user.notifTransactions) {
+    await prisma.notification.create({
+      data: {
+        userId,
+        type: "TRANSACTION",
+        title: `${typeLabel} registrada`,
+        message: `${tx.description} · ${tx.categoryName} · ${formatted}`,
+      },
+    });
+  }
+
+  if (user.notifBudgetAlerts && tx.type === "EXPENSE") {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const [monthlyExpense, monthlyIncome] = await Promise.all([
+      prisma.transaction.aggregate({
+        where: { userId, type: "EXPENSE", date: { gte: startOfMonth } },
+        _sum: { amount: true },
+      }),
+      prisma.transaction.aggregate({
+        where: { userId, type: "INCOME", date: { gte: startOfMonth } },
+        _sum: { amount: true },
+      }),
+    ]);
+
+    const totalExpense = parseFloat(String(monthlyExpense._sum.amount ?? 0));
+    const totalIncome = parseFloat(String(monthlyIncome._sum.amount ?? 0));
+
+    // Alert when expenses exceed 80% of income (and income > 0)
+    if (totalIncome > 0 && totalExpense >= totalIncome * 0.8) {
+      // Deduplicate: only one budget alert per day
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const existing = await prisma.notification.findFirst({
+        where: { userId, type: "BUDGET_ALERT", createdAt: { gte: todayStart } },
+      });
+      if (!existing) {
+        const pct = Math.round((totalExpense / totalIncome) * 100);
+        await prisma.notification.create({
+          data: {
+            userId,
+            type: "BUDGET_ALERT",
+            title: "Alerta de Gastos",
+            message: `Seus gastos este mês já representam ${pct}% das suas receitas.`,
+          },
+        });
+      }
+    }
+  }
+}
+
 export async function GET() {
   const session = await auth();
   if (!session?.user?.id) {
@@ -69,6 +133,14 @@ export async function POST(req: NextRequest) {
     },
     include: { category: true },
   });
+
+  // Generate notifications (fire-and-forget — don't block response)
+  generateTransactionNotifications(session.user.id, {
+    description: description.trim(),
+    amount,
+    type,
+    categoryName: transaction.category.name,
+  }).catch(() => {});
 
   const serialized = {
     ...transaction,

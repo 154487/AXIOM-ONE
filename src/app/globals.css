@@ -46,18 +46,25 @@
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
 
-  /* Axiom custom tokens */
-  --color-axiom-bg: #0D1B2A;
-  --color-axiom-card: #152030;
-  --color-axiom-hover: #1A2840;
-  --color-axiom-border: #1E2D42;
+  /* Axiom custom tokens — dynamic via CSS vars */
+  --color-axiom-bg: var(--axiom-bg);
+  --color-axiom-card: var(--axiom-card);
+  --color-axiom-hover: var(--axiom-hover);
+  --color-axiom-border: var(--axiom-border);
   --color-axiom-primary: #FF6B35;
   --color-axiom-income: #10B981;
   --color-axiom-expense: #EF4444;
-  --color-axiom-muted: #AAB2BD;
+  --color-axiom-muted: var(--axiom-muted);
 }
 
 :root {
+  /* Axiom light mode tokens */
+  --axiom-bg: #F0F4F8;
+  --axiom-card: #FFFFFF;
+  --axiom-hover: #E8EDF3;
+  --axiom-border: #CBD5E1;
+  --axiom-muted: #64748B;
+
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -94,6 +101,13 @@
 
 /* Axiom ONE dark theme */
 .dark {
+  /* Axiom dark mode tokens */
+  --axiom-bg: #0D1B2A;
+  --axiom-card: #152030;
+  --axiom-hover: #1A2840;
+  --axiom-border: #1E2D42;
+  --axiom-muted: #AAB2BD;
+
   --background: #0D1B2A;
   --foreground: #ffffff;
   --card: #152030;
@@ -137,4 +151,16 @@
   html {
     @apply font-sans;
   }
+}
+
+/* Light mode: override white text to dark so it's readable on light backgrounds */
+html:not(.dark) .text-white {
+  color: #1E293B;
+}
+html:not(.dark) .text-axiom-muted {
+  color: #64748B;
+}
+@keyframes toast-shrink {
+  from { width: 100%; }
+  to { width: 0%; }
 }

@@ -5,6 +5,8 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { CategoryDialog } from "./CategoryDialog";
 import { cn } from "@/lib/utils";
+import { toast } from "@/lib/toast";
+import { CategoryIcon } from "./CategoryIcon";
 import { Pencil, Trash2, Plus } from "lucide-react";
 import type { Category } from "@/generated/prisma/client";
 
@@ -17,7 +19,6 @@ export function CategoriesManager({ initialCategories }: CategoriesManagerProps)
   const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [dialog, setDialog] = useState<{ mode: "create" | "edit"; category?: Category } | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [deleteError, setDeleteError] = useState<Record<string, string>>({});
 
   function handleSuccess(updated: Category) {
     setCategories((prev) => {
@@ -25,31 +26,31 @@ export function CategoriesManager({ initialCategories }: CategoriesManagerProps)
       if (exists) return prev.map((c) => (c.id === updated.id ? updated : c));
       return [...prev, updated].sort((a, b) => a.name.localeCompare(b.name));
     });
+    toast.success("Sucesso!", t("categorySaved"));
     setDialog(null);
   }
 
   async function handleDelete(id: string) {
     setDeletingId(id);
-    setDeleteError((prev) => ({ ...prev, [id]: "" }));
     try {
       const res = await fetch(`/api/categories/${id}`, { method: "DELETE" });
       const data = await res.json();
       if (res.ok) {
         setCategories((prev) => prev.filter((c) => c.id !== id));
+        toast.success("Sucesso!", t("categoryDeleted"));
       } else {
-        setDeleteError((prev) => ({ ...prev, [id]: data.error ?? t("deleteError") }));
+        toast.error("Erro", data.error ?? t("deleteError"));
       }
     } catch {
-      setDeleteError((prev) => ({ ...prev, [id]: t("connectionError") }));
+      toast.error("Erro", t("connectionError"));
     } finally {
       setDeletingId(null);
     }
   }
 
   return (
-    <div className="max-w-lg">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-white font-semibold text-lg">{t("categoriesTitle")}</h2>
+    <div>
+      <div className="flex items-center justify-end mb-4">
         <Button
           onClick={() => setDialog({ mode: "create" })}
           className="bg-axiom-primary hover:bg-axiom-primary/90 text-white gap-1.5 h-9 text-sm"
@@ -59,7 +60,7 @@ export function CategoriesManager({ initialCategories }: CategoriesManagerProps)
         </Button>
       </div>
 
-      <div className="bg-axiom-card border border-axiom-border rounded-xl divide-y divide-axiom-border overflow-hidden">
+      <div className="border border-axiom-border rounded-xl divide-y divide-axiom-border overflow-hidden">
         {categories.length === 0 && (
           <p className="text-axiom-muted text-sm text-center py-8">
             {t("emptyCategories")}
@@ -70,14 +71,14 @@ export function CategoriesManager({ initialCategories }: CategoriesManagerProps)
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div
-                  className="w-8 h-8 rounded-full shrink-0"
+                  className="w-9 h-9 rounded-lg shrink-0 flex items-center justify-center"
                   style={{ backgroundColor: cat.color }}
-                />
+                >
+                  {cat.icon && <CategoryIcon name={cat.icon} size={16} className="text-white" />}
+                </div>
                 <div>
                   <p className="text-white text-sm font-medium">{cat.name}</p>
-                  {cat.icon && (
-                    <p className="text-axiom-muted text-xs">{cat.icon}</p>
-                  )}
+                  <p className="text-axiom-muted text-xs">{cat.color}</p>
                 </div>
               </div>
               <div className="flex items-center gap-1">
@@ -103,9 +104,6 @@ export function CategoriesManager({ initialCategories }: CategoriesManagerProps)
                 </button>
               </div>
             </div>
-            {deleteError[cat.id] && (
-              <p className="text-axiom-expense text-xs mt-1.5 pl-11">{deleteError[cat.id]}</p>
-            )}
           </div>
         ))}
       </div>

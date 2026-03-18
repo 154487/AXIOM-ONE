@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { sendProfileUpdatedEmail } from "@/lib/email";
 
 export async function PATCH(req: NextRequest) {
   const session = await auth();
@@ -27,11 +28,32 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Email já está em uso" }, { status: 409 });
   }
 
+  const currentUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { name: true, email: true },
+  });
+
   const updated = await prisma.user.update({
     where: { id: session.user.id },
     data: { name: name.trim(), email: email.trim() },
     select: { id: true, name: true, email: true },
   });
+
+  // Detect what changed and send email (fire-and-forget)
+  if (currentUser) {
+    const changes: { field: string; label: string }[] = [];
+    if (currentUser.name !== name.trim()) changes.push({ field: "name", label: "Nome" });
+    if (currentUser.email !== email.trim()) changes.push({ field: "email", label: "Email" });
+
+    if (changes.length > 0) {
+      // Send to OLD email so user is notified even if email changed
+      sendProfileUpdatedEmail({
+        to: currentUser.email,
+        name: currentUser.name,
+        changes,
+      }).catch(() => {});
+    }
+  }
 
   return NextResponse.json(updated);
 }

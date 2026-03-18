@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
+import { Toaster } from "@/components/ui/toaster";
 
 export default async function DashboardLayout({
   children,
@@ -15,9 +16,10 @@ export default async function DashboardLayout({
     <div className="flex h-screen bg-axiom-bg overflow-hidden">
       <Sidebar />
       <div className="flex flex-col flex-1 overflow-hidden">
-        <Topbar userName={session.user?.name} />
+        <Topbar userName={session.user?.name} userEmail={session.user?.email} />
         <main className="flex-1 overflow-y-auto p-6">{children}</main>
       </div>
+      <Toaster />
     </div>
   );
 }

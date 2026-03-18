@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { CategoryIcon, ICON_OPTIONS } from "./CategoryIcon";
 import { cn } from "@/lib/utils";
 import type { Category } from "@/generated/prisma/client";
 
@@ -22,8 +23,8 @@ const PALETTE = [
   "#3B82F6",
   "#8B5CF6",
   "#F59E0B",
-  "#AAB2BD",
-  "#0D1B2A",
+  "#EC4899",
+  "#14B8A6",
 ];
 
 interface CategoryDialogProps {
@@ -37,7 +38,7 @@ export function CategoryDialog({ mode, category, onSuccess, onClose }: CategoryD
   const t = useTranslations("Settings");
   const [name, setName] = useState(category?.name ?? "");
   const [color, setColor] = useState(category?.color ?? PALETTE[0]);
-  const [icon, setIcon] = useState(category?.icon ?? "");
+  const [icon, setIcon] = useState(category?.icon ?? ICON_OPTIONS[0].name);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,7 +46,7 @@ export function CategoryDialog({ mode, category, onSuccess, onClose }: CategoryD
     if (category) {
       setName(category.name);
       setColor(category.color);
-      setIcon(category.icon ?? "");
+      setIcon(category.icon ?? ICON_OPTIONS[0].name);
     }
   }, [category]);
 
@@ -66,7 +67,7 @@ export function CategoryDialog({ mode, category, onSuccess, onClose }: CategoryD
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), color, icon: icon.trim() || null }),
+        body: JSON.stringify({ name: name.trim(), color, icon: icon || null }),
       });
 
       const data = await res.json();
@@ -85,14 +86,26 @@ export function CategoryDialog({ mode, category, onSuccess, onClose }: CategoryD
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="bg-axiom-card border-axiom-border text-white max-w-sm">
+      <DialogContent className="bg-axiom-card border-axiom-border text-white max-w-md">
         <DialogHeader>
           <DialogTitle className="text-white">
             {mode === "create" ? t("categoryDialogCreateTitle") : t("categoryDialogEditTitle")}
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Preview */}
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-axiom-hover">
+            <div
+              className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+              style={{ backgroundColor: color }}
+            >
+              {icon && <CategoryIcon name={icon} size={18} className="text-white" />}
+            </div>
+            <span className="text-white text-sm font-medium">{name || t("categoryNamePlaceholder")}</span>
+          </div>
+
+          {/* Name */}
           <div className="space-y-1.5">
             <Label htmlFor="cat-name" className="text-axiom-muted text-sm">{t("categoryNameLabel")}</Label>
             <Input
@@ -104,6 +117,30 @@ export function CategoryDialog({ mode, category, onSuccess, onClose }: CategoryD
             />
           </div>
 
+          {/* Icon picker */}
+          <div className="space-y-2">
+            <Label className="text-axiom-muted text-sm">{t("categoryIconLabel")}</Label>
+            <div className="grid grid-cols-10 gap-1.5">
+              {ICON_OPTIONS.map((opt) => (
+                <button
+                  key={opt.name}
+                  type="button"
+                  title={opt.label}
+                  onClick={() => setIcon(opt.name)}
+                  className={cn(
+                    "w-8 h-8 flex items-center justify-center rounded-lg transition-all",
+                    icon === opt.name
+                      ? "bg-axiom-primary text-white"
+                      : "text-axiom-muted hover:text-white hover:bg-axiom-hover"
+                  )}
+                >
+                  <CategoryIcon name={opt.name} size={15} />
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Color palette */}
           <div className="space-y-2">
             <Label className="text-axiom-muted text-sm">{t("categoryColorLabel")}</Label>
             <div className="flex gap-2 flex-wrap">
@@ -129,17 +166,6 @@ export function CategoryDialog({ mode, category, onSuccess, onClose }: CategoryD
                 placeholder="#FF6B35"
               />
             </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="cat-icon" className="text-axiom-muted text-sm">{t("categoryIconLabel")}</Label>
-            <Input
-              id="cat-icon"
-              value={icon}
-              onChange={(e) => setIcon(e.target.value)}
-              className="bg-axiom-hover border-axiom-border text-white focus:border-axiom-primary"
-              placeholder={t("categoryIconPlaceholder")}
-            />
           </div>
 
           {error && <p className="text-axiom-expense text-sm">{error}</p>}

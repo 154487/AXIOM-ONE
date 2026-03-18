@@ -10,14 +10,15 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Pencil, Trash2 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { cn, formatCurrency, formatDate } from "@/lib/utils";
 import { useTranslations, useLocale } from "next-intl";
+import { CategoryIcon } from "@/components/settings/CategoryIcon";
 
 interface Category {
   id: string;
   name: string;
   color: string;
+  icon: string | null;
 }
 
 export interface Transaction {
@@ -72,9 +73,13 @@ export function TransactionTable({ transactions, onEdit, onDelete, deletingId }:
               <TableCell>
                 <div className="flex items-center gap-2">
                   <div
-                    className="w-3 h-3 rounded-full shrink-0"
+                    className="w-6 h-6 rounded-md shrink-0 flex items-center justify-center"
                     style={{ backgroundColor: tx.category.color }}
-                  />
+                  >
+                    {tx.category.icon && (
+                      <CategoryIcon name={tx.category.icon} size={12} className="text-white" />
+                    )}
+                  </div>
                   <span className="text-axiom-muted text-sm">{tx.category.name}</span>
                 </div>
               </TableCell>
