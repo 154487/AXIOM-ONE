@@ -211,6 +211,7 @@ const data = await prisma.xxx.findMany({ where: { userId: session.user.id } });
 | v0.1 | Foundation | ✅ concluída |
 | v0.2 | Settings | ✅ concluída — release v0.2.0 |
 | v0.3 | Transactions | ✅ concluída — release v0.3.0 |
+| v0.4 | i18n | ✅ concluída — release v0.4.0 |
 
 ---
 
