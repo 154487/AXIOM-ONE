@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
 import { useTranslations, useLocale } from "next-intl";
@@ -21,6 +22,8 @@ interface SpendingDonutProps {
 export function SpendingDonut({ data, currency = "BRL" }: SpendingDonutProps) {
   const t = useTranslations("SpendingDonut");
   const locale = useLocale();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const isEmpty = data.length === 0;
 
@@ -72,8 +75,12 @@ export function SpendingDonut({ data, currency = "BRL" }: SpendingDonutProps) {
       <h3 className="text-white font-semibold mb-4">{t("title")}</h3>
 
       <div style={{ height: 200 }}>
-        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-        <Doughnut data={chartData} options={options as any} />
+        {mounted ? (
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          <Doughnut data={chartData} options={options as any} />
+        ) : (
+          <div className="w-full h-full rounded-full bg-axiom-hover animate-pulse" />
+        )}
       </div>
 
       {/* Legend */}

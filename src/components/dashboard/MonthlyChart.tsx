@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -27,6 +28,8 @@ interface MonthlyChartProps {
 export function MonthlyChart({ data, currency = "BRL" }: MonthlyChartProps) {
   const t = useTranslations("MonthlyChart");
   const locale = useLocale();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const chartData = {
     labels: data.map((d) => d.month),
@@ -107,8 +110,12 @@ export function MonthlyChart({ data, currency = "BRL" }: MonthlyChartProps) {
     <div className="bg-axiom-card border border-axiom-border rounded-xl p-5">
       <h3 className="text-white font-semibold mb-4">{t("title")}</h3>
       <div style={{ height: 280 }}>
-        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-        <Bar data={chartData} options={options as any} />
+        {mounted ? (
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          <Bar data={chartData} options={options as any} />
+        ) : (
+          <div className="w-full h-full rounded-lg bg-axiom-hover animate-pulse" />
+        )}
       </div>
     </div>
   );

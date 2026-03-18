@@ -43,10 +43,20 @@ export async function POST(req: Request) {
 
   const userId = session.user.id as string;
 
+  // Only insert rows that have a category selected
+  const insertable = rows.filter((r) => r.categoryId);
+
+  if (insertable.length === 0) {
+    return NextResponse.json(
+      { error: "Nenhuma transação possui categoria selecionada" },
+      { status: 400 }
+    );
+  }
+
   // Bulk insert
   await prisma.transaction.createMany({
-    data: rows.map((row) => ({
-      description: row.description.trim() || row.cleanDescription,
+    data: insertable.map((row) => ({
+      description: (row.description ?? "").trim() || row.cleanDescription,
       amount: row.amount,
       type: row.type,
       date: new Date(row.date),
@@ -55,15 +65,20 @@ export async function POST(req: Request) {
     })),
   });
 
+  const skipped = rows.length - insertable.length;
+
   // Create system notification
   await prisma.notification.create({
     data: {
       userId,
       type: "SYSTEM",
       title: "Importação concluída",
-      message: `${rows.length} transações importadas com sucesso.`,
+      message:
+        skipped > 0
+          ? `${insertable.length} transações importadas. ${skipped} ignoradas por falta de categoria.`
+          : `${insertable.length} transações importadas com sucesso.`,
     },
   });
 
-  return NextResponse.json({ imported: rows.length }, { status: 201 });
+  return NextResponse.json({ imported: insertable.length, skipped }, { status: 201 });
 }
