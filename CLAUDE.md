@@ -16,7 +16,7 @@ Dark theme com acento laranja. Interface premium estilo fintech.
 | Estilo | Tailwind CSS v4 + shadcn/ui | — |
 | Banco | PostgreSQL + Prisma ORM | Prisma 7 |
 | Auth | NextAuth.js v5 (Auth.js) | beta |
-| Gráficos | Recharts | 3 |
+| Gráficos | **Chart.js + react-chartjs-2** | — |
 | Ícones | lucide-react | 0.577 |
 | Fonte | system-ui / SF Pro (nativa do OS) | — |
 | Package mgr | npm | — |
@@ -66,7 +66,7 @@ src/
 │   │   ├── register/page.tsx
 │   │   └── layout.tsx
 │   ├── (dashboard)/               # Rotas protegidas pelo middleware
-│   │   ├── dashboard/page.tsx
+│   │   ├── dashboard/page.tsx     # force-dynamic — fetch KPIs, gráficos, moeda padrão
 │   │   ├── transactions/page.tsx  # Server Component — auth + fetch transactions+categories → TransactionList
 │   │   ├── reports/page.tsx       # placeholder — futuro
 │   │   ├── import/page.tsx        # Server Component — fetch categories → ImportWizard
@@ -90,19 +90,19 @@ src/
 │   │   ├── notifications/[id]/    # PATCH mark as read
 │   │   ├── notifications/read-all/ # PATCH mark all read
 │   │   ├── import/parse/          # POST multipart/form-data → ParsedRow[] (OFX/CSV/XLSX)
-│   │   └── import/confirm/        # POST bulk createMany transactions
-│   ├── layout.tsx                 # Root layout (fonte, html, body)
-│   ├── globals.css                # Tailwind v4 + tokens Axiom + shadcn overrides
+│   │   └── import/confirm/        # POST bulk createMany (filtra categoryId nulo)
+│   ├── layout.tsx                 # Root layout (lê AXIOM_THEME cookie → class "dark")
+│   ├── globals.css                # Tailwind v4 + tokens Axiom + dark/light via CSS vars
 │   └── page.tsx                   # Redirect: autenticado → /dashboard, anon → /login
 ├── components/
 │   ├── layout/
 │   │   ├── Sidebar.tsx            # Nav lateral (collapse, active pill laranja)
-│   │   └── Topbar.tsx             # Título da página, moon, bell, avatar
+│   │   └── Topbar.tsx             # Título da página, bell (notificações), avatar
 │   ├── dashboard/
-│   │   ├── KPICard.tsx            # Card com valor, badge % variação, ícone
-│   │   ├── MonthlyChart.tsx       # Recharts BarChart (income + expenses 6 meses)
-│   │   ├── SpendingDonut.tsx      # Recharts PieChart por categoria
-│   │   └── RecentTransactions.tsx # Lista últimas 6 transações
+│   │   ├── KPICard.tsx            # "use client" — count-up animado 1000ms easeOutQuart
+│   │   ├── MonthlyChart.tsx       # "use client" — Chart.js Bar, mounted guard, animação 1000ms
+│   │   ├── SpendingDonut.tsx      # "use client" — Chart.js Doughnut, mounted guard, animação 1000ms
+│   │   └── RecentTransactions.tsx # Lista últimas 6 transações com moeda dinâmica
 │   ├── settings/
 │   │   ├── SettingsPage.tsx       # "use client" — container com dark/lang/currency/notifs
 │   │   ├── ProfileForm.tsx        # Form nome/email + form senha (router.refresh após salvar)
@@ -126,14 +126,14 @@ src/
     ├── auth.ts          # NextAuth config COMPLETA (server-only, usa Prisma)
     ├── auth.config.ts   # Config LEVE sem Prisma — usada no middleware (Edge Runtime)
     ├── prisma.ts        # Singleton PrismaClient (server-only, adapter PrismaPg)
-    ├── utils.ts         # cn(), formatCurrency(), formatDate()
+    ├── utils.ts         # cn(), formatCurrency(value, locale, currency), formatDate()
     ├── email.ts         # Resend lazy init + templates de email (senha, perfil)
     └── import/
         ├── types.ts           # ParsedRow, ReviewedRow interfaces
         ├── parseFile.ts       # Dispatcher por extensão
         ├── parseOFX.ts        # Parser SGML OFX (bancos BR)
         ├── parseCSV.ts        # papaparse + detecção de colunas flexível
-        ├── parseXLSX.ts       # xlsx + detecção de colunas flexível
+        ├── parseXLSX.ts       # xlsx — detecta header row dinamicamente (Nubank/Inter)
         ├── cleanDescription.ts # Normaliza nomes de transações bancárias
         └── matchCategory.ts   # Auto-match de categoria por keywords
 ```
@@ -157,7 +157,7 @@ Category
 
 Transaction
   id, description, amount (Decimal 10,2), type (INCOME|EXPENSE),
-  date, userId, categoryId, createdAt, updatedAt
+  date, userId, categoryId (NOT NULL), createdAt, updatedAt
   → relations: user, category
 
 UserCurrency
@@ -223,11 +223,42 @@ setItems((prev) => prev.filter((i) => i.id !== id));
 
 ```ts
 // page.tsx
+export const dynamic = "force-dynamic"; // garantir dados frescos
 const session = await auth();
 if (!session?.user?.id) redirect("/login");
 const data = await prisma.xxx.findMany({ where: { userId: session.user.id } });
 // renderizar Client Components passando data como props
 ```
+
+### Padrão de Gráficos (Chart.js)
+
+```tsx
+// SEMPRE usar mounted guard — Chart.js precisa do Canvas API (browser only)
+const [mounted, setMounted] = useState(false);
+useEffect(() => setMounted(true), []);
+
+// Animação sincronizada com KPI count-up:
+const options = {
+  animation: { duration: 1000, easing: "easeOutQuart" },
+  // ...
+};
+
+// Render:
+{mounted ? <Bar data={...} options={...} /> : <div className="animate-pulse ..." />}
+```
+
+### Padrão de formatCurrency
+
+```ts
+// Assinatura completa — sempre passar locale e currency
+formatCurrency(value, locale, currency)
+
+// Exemplos:
+formatCurrency(1234.56, "pt-BR", "BRL") // → R$ 1.234,56
+formatCurrency(1234.56, "en", "USD")     // → $1,234.56
+```
+
+A moeda padrão do usuário vem de `UserCurrency` com `isDefault: true`. O dashboard já busca e repassa a todos os componentes via prop `currency`.
 
 ---
 
@@ -259,9 +290,12 @@ const data = await prisma.xxx.findMany({ where: { userId: session.user.id } });
 2. **Nunca usar cores fora dos tokens `axiom-*`** — nem inline styles com hex hardcoded
 3. **Sempre `server-only`** em `auth.ts` e `prisma.ts`
 4. **shadcn components:** instalar via `npx shadcn@latest add <component>` antes de usar
-5. **Recharts:** sempre `"use client"` nos componentes de gráfico
+5. **Chart.js:** sempre `"use client"` + `mounted` guard (Canvas API não existe no SSR)
 6. **Deletar categoria:** verificar `_count.transactions` antes — retornar 409 se > 0
 7. **Cache corrompido:** se internal server error aparecer, `rm -rf .next && npm run dev`
+8. **Import de transações:** `categoryId` é NOT NULL — o confirm endpoint filtra linhas sem categoria antes do `createMany`
+9. **Dashboard:** `export const dynamic = "force-dynamic"` — nunca cachear dados financeiros
+10. **XLSX multi-seção (Nubank/Inter):** parseXLSX detecta a linha de cabeçalho dinamicamente, suporta DD-MM-YYYY e valores BR (vírgula decimal)
 
 ---
 
