@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { CategoryDialog } from "./CategoryDialog";
 import { cn } from "@/lib/utils";
@@ -12,6 +13,7 @@ interface CategoriesManagerProps {
 }
 
 export function CategoriesManager({ initialCategories }: CategoriesManagerProps) {
+  const t = useTranslations("Settings");
   const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [dialog, setDialog] = useState<{ mode: "create" | "edit"; category?: Category } | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -35,10 +37,10 @@ export function CategoriesManager({ initialCategories }: CategoriesManagerProps)
       if (res.ok) {
         setCategories((prev) => prev.filter((c) => c.id !== id));
       } else {
-        setDeleteError((prev) => ({ ...prev, [id]: data.error ?? "Erro ao deletar" }));
+        setDeleteError((prev) => ({ ...prev, [id]: data.error ?? t("deleteError") }));
       }
     } catch {
-      setDeleteError((prev) => ({ ...prev, [id]: "Erro de conexão" }));
+      setDeleteError((prev) => ({ ...prev, [id]: t("connectionError") }));
     } finally {
       setDeletingId(null);
     }
@@ -47,20 +49,20 @@ export function CategoriesManager({ initialCategories }: CategoriesManagerProps)
   return (
     <div className="max-w-lg">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-white font-semibold text-lg">Categorias</h2>
+        <h2 className="text-white font-semibold text-lg">{t("categoriesTitle")}</h2>
         <Button
           onClick={() => setDialog({ mode: "create" })}
           className="bg-axiom-primary hover:bg-axiom-primary/90 text-white gap-1.5 h-9 text-sm"
         >
           <Plus size={15} />
-          Nova Categoria
+          {t("addCategoryButton")}
         </Button>
       </div>
 
       <div className="bg-axiom-card border border-axiom-border rounded-xl divide-y divide-axiom-border overflow-hidden">
         {categories.length === 0 && (
           <p className="text-axiom-muted text-sm text-center py-8">
-            Nenhuma categoria cadastrada.
+            {t("emptyCategories")}
           </p>
         )}
         {categories.map((cat) => (
@@ -82,7 +84,7 @@ export function CategoriesManager({ initialCategories }: CategoriesManagerProps)
                 <button
                   onClick={() => setDialog({ mode: "edit", category: cat })}
                   className="w-8 h-8 flex items-center justify-center rounded-lg text-axiom-muted hover:text-white hover:bg-axiom-hover transition-colors"
-                  title="Editar"
+                  title={t("editButton")}
                 >
                   <Pencil size={14} />
                 </button>
@@ -95,7 +97,7 @@ export function CategoriesManager({ initialCategories }: CategoriesManagerProps)
                       ? "text-axiom-muted cursor-not-allowed"
                       : "text-axiom-muted hover:text-axiom-expense hover:bg-axiom-expense/10"
                   )}
-                  title="Deletar"
+                  title={t("deleteButton")}
                 >
                   <Trash2 size={14} />
                 </button>

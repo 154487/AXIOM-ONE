@@ -3,6 +3,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ProfileForm } from "./ProfileForm";
 import { CategoriesManager } from "./CategoriesManager";
+import { useTranslations } from "next-intl";
 import type { Category } from "@/generated/prisma/client";
 
 interface SettingsTabsProps {
@@ -11,6 +12,8 @@ interface SettingsTabsProps {
 }
 
 export function SettingsTabs({ user, categories }: SettingsTabsProps) {
+  const t = useTranslations("Settings");
+
   return (
     <Tabs defaultValue="profile" className="w-full">
       <TabsList className="bg-axiom-card border border-axiom-border mb-6">
@@ -18,13 +21,13 @@ export function SettingsTabs({ user, categories }: SettingsTabsProps) {
           value="profile"
           className="data-[state=active]:bg-axiom-primary data-[state=active]:text-white text-axiom-muted"
         >
-          Perfil
+          {t("tabProfile")}
         </TabsTrigger>
         <TabsTrigger
           value="categories"
           className="data-[state=active]:bg-axiom-primary data-[state=active]:text-white text-axiom-muted"
         >
-          Categorias
+          {t("tabCategories")}
         </TabsTrigger>
       </TabsList>
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, FormEvent, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -33,6 +34,7 @@ interface CategoryDialogProps {
 }
 
 export function CategoryDialog({ mode, category, onSuccess, onClose }: CategoryDialogProps) {
+  const t = useTranslations("Settings");
   const [name, setName] = useState(category?.name ?? "");
   const [color, setColor] = useState(category?.color ?? PALETTE[0]);
   const [icon, setIcon] = useState(category?.icon ?? "");
@@ -52,7 +54,7 @@ export function CategoryDialog({ mode, category, onSuccess, onClose }: CategoryD
     setError(null);
 
     if (!name.trim()) {
-      setError("Nome é obrigatório");
+      setError(t("categoryNameRequired"));
       return;
     }
 
@@ -69,13 +71,13 @@ export function CategoryDialog({ mode, category, onSuccess, onClose }: CategoryD
 
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Erro ao salvar");
+        setError(data.error ?? t("categorySaveError"));
         return;
       }
 
       onSuccess(data);
     } catch {
-      setError("Erro de conexão");
+      setError(t("connectionError"));
     } finally {
       setSaving(false);
     }
@@ -86,24 +88,24 @@ export function CategoryDialog({ mode, category, onSuccess, onClose }: CategoryD
       <DialogContent className="bg-axiom-card border-axiom-border text-white max-w-sm">
         <DialogHeader>
           <DialogTitle className="text-white">
-            {mode === "create" ? "Nova Categoria" : "Editar Categoria"}
+            {mode === "create" ? t("categoryDialogCreateTitle") : t("categoryDialogEditTitle")}
           </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="cat-name" className="text-axiom-muted text-sm">Nome</Label>
+            <Label htmlFor="cat-name" className="text-axiom-muted text-sm">{t("categoryNameLabel")}</Label>
             <Input
               id="cat-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="bg-axiom-hover border-axiom-border text-white focus:border-axiom-primary"
-              placeholder="ex: Lazer"
+              placeholder={t("categoryNamePlaceholder")}
             />
           </div>
 
           <div className="space-y-2">
-            <Label className="text-axiom-muted text-sm">Cor</Label>
+            <Label className="text-axiom-muted text-sm">{t("categoryColorLabel")}</Label>
             <div className="flex gap-2 flex-wrap">
               {PALETTE.map((c) => (
                 <button
@@ -130,13 +132,13 @@ export function CategoryDialog({ mode, category, onSuccess, onClose }: CategoryD
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="cat-icon" className="text-axiom-muted text-sm">Ícone (opcional)</Label>
+            <Label htmlFor="cat-icon" className="text-axiom-muted text-sm">{t("categoryIconLabel")}</Label>
             <Input
               id="cat-icon"
               value={icon}
               onChange={(e) => setIcon(e.target.value)}
               className="bg-axiom-hover border-axiom-border text-white focus:border-axiom-primary"
-              placeholder="ex: home, car, heart"
+              placeholder={t("categoryIconPlaceholder")}
             />
           </div>
 
@@ -149,14 +151,18 @@ export function CategoryDialog({ mode, category, onSuccess, onClose }: CategoryD
               onClick={onClose}
               className="border-axiom-border text-axiom-muted hover:text-white hover:bg-axiom-hover"
             >
-              Cancelar
+              {t("cancelButton")}
             </Button>
             <Button
               type="submit"
               disabled={saving}
               className="bg-axiom-primary hover:bg-axiom-primary/90 text-white"
             >
-              {saving ? "Salvando..." : mode === "create" ? "Criar" : "Salvar"}
+              {saving
+                ? t("creatingButton")
+                : mode === "create"
+                ? t("createButton")
+                : t("updateButton")}
             </Button>
           </DialogFooter>
         </form>
