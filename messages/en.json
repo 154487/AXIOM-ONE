@@ -1,38 +1,38 @@
 {
   "Sidebar": {
-    "dashboard": "",
-    "transactions": "",
-    "reports": "",
-    "import": "",
-    "settings": ""
+    "dashboard": "Dashboard",
+    "transactions": "Transactions",
+    "reports": "Reports",
+    "import": "Import",
+    "settings": "Settings"
   },
   "Topbar": {
     "pageTitles": {
-      "/dashboard": "",
-      "/transactions": "",
-      "/reports": "",
-      "/import": "",
-      "/settings": ""
+      "/dashboard": "Financial Overview",
+      "/transactions": "Transactions",
+      "/reports": "Financial Reports",
+      "/import": "Import OFX File",
+      "/settings": "Settings"
     },
-    "subtitle": ""
+    "subtitle": "Welcome back to AXIOM ONE"
   },
   "Dashboard": {
-    "totalBalance": "",
-    "income": "",
-    "expenses": "",
-    "netDifference": ""
+    "totalBalance": "Total Balance",
+    "income": "Income",
+    "expenses": "Expenses",
+    "netDifference": "Net Difference"
   },
   "MonthlyChart": {
-    "title": "",
-    "income": "",
-    "expenses": ""
+    "title": "Monthly Overview",
+    "income": "Income",
+    "expenses": "Expenses"
   },
   "SpendingDonut": {
-    "title": ""
+    "title": "Spending by Category"
   },
   "RecentTransactions": {
-    "title": "",
-    "viewAll": ""
+    "title": "Recent Transactions",
+    "viewAll": "View All"
   },
   "Auth": {
     "login": {
