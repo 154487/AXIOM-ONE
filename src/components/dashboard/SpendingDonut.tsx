@@ -40,6 +40,10 @@ export function SpendingDonut({ data, currency = "BRL" }: SpendingDonutProps) {
     responsive: true,
     maintainAspectRatio: false,
     cutout: "65%",
+    animation: {
+      duration: 1000,
+      easing: "easeOutQuart" as const,
+    },
     plugins: {
       legend: { display: false },
       tooltip: {

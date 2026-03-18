@@ -51,6 +51,10 @@ export function MonthlyChart({ data, currency = "BRL" }: MonthlyChartProps) {
   const options = {
     responsive: true,
     maintainAspectRatio: false,
+    animation: {
+      duration: 1000,
+      easing: "easeOutQuart" as const,
+    },
     plugins: {
       legend: {
         labels: {
