@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { useTranslations, useLocale } from "next-intl";
 
 interface Category {
   id: string;
@@ -37,10 +38,13 @@ interface TransactionTableProps {
 }
 
 export function TransactionTable({ transactions, onEdit, onDelete, deletingId }: TransactionTableProps) {
+  const t = useTranslations("Transactions");
+  const locale = useLocale();
+
   if (transactions.length === 0) {
     return (
       <div className="bg-axiom-card border border-axiom-border rounded-xl py-16 text-center">
-        <p className="text-axiom-muted text-sm">Nenhuma transação encontrada</p>
+        <p className="text-axiom-muted text-sm">{t("emptyState")}</p>
       </div>
     );
   }
@@ -50,11 +54,11 @@ export function TransactionTable({ transactions, onEdit, onDelete, deletingId }:
       <Table>
         <TableHeader>
           <TableRow className="border-axiom-border hover:bg-transparent">
-            <TableHead className="text-axiom-muted">Data</TableHead>
-            <TableHead className="text-axiom-muted">Descrição</TableHead>
-            <TableHead className="text-axiom-muted">Categoria</TableHead>
-            <TableHead className="text-axiom-muted">Tipo</TableHead>
-            <TableHead className="text-axiom-muted text-right">Valor</TableHead>
+            <TableHead className="text-axiom-muted">{t("colDate")}</TableHead>
+            <TableHead className="text-axiom-muted">{t("colDescription")}</TableHead>
+            <TableHead className="text-axiom-muted">{t("colCategory")}</TableHead>
+            <TableHead className="text-axiom-muted">{t("colType")}</TableHead>
+            <TableHead className="text-axiom-muted text-right">{t("colAmount")}</TableHead>
             <TableHead className="text-axiom-muted w-20"></TableHead>
           </TableRow>
         </TableHeader>
@@ -62,7 +66,7 @@ export function TransactionTable({ transactions, onEdit, onDelete, deletingId }:
           {transactions.map((tx) => (
             <TableRow key={tx.id} className="border-axiom-border hover:bg-axiom-hover">
               <TableCell className="text-axiom-muted text-sm">
-                {formatDate(tx.date)}
+                {formatDate(tx.date, locale)}
               </TableCell>
               <TableCell className="text-white text-sm">{tx.description}</TableCell>
               <TableCell>
@@ -83,7 +87,7 @@ export function TransactionTable({ transactions, onEdit, onDelete, deletingId }:
                       : "bg-axiom-expense/15 text-axiom-expense"
                   )}
                 >
-                  {tx.type === "INCOME" ? "Receita" : "Despesa"}
+                  {tx.type === "INCOME" ? t("badgeIncome") : t("badgeExpense")}
                 </Badge>
               </TableCell>
               <TableCell className="text-right">
@@ -94,7 +98,7 @@ export function TransactionTable({ transactions, onEdit, onDelete, deletingId }:
                   )}
                 >
                   {tx.type === "INCOME" ? "+" : "-"}
-                  {formatCurrency(tx.amount)}
+                  {formatCurrency(tx.amount, locale)}
                 </span>
               </TableCell>
               <TableCell>
@@ -102,7 +106,7 @@ export function TransactionTable({ transactions, onEdit, onDelete, deletingId }:
                   <button
                     onClick={() => onEdit(tx)}
                     className="w-8 h-8 flex items-center justify-center rounded-lg text-axiom-muted hover:text-white hover:bg-axiom-hover transition-colors"
-                    title="Editar"
+                    title={t("editButton")}
                   >
                     <Pencil size={14} />
                   </button>
@@ -115,7 +119,7 @@ export function TransactionTable({ transactions, onEdit, onDelete, deletingId }:
                         ? "text-axiom-muted cursor-not-allowed"
                         : "text-axiom-muted hover:text-axiom-expense hover:bg-axiom-expense/10"
                     )}
-                    title="Deletar"
+                    title={t("deleteButton")}
                   >
                     <Trash2 size={14} />
                   </button>
