@@ -2,6 +2,7 @@
 
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ type Message = { type: "success" | "error"; text: string } | null;
 
 export function ProfileForm({ user }: ProfileFormProps) {
   const router = useRouter();
+  const t = useTranslations("Settings");
 
   const [name, setName] = useState(user.name ?? "");
   const [email, setEmail] = useState(user.email);
@@ -39,13 +41,13 @@ export function ProfileForm({ user }: ProfileFormProps) {
       });
       const data = await res.json();
       if (res.ok) {
-        setProfileMsg({ type: "success", text: "Perfil atualizado com sucesso" });
+        setProfileMsg({ type: "success", text: t("saveSuccess") });
         router.refresh();
       } else {
-        setProfileMsg({ type: "error", text: data.error ?? "Erro ao salvar" });
+        setProfileMsg({ type: "error", text: data.error ?? t("saveError") });
       }
     } catch {
-      setProfileMsg({ type: "error", text: "Erro de conexão" });
+      setProfileMsg({ type: "error", text: t("connectionError") });
     } finally {
       setSavingProfile(false);
     }
@@ -56,7 +58,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
     setPasswordMsg(null);
 
     if (newPassword !== confirmPassword) {
-      setPasswordMsg({ type: "error", text: "As senhas não coincidem" });
+      setPasswordMsg({ type: "error", text: t("passwordMismatch") });
       return;
     }
 
@@ -69,15 +71,15 @@ export function ProfileForm({ user }: ProfileFormProps) {
       });
       const data = await res.json();
       if (res.ok) {
-        setPasswordMsg({ type: "success", text: "Senha alterada com sucesso" });
+        setPasswordMsg({ type: "success", text: t("passwordSuccess") });
         setCurrentPassword("");
         setNewPassword("");
         setConfirmPassword("");
       } else {
-        setPasswordMsg({ type: "error", text: data.error ?? "Erro ao alterar senha" });
+        setPasswordMsg({ type: "error", text: data.error ?? t("passwordError") });
       }
     } catch {
-      setPasswordMsg({ type: "error", text: "Erro de conexão" });
+      setPasswordMsg({ type: "error", text: t("connectionError") });
     } finally {
       setSavingPassword(false);
     }
@@ -87,10 +89,10 @@ export function ProfileForm({ user }: ProfileFormProps) {
     <div className="space-y-8 max-w-lg">
       {/* Informações Pessoais */}
       <div className="bg-axiom-card border border-axiom-border rounded-xl p-6">
-        <h2 className="text-white font-semibold text-lg mb-5">Informações Pessoais</h2>
+        <h2 className="text-white font-semibold text-lg mb-5">{t("profileTitle")}</h2>
         <form onSubmit={handleProfileSave} className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="name" className="text-axiom-muted text-sm">Nome</Label>
+            <Label htmlFor="name" className="text-axiom-muted text-sm">{t("nameLabel")}</Label>
             <Input
               id="name"
               value={name}
@@ -99,7 +101,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="email" className="text-axiom-muted text-sm">Email</Label>
+            <Label htmlFor="email" className="text-axiom-muted text-sm">{t("emailLabel")}</Label>
             <Input
               id="email"
               type="email"
@@ -120,17 +122,17 @@ export function ProfileForm({ user }: ProfileFormProps) {
             disabled={savingProfile}
             className="bg-axiom-primary hover:bg-axiom-primary/90 text-white"
           >
-            {savingProfile ? "Salvando..." : "Salvar"}
+            {savingProfile ? t("savingButton") : t("saveButton")}
           </Button>
         </form>
       </div>
 
       {/* Alterar Senha */}
       <div className="bg-axiom-card border border-axiom-border rounded-xl p-6">
-        <h2 className="text-white font-semibold text-lg mb-5">Alterar Senha</h2>
+        <h2 className="text-white font-semibold text-lg mb-5">{t("passwordTitle")}</h2>
         <form onSubmit={handlePasswordSave} className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="currentPassword" className="text-axiom-muted text-sm">Senha atual</Label>
+            <Label htmlFor="currentPassword" className="text-axiom-muted text-sm">{t("currentPasswordLabel")}</Label>
             <Input
               id="currentPassword"
               type="password"
@@ -140,7 +142,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="newPassword" className="text-axiom-muted text-sm">Nova senha</Label>
+            <Label htmlFor="newPassword" className="text-axiom-muted text-sm">{t("newPasswordLabel")}</Label>
             <Input
               id="newPassword"
               type="password"
@@ -150,7 +152,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="confirmPassword" className="text-axiom-muted text-sm">Confirmar nova senha</Label>
+            <Label htmlFor="confirmPassword" className="text-axiom-muted text-sm">{t("confirmPasswordLabel")}</Label>
             <Input
               id="confirmPassword"
               type="password"
@@ -171,7 +173,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
             disabled={savingPassword}
             className="bg-axiom-primary hover:bg-axiom-primary/90 text-white"
           >
-            {savingPassword ? "Salvando..." : "Alterar Senha"}
+            {savingPassword ? t("changingPasswordButton") : t("changePasswordButton")}
           </Button>
         </form>
       </div>
