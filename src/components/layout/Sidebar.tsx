@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -14,17 +15,18 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/transactions", label: "Transactions", icon: Receipt },
-  { href: "/reports", label: "Reports", icon: BarChart3 },
-  { href: "/import", label: "Import", icon: FileUp },
-  { href: "/settings", label: "Settings", icon: Settings2 },
-];
-
 export function Sidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const t = useTranslations("Sidebar");
+
+  const navItems = [
+    { href: "/dashboard", label: t("dashboard"), icon: LayoutDashboard },
+    { href: "/transactions", label: t("transactions"), icon: Receipt },
+    { href: "/reports", label: t("reports"), icon: BarChart3 },
+    { href: "/import", label: t("import"), icon: FileUp },
+    { href: "/settings", label: t("settings"), icon: Settings2 },
+  ];
 
   return (
     <aside
