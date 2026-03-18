@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, FormEvent } from "react";
+import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -40,6 +41,7 @@ export function TransactionDialog({
   onSuccess,
   onClose,
 }: TransactionDialogProps) {
+  const t = useTranslations("Transactions");
   const [description, setDescription] = useState(transaction?.description ?? "");
   const [amount, setAmount] = useState(transaction ? String(transaction.amount) : "");
   const [type, setType] = useState<"INCOME" | "EXPENSE">(transaction?.type ?? "EXPENSE");
@@ -63,16 +65,16 @@ export function TransactionDialog({
     setError(null);
 
     if (!description.trim()) {
-      setError("Descrição é obrigatória");
+      setError(t("errorDescription"));
       return;
     }
     const amountNum = parseFloat(amount);
     if (isNaN(amountNum) || amountNum <= 0) {
-      setError("Valor deve ser maior que zero");
+      setError(t("errorAmountInvalid"));
       return;
     }
     if (!categoryId) {
-      setError("Selecione uma categoria");
+      setError(t("errorCategory"));
       return;
     }
 
@@ -92,13 +94,13 @@ export function TransactionDialog({
 
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Erro ao salvar");
+        setError(data.error ?? t("saveError"));
         return;
       }
 
       onSuccess(data);
     } catch {
-      setError("Erro de conexão");
+      setError(t("connectionError"));
     } finally {
       setSaving(false);
     }
@@ -109,27 +111,27 @@ export function TransactionDialog({
       <DialogContent className="bg-axiom-card border-axiom-border text-white max-w-sm">
         <DialogHeader>
           <DialogTitle className="text-white">
-            {mode === "create" ? "Nova Transação" : "Editar Transação"}
+            {mode === "create" ? t("dialogCreateTitle") : t("dialogEditTitle")}
           </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="tx-description" className="text-axiom-muted text-sm">
-              Descrição
+              {t("descriptionLabel")}
             </Label>
             <Input
               id="tx-description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="bg-axiom-hover border-axiom-border text-white focus:border-axiom-primary"
-              placeholder="ex: Supermercado"
+              placeholder={t("descriptionPlaceholder")}
             />
           </div>
 
           <div className="space-y-1.5">
             <Label htmlFor="tx-amount" className="text-axiom-muted text-sm">
-              Valor (R$)
+              {t("amountLabel")}
             </Label>
             <Input
               id="tx-amount"
@@ -139,28 +141,28 @@ export function TransactionDialog({
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               className="bg-axiom-hover border-axiom-border text-white focus:border-axiom-primary"
-              placeholder="0,00"
+              placeholder={t("amountPlaceholder")}
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-axiom-muted text-sm">Tipo</Label>
+            <Label className="text-axiom-muted text-sm">{t("typeLabel")}</Label>
             <Select value={type} onValueChange={(v) => setType(v as "INCOME" | "EXPENSE")}>
               <SelectTrigger className="bg-axiom-hover border-axiom-border text-white">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-axiom-card border-axiom-border">
-                <SelectItem value="EXPENSE" className="text-white">Despesa</SelectItem>
-                <SelectItem value="INCOME" className="text-white">Receita</SelectItem>
+                <SelectItem value="EXPENSE" className="text-white">{t("typeExpense")}</SelectItem>
+                <SelectItem value="INCOME" className="text-white">{t("typeIncome")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-axiom-muted text-sm">Categoria</Label>
+            <Label className="text-axiom-muted text-sm">{t("categoryLabel")}</Label>
             <Select value={categoryId} onValueChange={(v) => setCategoryId(v ?? "")}>
               <SelectTrigger className="bg-axiom-hover border-axiom-border text-white">
-                <SelectValue placeholder="Selecione uma categoria" />
+                <SelectValue placeholder={t("categoryPlaceholder")} />
               </SelectTrigger>
               <SelectContent className="bg-axiom-card border-axiom-border">
                 {categories.map((cat) => (
@@ -174,7 +176,7 @@ export function TransactionDialog({
 
           <div className="space-y-1.5">
             <Label htmlFor="tx-date" className="text-axiom-muted text-sm">
-              Data
+              {t("dateLabel")}
             </Label>
             <Input
               id="tx-date"
@@ -194,14 +196,18 @@ export function TransactionDialog({
               onClick={onClose}
               className="border-axiom-border text-axiom-muted hover:text-white hover:bg-axiom-hover"
             >
-              Cancelar
+              {t("cancelButton")}
             </Button>
             <Button
               type="submit"
               disabled={saving}
               className="bg-axiom-primary hover:bg-axiom-primary/90 text-white"
             >
-              {saving ? "Salvando..." : mode === "create" ? "Criar" : "Salvar"}
+              {saving
+                ? t("creatingButton")
+                : mode === "create"
+                ? t("createButton")
+                : t("updateButton")}
             </Button>
           </DialogFooter>
         </form>

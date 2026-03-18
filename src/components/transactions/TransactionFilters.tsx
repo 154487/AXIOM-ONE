@@ -8,6 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { useTranslations, useLocale } from "next-intl";
 import type { Category } from "@/generated/prisma/client";
 
 type FilterType = "ALL" | "INCOME" | "EXPENSE";
@@ -24,21 +25,22 @@ interface TransactionFiltersProps {
   categories: Category[];
 }
 
-function getLast12Months(): { value: string; label: string }[] {
+function getLast12Months(locale: string): { value: string; label: string }[] {
   const months = [];
   const now = new Date();
   for (let i = 0; i < 12; i++) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const value = d.toISOString().slice(0, 7);
-    const label = d.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+    const label = d.toLocaleDateString(locale, { month: "long", year: "numeric" });
     months.push({ value, label: label.charAt(0).toUpperCase() + label.slice(1) });
   }
   return months;
 }
 
-const MONTHS = getLast12Months();
-
 export function TransactionFilters({ filters, onFilterChange, categories }: TransactionFiltersProps) {
+  const t = useTranslations("Transactions");
+  const locale = useLocale();
+  const months = getLast12Months(locale);
   const hasActiveFilter = filters.type !== "ALL" || filters.categoryId !== null || filters.month !== null;
 
   return (
@@ -52,9 +54,9 @@ export function TransactionFilters({ filters, onFilterChange, categories }: Tran
           <SelectValue />
         </SelectTrigger>
         <SelectContent className="bg-axiom-card border-axiom-border">
-          <SelectItem value="ALL" className="text-white">Todos</SelectItem>
-          <SelectItem value="INCOME" className="text-white">Receitas</SelectItem>
-          <SelectItem value="EXPENSE" className="text-white">Despesas</SelectItem>
+          <SelectItem value="ALL" className="text-white">{t("filterTypeAll")}</SelectItem>
+          <SelectItem value="INCOME" className="text-white">{t("filterTypeIncome")}</SelectItem>
+          <SelectItem value="EXPENSE" className="text-white">{t("filterTypeExpense")}</SelectItem>
         </SelectContent>
       </Select>
 
@@ -67,7 +69,7 @@ export function TransactionFilters({ filters, onFilterChange, categories }: Tran
           <SelectValue />
         </SelectTrigger>
         <SelectContent className="bg-axiom-card border-axiom-border">
-          <SelectItem value="ALL" className="text-white">Todas categorias</SelectItem>
+          <SelectItem value="ALL" className="text-white">{t("filterCategoryAll")}</SelectItem>
           {categories.map((cat) => (
             <SelectItem key={cat.id} value={cat.id} className="text-white">
               {cat.name}
@@ -82,11 +84,11 @@ export function TransactionFilters({ filters, onFilterChange, categories }: Tran
         onValueChange={(v) => onFilterChange({ ...filters, month: v === "ALL" ? null : v })}
       >
         <SelectTrigger className="bg-axiom-hover border-axiom-border text-white w-44 h-9">
-          <SelectValue placeholder="Todos os meses" />
+          <SelectValue placeholder={t("filterMonthAll")} />
         </SelectTrigger>
         <SelectContent className="bg-axiom-card border-axiom-border">
-          <SelectItem value="ALL" className="text-white">Todos os meses</SelectItem>
-          {MONTHS.map((m) => (
+          <SelectItem value="ALL" className="text-white">{t("filterMonthAll")}</SelectItem>
+          {months.map((m) => (
             <SelectItem key={m.value} value={m.value} className="text-white">
               {m.label}
             </SelectItem>
@@ -101,7 +103,7 @@ export function TransactionFilters({ filters, onFilterChange, categories }: Tran
           onClick={() => onFilterChange({ type: "ALL", categoryId: null, month: null })}
           className="text-axiom-muted hover:text-white h-9"
         >
-          Limpar filtros
+          {t("clearFilters")}
         </Button>
       )}
     </div>

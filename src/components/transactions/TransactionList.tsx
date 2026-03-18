@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { TransactionFilters } from "./TransactionFilters";
@@ -27,6 +28,7 @@ interface TransactionListProps {
 }
 
 export function TransactionList({ transactions: initial, categories }: TransactionListProps) {
+  const t = useTranslations("Transactions");
   const [transactions, setTransactions] = useState<Transaction[]>(initial);
   const [filters, setFilters] = useState<Filters>({ type: "ALL", categoryId: null, month: null });
   const [dialog, setDialog] = useState<DialogState>(null);
@@ -76,7 +78,7 @@ export function TransactionList({ transactions: initial, categories }: Transacti
           className="bg-axiom-primary hover:bg-axiom-primary/90 text-white gap-1.5 h-9 text-sm shrink-0"
         >
           <Plus size={15} />
-          Nova Transação
+          {t("newButton")}
         </Button>
       </div>
 
