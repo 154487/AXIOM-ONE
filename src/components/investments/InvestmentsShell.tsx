@@ -7,8 +7,10 @@ import { PortfolioSummaryCards } from "./portfolio/PortfolioSummaryCards";
 import { PortfolioDonut } from "./portfolio/PortfolioDonut";
 import { AssetList } from "./portfolio/AssetList";
 import { EntryList } from "./entries/EntryList";
+import { BenchmarkBar } from "./benchmarks/BenchmarkBar";
 import type { AssetPosition } from "@/app/api/investments/portfolio/route";
 import type { AssetType } from "@/generated/prisma/client";
+import type { BenchmarkData } from "@/lib/benchmarks";
 
 interface PortfolioData {
   assets: AssetPosition[];
@@ -43,23 +45,32 @@ export function InvestmentsShell({ initialCurrency, initialLocale }: Investments
   const [portfolioData, setPortfolioData] = useState<PortfolioData | null>(null);
   const [portfolioLoading, setPortfolioLoading] = useState(false);
   const [assets, setAssets] = useState<AssetRaw[]>([]);
+  const [benchmarks, setBenchmarks] = useState<BenchmarkData | null>(null);
+  const [benchmarksLoading, setBenchmarksLoading] = useState(true);
 
   const triggerPortfolioRefresh = useCallback(() => setPortfolioKey((k) => k + 1), []);
 
   const fetchPortfolio = useCallback(async () => {
     setPortfolioLoading(true);
     try {
-      const [portfolioRes, assetsRes] = await Promise.all([
+      const [portfolioRes, assetsRes, benchmarksRes] = await Promise.all([
         fetch("/api/investments/portfolio"),
         fetch("/api/investments/assets"),
+        fetch("/api/investments/benchmarks"),
       ]);
-      const [portfolio, assetsList] = await Promise.all([portfolioRes.json(), assetsRes.json()]);
+      const [portfolio, assetsList, benchmarksData] = await Promise.all([
+        portfolioRes.json(),
+        assetsRes.json(),
+        benchmarksRes.json(),
+      ]);
       setPortfolioData(portfolio);
       setAssets(assetsList);
+      setBenchmarks(benchmarksData);
     } catch {
       // silent fail
     } finally {
       setPortfolioLoading(false);
+      setBenchmarksLoading(false);
     }
   }, []);
 
@@ -70,6 +81,8 @@ export function InvestmentsShell({ initialCurrency, initialLocale }: Investments
   return (
     <div className="flex flex-col gap-6 p-6">
       <h1 className="text-xl font-semibold text-white">{t("title")}</h1>
+
+      <BenchmarkBar data={benchmarks} loading={benchmarksLoading} />
 
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "portfolio" | "entries")}>
         <TabsList className="bg-axiom-card border border-axiom-border">
