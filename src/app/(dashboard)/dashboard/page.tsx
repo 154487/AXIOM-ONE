@@ -11,7 +11,7 @@ import { RecentTransactions } from "@/components/dashboard/RecentTransactions";
 import { DashboardInsights } from "@/components/dashboard/DashboardInsights";
 import { PeriodFilter } from "@/components/shared/PeriodFilter";
 import { formatCurrency } from "@/lib/utils";
-import { Wallet, ArrowUpRight, ArrowDownRight, Scale } from "lucide-react";
+import { Wallet, ArrowUpRight, ArrowDownRight, Scale, Coins, BarChart2 } from "lucide-react";
 import type { DashboardInsight } from "@/components/dashboard/DashboardInsights";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -79,7 +79,7 @@ async function getDashboardData(
   // 6 meses terminando no mês de `end` para o MonthlyChart
   const endMonth = new Date(end.getFullYear(), end.getMonth() + 1, 0);
 
-  const [allTransactions, periodTx, prevTx, recentTx, categoryTx, defaultCurrency] =
+  const [allTransactions, periodTx, prevTx, recentTx, categoryTx, defaultCurrency, dividendEntries, portfolioAssets] =
     await Promise.all([
       // All-time para saldo total
       prisma.transaction.findMany({ where: { userId } }),
@@ -106,6 +106,15 @@ async function getDashboardData(
       // Moeda padrão
       prisma.userCurrency.findFirst({
         where: { userId, isDefault: true },
+      }),
+      // Proventos (dividendos) no período
+      prisma.investmentEntry.findMany({
+        where: { userId, type: "DIVIDEND", date: { gte: start, lte: end } },
+      }),
+      // Ativos com entradas para calcular P&L da carteira
+      prisma.asset.findMany({
+        where: { userId },
+        include: { entries: { orderBy: { date: "asc" } } },
       }),
     ]);
 
@@ -176,6 +185,29 @@ async function getDashboardData(
 
   const currency = defaultCurrency?.code ?? "BRL";
 
+  // Proventos do período
+  const periodDividends = dividendEntries.reduce((acc, e) => acc + toNumber(e.amount), 0);
+
+  // P&L da carteira (all-time)
+  let portfolioTotalInvested = 0;
+  let portfolioCurrentValue = 0;
+  for (const asset of portfolioAssets) {
+    let qty = 0, cost = 0;
+    for (const e of asset.entries) {
+      const q = toNumber(e.quantity), p = toNumber(e.price);
+      if (e.type === "PURCHASE") { cost += q * p; qty += q; }
+      else if (e.type === "SALE" && qty > 0) { cost -= q * (cost / qty); qty -= q; }
+      else if (e.type === "SPLIT") { qty = q; }
+    }
+    if (qty < 0.000001) qty = 0;
+    const avgCost = qty > 0 ? cost / qty : 0;
+    const currentPrice = asset.currentPrice ? toNumber(asset.currentPrice) : avgCost;
+    portfolioTotalInvested += qty * avgCost;
+    portfolioCurrentValue += qty * currentPrice;
+  }
+  const portfolioPnl = portfolioCurrentValue - portfolioTotalInvested;
+  const portfolioPnlPct = portfolioTotalInvested > 0 ? (portfolioPnl / portfolioTotalInvested) * 100 : 0;
+
   return {
     totalBalance,
     income,
@@ -187,6 +219,11 @@ async function getDashboardData(
     monthlyData,
     categorySpending,
     currency,
+    periodDividends,
+    portfolioTotalInvested,
+    portfolioCurrentValue,
+    portfolioPnl,
+    portfolioPnlPct,
     recentTransactions: recentTx.map((tx) => ({
       id: tx.id,
       description: tx.description,
@@ -360,6 +397,29 @@ export default async function DashboardPage({
           currency={data.currency}
         />
       </div>
+
+      {/* Investment snapshot (dividends + portfolio P&L) */}
+      {(data.periodDividends > 0 || data.portfolioTotalInvested > 0) && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <KPICard
+            title={`Proventos no Período`}
+            value={data.periodDividends}
+            icon={<Coins size={20} />}
+            type="income"
+            locale={locale}
+            currency={data.currency}
+          />
+          <KPICard
+            title="Valorização da Carteira"
+            value={data.portfolioPnl}
+            change={data.portfolioPnlPct}
+            icon={<BarChart2 size={20} />}
+            type={data.portfolioPnl >= 0 ? "income" : "expense"}
+            locale={locale}
+            currency={data.currency}
+          />
+        </div>
+      )}
 
       {/* Insights */}
       <DashboardInsights insights={insights} />
