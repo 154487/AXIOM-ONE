@@ -102,7 +102,10 @@ src/
 │   │   ├── reports/seasonal/      # GET → hasEnoughData, months[] variação sazonal (all-time)
 │   │   ├── reports/fire/          # GET ?patrimony=&monthlyIncome=&monthlyExpenses=&rate= (sem Prisma)
 │   │   ├── journal/               # GET ?month=&type=&tag= (max 100), POST (cria + snapshot)
-│   │   └── journal/[id]/          # PATCH (ownership check, healthScore imutável), DELETE → 204
+│   │   ├── journal/[id]/          # PATCH (ownership check, healthScore imutável), DELETE → 204
+│   │   ├── patrimonio/goal/       # GET → { goal }, PATCH → salva patrimonyGoal
+│   │   ├── patrimonio/items/      # GET → WealthItemsResponse, POST → cria WealthItem
+│   │   └── patrimonio/items/[id]/ # PATCH → atualiza (itemType imutável), DELETE → 204
 │   ├── layout.tsx                 # Root layout (lê AXIOM_THEME cookie → class "dark")
 │   ├── globals.css                # Tailwind v4 + tokens Axiom + dark/light via CSS vars
 │   └── page.tsx                   # Redirect: autenticado → /dashboard, anon → /login
@@ -150,6 +153,13 @@ src/
 │   │       ├── NetWorthChart.tsx    # Line com área preenchida (cor por saldo positivo/negativo)
 │   │       ├── SavingsRateChart.tsx # Bar por mês + linha meta 20% (dataset line borderDash)
 │   │       └── FireProjection.tsx   # FIRE: slider poupança + 3 cenários + Line chart
+│   ├── patrimonio/
+│   │   ├── PatrimonioShell.tsx    # "use client" — 5 fetches paralelos, adjustedNetWorth
+│   │   ├── AssetBreakdown.tsx     # Doughnut + tabela por classe de ativo
+│   │   ├── BenchmarkComparison.tsx # Line vs CDI/IPCA (dashed)
+│   │   ├── PatrimonioGoal.tsx     # Meta patrimônio: barra progresso + projeção
+│   │   ├── WealthItems.tsx        # Lista bens/passivos agrupada com CRUD inline
+│   │   └── WealthItemDialog.tsx   # Dialog criar/editar bem ou passivo
 │   ├── journal/
 │   │   ├── JournalShell.tsx       # "use client" — estado global, fetch entries, upsert/delete local
 │   │   ├── JournalList.tsx        # Filtros mês/tipo + grid de cards
@@ -212,6 +222,11 @@ JournalEntry
   id, userId, title, content (Markdown), entryType (NOTE|APORTE|RESGATE|REFLEXAO|META),
   tags (String[]), date, healthScoreAtTime (Int?, snapshot imutável), sustainableSurplusAtTime (Decimal?),
   createdAt, updatedAt
+  → relations: user
+
+WealthItem
+  id, userId, name, value (Decimal 14,2), itemType (ASSET|LIABILITY),
+  category (String), notes (String?), createdAt, updatedAt
   → relations: user
 ```
 
@@ -339,6 +354,7 @@ A moeda padrão do usuário vem de `UserCurrency` com `isDefault: true`. O dashb
 | v0.10 | Journal ↔ Investments Link + Patrimônio dedicado | ✅ concluída |
 | v1.0 | Intelligence Layer | ✅ concluída — release v1.0.0 |
 | v1.1 | Patrimônio Evoluído | ✅ concluída — release v1.1.0 |
+| v1.2 | Bens e Passivos | ✅ concluída — release v1.2.0 |
 
 ---
 
