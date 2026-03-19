@@ -53,9 +53,10 @@ export interface CashflowData {
 
 export interface NetworthMonth {
   month: string;
-  netWorth: number;
-  income: number;
-  expenses: number;
+  cumulativeBalance: number;
+  monthIncome: number;
+  monthExpenses: number;
+  savingsRate: number;
 }
 
 export interface NetworthData {
