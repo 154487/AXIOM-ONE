@@ -5,23 +5,29 @@ import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
-  BarElement,
   LineElement,
   PointElement,
+  Filler,
   Tooltip,
   Legend,
 } from "chart.js";
-import { Chart } from "react-chartjs-2";
+import { Line } from "react-chartjs-2";
 import { useTranslations } from "next-intl";
 import { formatCurrency } from "@/lib/utils";
 import type { CashflowData } from "../types";
 
+const LABELS = {
+  income: "Receitas",
+  expenses: "Despesas",
+  net: "Saldo Líquido",
+};
+
 ChartJS.register(
   CategoryScale,
   LinearScale,
-  BarElement,
   LineElement,
   PointElement,
+  Filler,
   Tooltip,
   Legend
 );
@@ -43,35 +49,51 @@ export function CashFlowChart({ cashflowData, currency, locale }: CashFlowChartP
     labels: monthlyBars.map((d) => d.month),
     datasets: [
       {
-        type: "bar" as const,
-        label: "Receitas",
+        label: LABELS.income,
         data: monthlyBars.map((d) => d.income),
-        backgroundColor: "#10B981",
-        borderRadius: 4,
-        borderSkipped: false,
+        borderColor: "#10B981",
+        backgroundColor: "rgba(16, 185, 129, 0.15)",
+        borderWidth: 2,
+        fill: true,
+        tension: 0.4,
+        pointRadius: 4,
+        pointBackgroundColor: "#10B981",
+        pointBorderColor: "#152030",
+        pointBorderWidth: 2,
+        pointHoverRadius: 6,
         order: 2,
       },
       {
-        type: "bar" as const,
-        label: "Despesas",
+        label: LABELS.expenses,
         data: monthlyBars.map((d) => d.expenses),
-        backgroundColor: "#EF4444",
-        borderRadius: 4,
-        borderSkipped: false,
-        order: 2,
+        borderColor: "#EF4444",
+        backgroundColor: "rgba(239, 68, 68, 0.15)",
+        borderWidth: 2,
+        fill: true,
+        tension: 0.4,
+        pointRadius: 4,
+        pointBackgroundColor: "#EF4444",
+        pointBorderColor: "#152030",
+        pointBorderWidth: 2,
+        pointHoverRadius: 6,
+        order: 3,
       },
       {
-        type: "line" as const,
-        label: "Saldo Líquido",
+        label: LABELS.net,
         data: monthlyBars.map((d) => d.net),
-        borderColor: monthlyBars.every((d) => d.net >= 0) ? "#10B981" : "#FF6B35",
+        borderColor: "#FF6B35",
         backgroundColor: "transparent",
         borderWidth: 2,
+        fill: false,
+        tension: 0.4,
+        pointRadius: 4,
         pointBackgroundColor: monthlyBars.map((d) =>
           d.net >= 0 ? "#10B981" : "#EF4444"
         ),
-        pointRadius: 4,
-        tension: 0.3,
+        pointBorderColor: "#152030",
+        pointBorderWidth: 2,
+        pointHoverRadius: 6,
+        borderDash: [],
         order: 1,
       },
     ],
@@ -84,27 +106,45 @@ export function CashFlowChart({ cashflowData, currency, locale }: CashFlowChartP
       duration: 1000,
       easing: "easeOutQuart" as const,
     },
+    interaction: {
+      mode: "index" as const,
+      intersect: false,
+    },
     plugins: {
       legend: {
+        position: "top" as const,
+        align: "end" as const,
         labels: {
           color: "#AAB2BD",
           font: { size: 12 },
-          boxWidth: 12,
-          boxHeight: 12,
+          boxWidth: 10,
+          boxHeight: 10,
+          borderRadius: 5,
+          usePointStyle: true,
+          pointStyle: "circle",
         },
       },
       tooltip: {
-        backgroundColor: "#152030",
+        backgroundColor: "#0D1B2A",
         borderColor: "#1E2D42",
         borderWidth: 1,
-        titleColor: "#AAB2BD",
-        bodyColor: "#fff",
-        padding: 10,
+        titleColor: "#ffffff",
+        bodyColor: "#AAB2BD",
+        padding: 12,
         callbacks: {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           label: (ctx: any) => {
-            return ` ${ctx.dataset.label}: ${formatCurrency(ctx.parsed.y, locale, currency)}`;
+            const color = ctx.dataset.borderColor as string;
+            const label = ctx.dataset.label ?? "";
+            const val = formatCurrency(ctx.parsed.y, locale, currency);
+            return `  ${label}: ${val}`;
           },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          labelColor: (ctx: any) => ({
+            borderColor: "transparent",
+            backgroundColor: ctx.dataset.borderColor,
+            borderRadius: 4,
+          }),
         },
       },
     },
@@ -115,13 +155,19 @@ export function CashFlowChart({ cashflowData, currency, locale }: CashFlowChartP
         border: { display: false },
       },
       y: {
-        grid: { color: "#1E2D42" },
+        grid: {
+          color: "#1E2D42",
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          borderDash: [4, 4] as any,
+        },
         ticks: {
           color: "#AAB2BD",
           font: { size: 11 },
           callback: (val: number | string) => {
             const n = Number(val);
-            return n >= 1000 ? `${(n / 1000).toFixed(0)}k` : String(n);
+            if (n >= 1000) return `${(n / 1000).toFixed(0)}k`;
+            if (n <= -1000) return `${(n / 1000).toFixed(0)}k`;
+            return String(n);
           },
         },
         border: { display: false },
@@ -146,7 +192,7 @@ export function CashFlowChart({ cashflowData, currency, locale }: CashFlowChartP
       <div className="flex-1 min-h-0">
         {mounted ? (
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          <Chart type="bar" data={chartData} options={options as any} />
+          <Line data={chartData} options={options as any} />
         ) : (
           <div className="w-full h-full rounded-lg bg-axiom-hover animate-pulse" />
         )}
