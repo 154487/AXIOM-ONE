@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { PeriodFilter } from "@/components/shared/PeriodFilter";
 import { CashFlowChart } from "./fluxo-caixa/CashFlowChart";
+import { NetWorthChart } from "./patrimonio/NetWorthChart";
+import { SavingsRateChart } from "./patrimonio/SavingsRateChart";
 import type { OverviewData, CashflowData, NetworthData } from "./types";
 
 type TabKey = "overview" | "cashflow" | "trends" | "patrimonio";
@@ -367,8 +369,8 @@ function TrendsTab({
 function PatrimonioTab({
   data,
   loading,
-  currency: _currency,
-  locale: _locale,
+  currency,
+  locale,
 }: {
   data: NetworthData | null;
   loading: boolean;
@@ -391,21 +393,16 @@ function PatrimonioTab({
     );
   }
 
-  // NetWorthChart, SavingsRateChart e FireProjection serão implementados na Issue #33 e #41
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-      <div className="xl:col-span-2 bg-axiom-card border border-axiom-border rounded-xl p-6">
-        <p className="text-axiom-muted text-sm font-medium mb-4">{t("netWorth")}</p>
-        <p className="text-axiom-muted text-sm">
-          {data.months.length} meses carregados — gráfico será implementado na Issue #33
-        </p>
+    <div className="grid grid-cols-1 gap-4">
+      <div style={{ minHeight: 320 }}>
+        <NetWorthChart networthData={data} currency={currency} locale={locale} />
       </div>
-      <div className="bg-axiom-card border border-axiom-border rounded-xl p-6">
-        <p className="text-axiom-muted text-sm font-medium mb-2">{t("savingsRate")}</p>
-        <p className="text-4xl font-bold text-axiom-income">
-          {data.avgSavingsRate.toFixed(1)}%
-        </p>
+      <div style={{ minHeight: 280 }}>
+        <SavingsRateChart networthData={data} currency={currency} locale={locale} />
       </div>
+      {/* FireProjection — Issue #41 */}
+      <SkeletonCard label={t("fire")} />
     </div>
   );
 }
