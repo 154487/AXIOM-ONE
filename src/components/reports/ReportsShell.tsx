@@ -13,6 +13,7 @@ import { RecurringList } from "./fluxo-caixa/RecurringList";
 import { SankeyDiagram } from "./fluxo-caixa/SankeyDiagram";
 import { CategoryTrendChart } from "./tendencias/CategoryTrendChart";
 import { MerchantSpotlight } from "./tendencias/MerchantSpotlight";
+import { SeasonalAnalysis } from "./tendencias/SeasonalAnalysis";
 import type { OverviewData, CashflowData, NetworthData } from "./types";
 
 type TabKey = "overview" | "cashflow" | "trends" | "patrimonio";
@@ -280,8 +281,7 @@ function TrendsTab({
         <CategoryTrendChart currency={currency} locale={locale} period={period} />
       </div>
       <MerchantSpotlight currency={currency} period={period} />
-      {/* SeasonalAnalysis — Issue #40 */}
-      <SkeletonCard label={t("seasonal")} />
+      <SeasonalAnalysis />
     </div>
   );
 }
