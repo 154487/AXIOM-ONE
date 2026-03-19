@@ -71,10 +71,10 @@ export function SpendingDonut({ data, currency = "BRL" }: SpendingDonutProps) {
   };
 
   return (
-    <div className="bg-axiom-card border border-axiom-border rounded-xl p-5">
+    <div className="bg-axiom-card border border-axiom-border rounded-xl p-5 h-full flex flex-col">
       <h3 className="text-white font-semibold mb-4">{t("title")}</h3>
 
-      <div style={{ height: 200 }}>
+      <div className="flex-1 min-h-0">
         {mounted ? (
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           <Doughnut data={chartData} options={options as any} />

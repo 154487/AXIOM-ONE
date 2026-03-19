@@ -27,6 +27,13 @@
     "income": "Receitas",
     "expenses": "Despesas"
   },
+  "DashboardFilters": {
+    "day": "Dia",
+    "month": "Mês",
+    "year": "Ano",
+    "period": "Período",
+    "to": "até"
+  },
   "SpendingDonut": {
     "title": "Gastos por Categoria"
   },
@@ -188,6 +195,35 @@
     "errorCategory": "Selecione uma categoria",
     "saveError": "Erro ao salvar",
     "connectionError": "Erro de conexão"
+  },
+  "Reports": {
+    "tabOverview": "Visão Geral",
+    "tabCashflow": "Fluxo de Caixa",
+    "tabTrends": "Tendências",
+    "tabPatrimonio": "Patrimônio",
+    "healthScore": "Saúde Financeira",
+    "insights": "Principais Insights",
+    "spendingVelocity": "Velocidade de Gasto",
+    "cashFlow": "Fluxo de Caixa",
+    "sankey": "Onde Vai o Dinheiro",
+    "recurring": "Assinaturas e Recorrências",
+    "categoryTrend": "Tendência por Categoria",
+    "merchantSpotlight": "Top Merchants",
+    "seasonal": "Padrão Sazonal",
+    "netWorth": "Evolução do Patrimônio",
+    "savingsRate": "Taxa de Poupança",
+    "fire": "Projeção de Independência Financeira",
+    "fireDisclaimer": "Projeção educacional. Não constitui assessoria financeira.",
+    "fireNotProjectable": "Seus gastos superam sua renda — ajuste o orçamento para projetar.",
+    "noData": "Sem dados para o período selecionado",
+    "insufficientHistory": "Disponível após 12 meses de uso",
+    "periodLast30": "Últimos 30 dias",
+    "periodCurrentMonth": "Mês atual",
+    "periodLastMonth": "Mês anterior",
+    "periodCurrentQuarter": "Trimestre atual",
+    "periodLast6Months": "Últimos 6 meses",
+    "periodLastYear": "Último ano",
+    "periodCustom": "Personalizado"
   },
   "Import": {
     "dropzoneTitle": "Arraste seu arquivo aqui",

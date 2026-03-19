@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/input";
@@ -29,6 +29,7 @@ import {
   Trash2,
   Shield,
   ChevronRight,
+  Camera,
 } from "lucide-react";
 import type { Category, UserCurrency } from "@/generated/prisma/client";
 
@@ -49,7 +50,7 @@ interface NotifPrefs {
 }
 
 interface SettingsPageProps {
-  user: { id: string; name: string | null; email: string };
+  user: { id: string; name: string | null; email: string; image: string | null };
   categories: Category[];
   currencies: UserCurrency[];
   currentTheme: "dark" | "light";
@@ -72,6 +73,32 @@ export function SettingsPage({
   const [name, setName] = useState(user.name ?? "");
   const [email, setEmail] = useState(user.email);
   const [savingProfile, setSavingProfile] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(user.image);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingAvatar(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/settings/avatar", { method: "POST", body: fd });
+      const data = await res.json();
+      if (res.ok) {
+        setAvatarUrl(data.imageUrl + "?t=" + Date.now());
+        router.refresh();
+      } else {
+        toast.error("Erro", data.error ?? "Não foi possível enviar a imagem");
+      }
+    } catch {
+      toast.error("Erro", t("connectionError"));
+    } finally {
+      setUploadingAvatar(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
 
   // Password state
   const [currentPassword, setCurrentPassword] = useState("");
@@ -201,9 +228,36 @@ export function SettingsPage({
         <form onSubmit={handleProfileSave}>
           {/* Avatar + fields */}
           <div className="flex items-start gap-6 mb-6">
-            {/* Avatar */}
-            <div className="shrink-0 w-20 h-20 rounded-full bg-axiom-hover border border-axiom-border flex items-center justify-center">
-              <User size={32} className="text-axiom-muted" />
+            {/* Avatar clicável */}
+            <div className="shrink-0 relative group">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingAvatar}
+                className="w-20 h-20 rounded-full overflow-hidden bg-axiom-hover border border-axiom-border flex items-center justify-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-axiom-primary"
+              >
+                {avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  <User size={32} className="text-axiom-muted" />
+                )}
+                {/* Overlay hover */}
+                <span className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  {uploadingAvatar ? (
+                    <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Camera size={18} className="text-white" />
+                  )}
+                </span>
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="hidden"
+                onChange={handleAvatarChange}
+              />
             </div>
             {/* Name + Email side by side */}
             <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">

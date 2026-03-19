@@ -27,6 +27,13 @@
     "income": "الدخل",
     "expenses": "المصروفات"
   },
+  "DashboardFilters": {
+    "day": "يوم",
+    "month": "شهر",
+    "year": "سنة",
+    "period": "فترة",
+    "to": "إلى"
+  },
   "SpendingDonut": {
     "title": "الإنفاق حسب الفئة"
   },
@@ -188,6 +195,35 @@
     "errorCategory": "اختر فئة",
     "saveError": "خطأ في الحفظ",
     "connectionError": "خطأ في الاتصال"
+  },
+  "Reports": {
+    "tabOverview": "نظرة عامة",
+    "tabCashflow": "التدفق النقدي",
+    "tabTrends": "الاتجاهات",
+    "tabPatrimonio": "صافي الثروة",
+    "healthScore": "الصحة المالية",
+    "insights": "الرؤى الرئيسية",
+    "spendingVelocity": "سرعة الإنفاق",
+    "cashFlow": "التدفق النقدي",
+    "sankey": "أين يذهب المال",
+    "recurring": "الاشتراكات والمتكررة",
+    "categoryTrend": "اتجاه الفئة",
+    "merchantSpotlight": "أبرز التجار",
+    "seasonal": "النمط الموسمي",
+    "netWorth": "تطور صافي الثروة",
+    "savingsRate": "معدل الادخار",
+    "fire": "إسقاط الاستقلال المالي",
+    "fireDisclaimer": "إسقاط تعليمي. لا يمثل مشورة مالية.",
+    "fireNotProjectable": "نفقاتك تتجاوز دخلك — اضبط الميزانية للإسقاط.",
+    "noData": "لا توجد بيانات للفترة المحددة",
+    "insufficientHistory": "متاح بعد 12 شهرًا من الاستخدام",
+    "periodLast30": "آخر 30 يومًا",
+    "periodCurrentMonth": "الشهر الحالي",
+    "periodLastMonth": "الشهر الماضي",
+    "periodCurrentQuarter": "الربع الحالي",
+    "periodLast6Months": "آخر 6 أشهر",
+    "periodLastYear": "السنة الماضية",
+    "periodCustom": "مخصص"
   },
   "Import": {
     "dropzoneTitle": "أسقط ملفك هنا",

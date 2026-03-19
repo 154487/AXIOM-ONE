@@ -27,6 +27,13 @@
     "income": "Income",
     "expenses": "Expenses"
   },
+  "DashboardFilters": {
+    "day": "Day",
+    "month": "Month",
+    "year": "Year",
+    "period": "Period",
+    "to": "to"
+  },
   "SpendingDonut": {
     "title": "Spending by Category"
   },
@@ -188,6 +195,35 @@
     "errorCategory": "Select a category",
     "saveError": "Error saving",
     "connectionError": "Connection error"
+  },
+  "Reports": {
+    "tabOverview": "Overview",
+    "tabCashflow": "Cash Flow",
+    "tabTrends": "Trends",
+    "tabPatrimonio": "Net Worth",
+    "healthScore": "Financial Health",
+    "insights": "Key Insights",
+    "spendingVelocity": "Spending Velocity",
+    "cashFlow": "Cash Flow",
+    "sankey": "Where the Money Goes",
+    "recurring": "Subscriptions & Recurring",
+    "categoryTrend": "Category Trend",
+    "merchantSpotlight": "Top Merchants",
+    "seasonal": "Seasonal Pattern",
+    "netWorth": "Net Worth Evolution",
+    "savingsRate": "Savings Rate",
+    "fire": "Financial Independence Projection",
+    "fireDisclaimer": "Educational projection. Not financial advice.",
+    "fireNotProjectable": "Your expenses exceed your income — adjust your budget to project.",
+    "noData": "No data for the selected period",
+    "insufficientHistory": "Available after 12 months of use",
+    "periodLast30": "Last 30 days",
+    "periodCurrentMonth": "Current month",
+    "periodLastMonth": "Last month",
+    "periodCurrentQuarter": "Current quarter",
+    "periodLast6Months": "Last 6 months",
+    "periodLastYear": "Last year",
+    "periodCustom": "Custom"
   },
   "Import": {
     "dropzoneTitle": "Drop your file here",

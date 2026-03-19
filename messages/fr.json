@@ -27,6 +27,13 @@
     "income": "Revenus",
     "expenses": "Dépenses"
   },
+  "DashboardFilters": {
+    "day": "Jour",
+    "month": "Mois",
+    "year": "Année",
+    "period": "Période",
+    "to": "au"
+  },
   "SpendingDonut": {
     "title": "Dépenses par Catégorie"
   },
@@ -188,6 +195,35 @@
     "errorCategory": "Sélectionnez une catégorie",
     "saveError": "Erreur lors de l'enregistrement",
     "connectionError": "Erreur de connexion"
+  },
+  "Reports": {
+    "tabOverview": "Vue d'ensemble",
+    "tabCashflow": "Flux de Trésorerie",
+    "tabTrends": "Tendances",
+    "tabPatrimonio": "Patrimoine",
+    "healthScore": "Santé Financière",
+    "insights": "Insights Clés",
+    "spendingVelocity": "Vitesse de Dépense",
+    "cashFlow": "Flux de Trésorerie",
+    "sankey": "Où va l'Argent",
+    "recurring": "Abonnements et Récurrents",
+    "categoryTrend": "Tendance par Catégorie",
+    "merchantSpotlight": "Top Marchands",
+    "seasonal": "Schéma Saisonnier",
+    "netWorth": "Évolution du Patrimoine",
+    "savingsRate": "Taux d'Épargne",
+    "fire": "Projection d'Indépendance Financière",
+    "fireDisclaimer": "Projection éducative. Ne constitue pas un conseil financier.",
+    "fireNotProjectable": "Vos dépenses dépassent vos revenus — ajustez votre budget pour projeter.",
+    "noData": "Pas de données pour la période sélectionnée",
+    "insufficientHistory": "Disponible après 12 mois d'utilisation",
+    "periodLast30": "30 derniers jours",
+    "periodCurrentMonth": "Mois actuel",
+    "periodLastMonth": "Mois précédent",
+    "periodCurrentQuarter": "Trimestre actuel",
+    "periodLast6Months": "6 derniers mois",
+    "periodLastYear": "Dernière année",
+    "periodCustom": "Personnalisé"
   },
   "Import": {
     "dropzoneTitle": "Déposez votre fichier ici",

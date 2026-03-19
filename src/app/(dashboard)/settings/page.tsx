@@ -19,6 +19,7 @@ export default async function Page() {
         id: true,
         name: true,
         email: true,
+        image: true,
         notifTransactions: true,
         notifBudgetAlerts: true,
         notifMonthlyReport: true,

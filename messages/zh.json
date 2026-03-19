@@ -27,6 +27,13 @@
     "income": "收入",
     "expenses": "支出"
   },
+  "DashboardFilters": {
+    "day": "日",
+    "month": "月",
+    "year": "年",
+    "period": "期间",
+    "to": "至"
+  },
   "SpendingDonut": {
     "title": "按类别的支出"
   },
@@ -188,6 +195,35 @@
     "errorCategory": "请选择类别",
     "saveError": "保存出错",
     "connectionError": "连接错误"
+  },
+  "Reports": {
+    "tabOverview": "总览",
+    "tabCashflow": "现金流",
+    "tabTrends": "趋势",
+    "tabPatrimonio": "资产净值",
+    "healthScore": "财务健康",
+    "insights": "主要洞察",
+    "spendingVelocity": "消费速度",
+    "cashFlow": "现金流",
+    "sankey": "钱去哪了",
+    "recurring": "订阅和定期支出",
+    "categoryTrend": "分类趋势",
+    "merchantSpotlight": "热门商家",
+    "seasonal": "季节性模式",
+    "netWorth": "资产净值演变",
+    "savingsRate": "储蓄率",
+    "fire": "财务独立预测",
+    "fireDisclaimer": "教育性预测，不构成财务建议。",
+    "fireNotProjectable": "您的支出超过收入 — 调整预算以进行预测。",
+    "noData": "所选时期无数据",
+    "insufficientHistory": "使用12个月后可用",
+    "periodLast30": "最近30天",
+    "periodCurrentMonth": "当前月份",
+    "periodLastMonth": "上个月",
+    "periodCurrentQuarter": "当前季度",
+    "periodLast6Months": "最近6个月",
+    "periodLastYear": "去年",
+    "periodCustom": "自定义"
   },
   "Import": {
     "dropzoneTitle": "将文件拖放到此处",
