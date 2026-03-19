@@ -88,24 +88,20 @@ export function InvestmentsShell({ initialCurrency, initialLocale }: Investments
             currency={initialCurrency}
             locale={initialLocale}
           />
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-1">
-              <PortfolioDonut
-                allocationByType={portfolioData?.allocationByType ?? {}}
-                loading={portfolioLoading}
-              />
-            </div>
-            <div className="lg:col-span-2">
-              <AssetList
-                positions={portfolioData?.assets ?? []}
-                assets={assets}
-                loading={portfolioLoading}
-                currency={initialCurrency}
-                locale={initialLocale}
-                onRefresh={triggerPortfolioRefresh}
-              />
-            </div>
-          </div>
+          <AssetList
+            positions={portfolioData?.assets ?? []}
+            assets={assets}
+            loading={portfolioLoading}
+            currency={initialCurrency}
+            locale={initialLocale}
+            onRefresh={triggerPortfolioRefresh}
+          />
+          {(portfolioData?.assets ?? []).length > 0 && (
+            <PortfolioDonut
+              allocationByType={portfolioData?.allocationByType ?? {}}
+              loading={portfolioLoading}
+            />
+          )}
         </TabsContent>
 
         <TabsContent value="entries" className="mt-6">

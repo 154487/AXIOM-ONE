@@ -60,8 +60,8 @@ export function PortfolioDonut({ allocationByType, loading }: PortfolioDonutProp
     animation: { duration: 1000, easing: "easeOutQuart" as const },
     plugins: {
       legend: {
-        position: "bottom" as const,
-        labels: { color: "#AAB2BD", font: { size: 12 }, padding: 12 },
+        position: "right" as const,
+        labels: { color: "#AAB2BD", font: { size: 12 }, padding: 16, boxWidth: 12 },
       },
       tooltip: {
         callbacks: {
@@ -71,16 +71,19 @@ export function PortfolioDonut({ allocationByType, loading }: PortfolioDonutProp
       },
     },
     cutout: "65%",
+    maintainAspectRatio: false,
   };
 
   return (
     <div className="bg-axiom-card border border-axiom-border rounded-xl p-5">
       <h3 className="text-sm font-medium text-axiom-muted mb-4">Alocação por Tipo</h3>
-      {mounted ? (
-        <Doughnut data={chartData} options={options} />
-      ) : (
-        <div className="w-40 h-40 rounded-full bg-axiom-hover animate-pulse mx-auto" />
-      )}
+      <div className="h-52">
+        {mounted ? (
+          <Doughnut data={chartData} options={options} />
+        ) : (
+          <div className="w-40 h-40 rounded-full bg-axiom-hover animate-pulse mx-auto" />
+        )}
+      </div>
     </div>
   );
 }
