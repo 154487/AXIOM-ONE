@@ -68,7 +68,7 @@ src/
 │   ├── (dashboard)/               # Rotas protegidas pelo middleware
 │   │   ├── dashboard/page.tsx     # force-dynamic — fetch KPIs, gráficos, moeda padrão
 │   │   ├── transactions/page.tsx  # Server Component — auth + fetch transactions+categories → TransactionList
-│   │   ├── reports/page.tsx       # placeholder — futuro
+│   │   ├── reports/page.tsx       # force-dynamic — auth + fetch moeda/locale → ReportsShell
 │   │   ├── import/page.tsx        # Server Component — fetch categories → ImportWizard
 │   │   ├── settings/page.tsx      # Server Component — fetch user+categories+currencies → SettingsPage
 │   │   └── layout.tsx
@@ -90,7 +90,15 @@ src/
 │   │   ├── notifications/[id]/    # PATCH mark as read
 │   │   ├── notifications/read-all/ # PATCH mark all read
 │   │   ├── import/parse/          # POST multipart/form-data → ParsedRow[] (OFX/CSV/XLSX)
-│   │   └── import/confirm/        # POST bulk createMany (filtra categoryId nulo)
+│   │   ├── import/confirm/        # POST bulk createMany (filtra categoryId nulo)
+│   │   ├── reports/overview/      # GET ?start=&end= → healthScore, pillars[], insights[], velocity
+│   │   ├── reports/cashflow/      # GET ?start=&end= → monthlyBars[], sankeyNodes[], sankeyLinks[]
+│   │   ├── reports/networth/      # GET → months[], currentNetWorth, avgSavingsRate (all-time)
+│   │   ├── reports/recurring/     # GET → recurring[] heurística all-time (≥3 ocorrências)
+│   │   ├── reports/trends/        # GET ?cats=&start=&end= → categories[], series[] com mean/stdDev
+│   │   ├── reports/merchants/     # GET ?start=&end= → top 10 merchants por valor
+│   │   ├── reports/seasonal/      # GET → hasEnoughData, months[] variação sazonal (all-time)
+│   │   └── reports/fire/          # GET ?patrimony=&monthlyIncome=&monthlyExpenses=&rate= (sem Prisma)
 │   ├── layout.tsx                 # Root layout (lê AXIOM_THEME cookie → class "dark")
 │   ├── globals.css                # Tailwind v4 + tokens Axiom + dark/light via CSS vars
 │   └── page.tsx                   # Redirect: autenticado → /dashboard, anon → /login
@@ -119,6 +127,27 @@ src/
 │   │   ├── ImportDropzone.tsx     # Drag-and-drop, posts para /api/import/parse
 │   │   ├── ImportPreviewTable.tsx # Tabela editável com skip, descrição, tipo, categoria
 │   │   └── ImportInlineCategorySelect.tsx # Select com "+ Nova categoria..." inline
+│   ├── reports/
+│   │   ├── types.ts               # Interfaces: OverviewData, CashflowData, NetworthData
+│   │   ├── ReportsShell.tsx       # "use client" — 4 abas + PeriodFilter (callback), fetch por aba
+│   │   ├── visao-geral/
+│   │   │   ├── HealthScoreCard.tsx  # Score animado count-up + 4 barras de pilares
+│   │   │   ├── InsightsCard.tsx     # 3 insights com ícone lucide + badge colorido
+│   │   │   └── SpendingVelocityCard.tsx # Barra + projeção de fim de mês
+│   │   ├── fluxo-caixa/
+│   │   │   ├── CashFlowChart.tsx    # Chart.js mixed Bar+Line (income/expense/net)
+│   │   │   ├── SankeyDiagram.tsx    # chartjs-chart-sankey (lazy import SSR-safe)
+│   │   │   └── RecurringList.tsx    # Assinaturas/recorrências agrupadas por frequência
+│   │   ├── tendencias/
+│   │   │   ├── CategoryTrendChart.tsx # Line multi-cat com banda stdDev, fetch próprio
+│   │   │   ├── MerchantSpotlight.tsx  # Top 10 merchants com barra proporcional
+│   │   │   └── SeasonalAnalysis.tsx   # Grid 12 meses com heatmap de variação
+│   │   └── patrimonio/
+│   │       ├── NetWorthChart.tsx    # Line com área preenchida (cor por saldo positivo/negativo)
+│   │       ├── SavingsRateChart.tsx # Bar por mês + linha meta 20% (dataset line borderDash)
+│   │       └── FireProjection.tsx   # FIRE: slider poupança + 3 cenários + Line chart
+│   ├── shared/
+│   │   └── PeriodFilter.tsx       # Seletor período compartilhado: URL mode (dashboard) ou callback mode (reports)
 │   └── ui/                        # shadcn/ui instalados: button, card, input, label,
 │                                  # dropdown-menu, badge, separator, avatar, switch,
 │                                  # table, tabs, dialog, select
@@ -281,6 +310,7 @@ A moeda padrão do usuário vem de `UserCurrency` com `isDefault: true`. O dashb
 | v0.3 | Transactions | ✅ concluída — release v0.3.0 |
 | v0.4 | i18n | ✅ concluída — release v0.4.0 |
 | v0.5 | Import | ✅ concluída — release v0.5.0 |
+| v0.6 | Reports | ✅ concluída — branch feature/v0.6-reports |
 
 ---
 
