@@ -10,6 +10,7 @@ import { HealthScoreCard } from "./visao-geral/HealthScoreCard";
 import { InsightsCard } from "./visao-geral/InsightsCard";
 import { SpendingVelocityCard } from "./visao-geral/SpendingVelocityCard";
 import { RecurringList } from "./fluxo-caixa/RecurringList";
+import { CategoryTrendChart } from "./tendencias/CategoryTrendChart";
 import type { OverviewData, CashflowData, NetworthData } from "./types";
 
 type TabKey = "overview" | "cashflow" | "trends" | "patrimonio";
@@ -259,9 +260,9 @@ function CashflowTab({
 }
 
 function TrendsTab({
-  currency: _currency,
-  locale: _locale,
-  period: _period,
+  currency,
+  locale,
+  period,
 }: {
   currency: string;
   locale: string;
@@ -269,12 +270,14 @@ function TrendsTab({
 }) {
   const t = useTranslations("Reports");
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-      <SkeletonCard label={t("categoryTrend")} />
-      <SkeletonCard label={t("merchantSpotlight")} />
-      <div className="xl:col-span-2">
-        <SkeletonCard label={t("seasonal")} />
+    <div className="grid grid-cols-1 gap-4">
+      <div style={{ minHeight: 380 }}>
+        <CategoryTrendChart currency={currency} locale={locale} period={period} />
       </div>
+      {/* MerchantSpotlight — Issue #38 */}
+      <SkeletonCard label={t("merchantSpotlight")} />
+      {/* SeasonalAnalysis — Issue #40 */}
+      <SkeletonCard label={t("seasonal")} />
     </div>
   );
 }
