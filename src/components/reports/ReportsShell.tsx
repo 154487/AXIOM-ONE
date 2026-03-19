@@ -11,6 +11,7 @@ import { InsightsCard } from "./visao-geral/InsightsCard";
 import { SpendingVelocityCard } from "./visao-geral/SpendingVelocityCard";
 import { RecurringList } from "./fluxo-caixa/RecurringList";
 import { CategoryTrendChart } from "./tendencias/CategoryTrendChart";
+import { MerchantSpotlight } from "./tendencias/MerchantSpotlight";
 import type { OverviewData, CashflowData, NetworthData } from "./types";
 
 type TabKey = "overview" | "cashflow" | "trends" | "patrimonio";
@@ -274,8 +275,7 @@ function TrendsTab({
       <div style={{ minHeight: 380 }}>
         <CategoryTrendChart currency={currency} locale={locale} period={period} />
       </div>
-      {/* MerchantSpotlight — Issue #38 */}
-      <SkeletonCard label={t("merchantSpotlight")} />
+      <MerchantSpotlight currency={currency} period={period} />
       {/* SeasonalAnalysis — Issue #40 */}
       <SkeletonCard label={t("seasonal")} />
     </div>
