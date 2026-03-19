@@ -149,7 +149,7 @@ export function TransactionDialog({
             <Label className="text-axiom-muted text-sm">{t("typeLabel")}</Label>
             <Select value={type} onValueChange={(v) => setType(v as "INCOME" | "EXPENSE")}>
               <SelectTrigger className="bg-axiom-hover border-axiom-border text-white">
-                <SelectValue />
+                <SelectValue>{type === "INCOME" ? t("typeIncome") : t("typeExpense")}</SelectValue>
               </SelectTrigger>
               <SelectContent className="bg-axiom-card border-axiom-border">
                 <SelectItem value="EXPENSE" className="text-white">{t("typeExpense")}</SelectItem>
@@ -162,7 +162,9 @@ export function TransactionDialog({
             <Label className="text-axiom-muted text-sm">{t("categoryLabel")}</Label>
             <Select value={categoryId} onValueChange={(v) => setCategoryId(v ?? "")}>
               <SelectTrigger className="bg-axiom-hover border-axiom-border text-white">
-                <SelectValue placeholder={t("categoryPlaceholder")} />
+                <SelectValue placeholder={t("categoryPlaceholder")}>
+                  {categoryId ? categories.find((c) => c.id === categoryId)?.name : undefined}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent className="bg-axiom-card border-axiom-border">
                 {categories.map((cat) => (

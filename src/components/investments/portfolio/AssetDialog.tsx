@@ -207,7 +207,7 @@ export function AssetDialog({ open, onClose, asset, onSave }: AssetDialogProps) 
             <Label className="text-axiom-muted text-sm">Tipo *</Label>
             <Select value={type} onValueChange={(v) => setType(v as AssetType)}>
               <SelectTrigger className="bg-axiom-bg border-axiom-border text-white">
-                <SelectValue />
+                <SelectValue>{t(`assetTypes.${type}`)}</SelectValue>
               </SelectTrigger>
               <SelectContent className="bg-axiom-card border-axiom-border">
                 {ASSET_TYPES.map((at) => (
