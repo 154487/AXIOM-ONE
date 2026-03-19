@@ -87,8 +87,9 @@ export async function GET() {
     };
   });
 
-  // Filter out zero-position assets (fully sold)
-  const activePositions = positions.filter((p) => p.totalQuantity > 0);
+  // Keep assets with active position OR with no entries yet (freshly registered)
+  const assetsWithEntries = new Set(assets.filter((a) => a.entries.length > 0).map((a) => a.id));
+  const activePositions = positions.filter((p) => p.totalQuantity > 0 || !assetsWithEntries.has(p.id));
 
   const totalInvested = activePositions.reduce((acc, p) => acc + p.totalInvested, 0);
   const totalCurrentValue = activePositions.reduce((acc, p) => acc + p.currentValue, 0);
