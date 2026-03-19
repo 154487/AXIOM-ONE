@@ -25,6 +25,8 @@ model User {
   categories          Category[]
   currencies          UserCurrency[]
   notifications       Notification[]
+  assets              Asset[]
+  investmentEntries   InvestmentEntry[]
 }
 
 model Notification {
@@ -86,4 +88,52 @@ model Transaction {
 enum TransactionType {
   INCOME
   EXPENSE
+}
+
+enum AssetType {
+  STOCK
+  FII
+  ETF
+  BDR
+  CRYPTO
+  FIXED_INCOME
+  STOCK_INT
+  OTHER
+}
+
+enum EntryType {
+  PURCHASE
+  SALE
+  DIVIDEND
+  SPLIT
+}
+
+model Asset {
+  id           String            @id @default(cuid())
+  userId       String
+  ticker       String?
+  name         String
+  type         AssetType
+  currency     String            @default("BRL")
+  currentPrice Decimal?          @db.Decimal(14, 6)
+  createdAt    DateTime          @default(now())
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entries      InvestmentEntry[]
+
+  @@unique([userId, ticker])
+}
+
+model InvestmentEntry {
+  id        String    @id @default(cuid())
+  assetId   String
+  userId    String
+  type      EntryType
+  date      DateTime
+  quantity  Decimal   @db.Decimal(14, 6)
+  price     Decimal   @db.Decimal(14, 6)
+  amount    Decimal   @db.Decimal(14, 2)
+  notes     String?
+  createdAt DateTime  @default(now())
+  asset     Asset     @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
