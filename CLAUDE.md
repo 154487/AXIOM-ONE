@@ -336,6 +336,8 @@ A moeda padrão do usuário vem de `UserCurrency` com `isDefault: true`. O dashb
 | v0.7 | Investimentos | ✅ concluída — release v0.7.0 |
 | v0.8 | Cotações + Benchmarks Realtime | ✅ concluída — release v0.8.0 |
 | v0.9 | Financial Journal | ✅ concluída — release v0.9.0 |
+| v0.10 | Journal ↔ Investments Link + Patrimônio dedicado | ✅ concluída |
+| v1.0 | Intelligence Layer | ✅ concluída — release v1.0.0 |
 
 ---
 
