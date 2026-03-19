@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, KeyboardEvent } from "react";
+import { useState, useEffect, useCallback, KeyboardEvent } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -25,6 +25,16 @@ const ENTRY_TYPE_LABELS: Record<string, string> = {
   META: "Meta",
 };
 
+interface RecentOp {
+  id: string;
+  type: string;
+  date: string;
+  quantity: number;
+  price: number;
+  amount: number;
+  asset: { ticker: string | null; name: string };
+}
+
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -48,7 +58,11 @@ export function JournalEditor({ open, onOpenChange, entry, onSaved }: JournalEdi
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Populate form when editing
+  const [investmentEntryId, setInvestmentEntryId] = useState<string | null>(null);
+  const [recentOps, setRecentOps] = useState<RecentOp[]>([]);
+  const [loadingOps, setLoadingOps] = useState(false);
+
+  // Populate form when opening
   useEffect(() => {
     if (open) {
       if (entry) {
@@ -57,17 +71,47 @@ export function JournalEditor({ open, onOpenChange, entry, onSaved }: JournalEdi
         setDate(entry.date.slice(0, 10));
         setTags(entry.tags);
         setContent(entry.content);
+        setInvestmentEntryId(entry.investmentEntryId ?? null);
       } else {
         setTitle("");
         setEntryType("NOTE");
         setDate(todayISO());
         setTags([]);
         setContent("");
+        setInvestmentEntryId(null);
       }
       setTagInput("");
       setError(null);
     }
   }, [open, entry]);
+
+  // Fetch recent uncataloged ops when type = APORTE or RESGATE
+  const alreadyLinked = entry?.investmentEntryId;
+  const fetchOps = useCallback(async () => {
+    if (entryType !== "APORTE" && entryType !== "RESGATE") {
+      setRecentOps([]);
+      return;
+    }
+    setLoadingOps(true);
+    try {
+      const url = alreadyLinked
+        ? `/api/journal/uncataloged?include=${alreadyLinked}`
+        : "/api/journal/uncataloged";
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        setRecentOps(data.entries ?? []);
+      }
+    } catch {
+      // silent
+    } finally {
+      setLoadingOps(false);
+    }
+  }, [entryType, alreadyLinked]);
+
+  useEffect(() => {
+    if (open) fetchOps();
+  }, [open, fetchOps]);
 
   const addTag = () => {
     const t = tagInput.trim().toLowerCase();
@@ -94,7 +138,7 @@ export function JournalEditor({ open, onOpenChange, entry, onSaved }: JournalEdi
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, content, entryType, tags, date }),
+        body: JSON.stringify({ title, content, entryType, tags, date, investmentEntryId }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -110,6 +154,8 @@ export function JournalEditor({ open, onOpenChange, entry, onSaved }: JournalEdi
       setSaving(false);
     }
   };
+
+  const showOpSelector = entryType === "APORTE" || entryType === "RESGATE";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -158,6 +204,67 @@ export function JournalEditor({ open, onOpenChange, entry, onSaved }: JournalEdi
             </div>
           </div>
 
+          {/* Investment op selector — só para APORTE/RESGATE */}
+          {showOpSelector && (
+            <div className="flex flex-col gap-1.5">
+              <Label>Operação vinculada</Label>
+              {loadingOps ? (
+                <p className="text-xs text-axiom-muted">Carregando operações...</p>
+              ) : recentOps.length === 0 ? (
+                <p className="text-xs text-axiom-muted italic">
+                  Nenhuma operação recente não catalogada.
+                </p>
+              ) : (
+                <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto pr-1">
+                  {/* Opção nenhuma */}
+                  <label className={`flex items-center gap-3 p-2 rounded-lg border cursor-pointer transition-colors ${
+                    investmentEntryId === null
+                      ? "border-axiom-primary bg-axiom-primary/10"
+                      : "border-axiom-border hover:border-axiom-primary/50"
+                  }`}>
+                    <input
+                      type="radio"
+                      name="invEntry"
+                      checked={investmentEntryId === null}
+                      onChange={() => setInvestmentEntryId(null)}
+                      className="hidden"
+                    />
+                    <span className="text-sm text-axiom-muted">Nenhuma</span>
+                  </label>
+
+                  {recentOps.map((op) => {
+                    const label = op.asset.ticker ?? op.asset.name;
+                    const typeLabel = op.type === "PURCHASE" ? "Compra" : "Venda";
+                    const opDate = new Date(op.date).toLocaleDateString("pt-BR");
+                    return (
+                      <label key={op.id} className={`flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-colors ${
+                        investmentEntryId === op.id
+                          ? "border-axiom-primary bg-axiom-primary/10"
+                          : "border-axiom-border hover:border-axiom-primary/50"
+                      }`}>
+                        <input
+                          type="radio"
+                          name="invEntry"
+                          checked={investmentEntryId === op.id}
+                          onChange={() => setInvestmentEntryId(op.id)}
+                          className="hidden"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-white">
+                            {label} · {typeLabel}
+                          </p>
+                          <p className="text-xs text-axiom-muted">
+                            {op.quantity} × R$ {op.price.toFixed(2)} = R$ {op.amount.toFixed(2)} · {opDate}
+                          </p>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Tags */}
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="je-tags">Tags</Label>
@@ -200,7 +307,7 @@ export function JournalEditor({ open, onOpenChange, entry, onSaved }: JournalEdi
                 />
               </TabsContent>
               <TabsContent value="preview">
-                <div className="min-h-[200px] bg-axiom-hover border border-axiom-border rounded-md px-4 py-3 text-sm text-white leading-relaxed prose-like overflow-auto">
+                <div className="min-h-[200px] bg-axiom-hover border border-axiom-border rounded-md px-4 py-3 text-sm text-white leading-relaxed overflow-auto">
                   {content ? (
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}

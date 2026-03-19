@@ -86,6 +86,26 @@ export function JournalEntryCard({ entry, onEdit, onDelete }: JournalEntryCardPr
       {/* Preview */}
       <p className="text-sm text-axiom-muted line-clamp-2">{preview || "—"}</p>
 
+      {/* Operação vinculada */}
+      {entry.investmentEntry && (
+        <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-axiom-hover border border-axiom-border text-xs">
+          <span className="text-axiom-primary font-mono font-semibold shrink-0">
+            {entry.investmentEntry.asset.ticker ?? entry.investmentEntry.asset.name}
+          </span>
+          <span className="text-axiom-muted">·</span>
+          <span className="text-axiom-muted shrink-0">
+            {entry.investmentEntry.type === "PURCHASE" ? "Compra" : "Venda"}
+          </span>
+          <span className="text-axiom-muted">·</span>
+          <span className="text-white shrink-0">
+            {entry.investmentEntry.quantity}× R$ {entry.investmentEntry.price.toFixed(2)}
+          </span>
+          <span className="ml-auto text-axiom-muted shrink-0">
+            = R$ {entry.investmentEntry.amount.toFixed(2)}
+          </span>
+        </div>
+      )}
+
       {/* Footer */}
       <div className="flex flex-wrap gap-1.5 items-center mt-auto">
         <span className="text-xs px-2 py-0.5 rounded-full bg-axiom-primary/10 text-axiom-primary font-medium">

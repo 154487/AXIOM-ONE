@@ -5,6 +5,16 @@ import { Plus } from "lucide-react";
 import { JournalList } from "./JournalList";
 import { JournalEditor } from "./JournalEditor";
 
+export interface InvestmentEntryLinked {
+  id: string;
+  type: string;
+  quantity: number;
+  price: number;
+  amount: number;
+  date: string;
+  asset: { id: string; ticker: string | null; name: string; type: string };
+}
+
 export interface JournalEntry {
   id: string;
   title: string;
@@ -14,6 +24,8 @@ export interface JournalEntry {
   date: string;
   healthScoreAtTime: number | null;
   sustainableSurplusAtTime: number | null;
+  investmentEntryId: string | null;
+  investmentEntry: InvestmentEntryLinked | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -30,6 +42,7 @@ export function JournalShell() {
   const [filterType, setFilterType] = useState<string | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null);
+  const [uncatalogedCount, setUncatalogedCount] = useState(0);
 
   const fetchEntries = useCallback(async () => {
     setLoading(true);
@@ -45,9 +58,23 @@ export function JournalShell() {
     }
   }, [filterMonth, filterType]);
 
+  const fetchUncataloged = useCallback(async () => {
+    try {
+      const res = await fetch("/api/journal/uncataloged");
+      if (res.ok) {
+        const data = await res.json();
+        setUncatalogedCount(data.count ?? 0);
+      }
+    } catch { /* silent */ }
+  }, []);
+
   useEffect(() => {
     fetchEntries();
   }, [fetchEntries]);
+
+  useEffect(() => {
+    fetchUncataloged();
+  }, [fetchUncataloged]);
 
   const handleSaved = useCallback((entry: JournalEntry) => {
     setEntries((prev) => {
@@ -55,13 +82,17 @@ export function JournalShell() {
       if (exists) return prev.map((e) => (e.id === entry.id ? entry : e));
       return [entry, ...prev];
     });
-  }, []);
+    fetchUncataloged();
+  }, [fetchUncataloged]);
 
   const handleDelete = useCallback(async (id: string) => {
     if (!confirm("Excluir esta entrada?")) return;
     const res = await fetch(`/api/journal/${id}`, { method: "DELETE" });
-    if (res.ok) setEntries((prev) => prev.filter((e) => e.id !== id));
-  }, []);
+    if (res.ok) {
+      setEntries((prev) => prev.filter((e) => e.id !== id));
+      fetchUncataloged();
+    }
+  }, [fetchUncataloged]);
 
   const openNew = () => {
     setEditingEntry(null);
@@ -91,6 +122,27 @@ export function JournalShell() {
           Nova entrada
         </button>
       </div>
+
+      {/* Banner — movimentações não catalogadas */}
+      {uncatalogedCount > 0 && (
+        <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-axiom-primary/30 bg-axiom-primary/5">
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-axiom-primary font-medium">⚠</span>
+            <span className="text-white">
+              {uncatalogedCount === 1
+                ? "1 movimentação não catalogada"
+                : `${uncatalogedCount} movimentações não catalogadas`}
+            </span>
+            <span className="text-axiom-muted text-xs">(últimos 30 dias)</span>
+          </div>
+          <button
+            onClick={openNew}
+            className="text-xs text-axiom-primary hover:underline shrink-0"
+          >
+            Criar nota
+          </button>
+        </div>
+      )}
 
       {/* List */}
       <JournalList
