@@ -99,7 +99,10 @@ export function InvestmentsShell({ initialCurrency, initialLocale }: Investments
           {(portfolioData?.assets ?? []).length > 0 && (
             <PortfolioDonut
               allocationByType={portfolioData?.allocationByType ?? {}}
+              totalCurrentValue={portfolioData?.totals.totalCurrentValue ?? 0}
               loading={portfolioLoading}
+              currency={initialCurrency}
+              locale={initialLocale}
             />
           )}
         </TabsContent>
