@@ -8,8 +8,11 @@ import { KPICard } from "@/components/dashboard/KPICard";
 import { MonthlyChart } from "@/components/dashboard/MonthlyChart";
 import { SpendingDonut } from "@/components/dashboard/SpendingDonut";
 import { RecentTransactions } from "@/components/dashboard/RecentTransactions";
+import { DashboardInsights } from "@/components/dashboard/DashboardInsights";
 import { PeriodFilter } from "@/components/shared/PeriodFilter";
+import { formatCurrency } from "@/lib/utils";
 import { Wallet, ArrowUpRight, ArrowDownRight, Scale } from "lucide-react";
+import type { DashboardInsight } from "@/components/dashboard/DashboardInsights";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function toNumber(val: any): number {
@@ -195,6 +198,91 @@ async function getDashboardData(
   };
 }
 
+function generateInsights(params: {
+  income: number;
+  expenses: number;
+  netDifference: number;
+  incomeChange: number;
+  expensesChange: number;
+  categorySpending: { name: string; value: number }[];
+  currency: string;
+  locale: string;
+}): DashboardInsight[] {
+  const { income, expenses, netDifference, incomeChange, expensesChange, categorySpending, currency, locale } = params;
+  if (income === 0 && expenses === 0) return [];
+
+  const insights: DashboardInsight[] = [];
+
+  // Expenses vs previous period
+  if (expensesChange > 15) {
+    insights.push({
+      type: "warning",
+      title: "Alerta de Gastos",
+      message: `Seus gastos aumentaram ${expensesChange.toFixed(0)}% em relação ao período anterior.`,
+    });
+  } else if (expensesChange < -10) {
+    insights.push({
+      type: "positive",
+      title: "Economia nos Gastos",
+      message: `Seus gastos reduziram ${Math.abs(expensesChange).toFixed(0)}% em relação ao período anterior.`,
+    });
+  }
+
+  // Income vs previous period
+  if (incomeChange > 5) {
+    insights.push({
+      type: "positive",
+      title: "Receita em Alta",
+      message: `Sua receita cresceu ${incomeChange.toFixed(1)}% em relação ao período anterior.`,
+    });
+  } else if (incomeChange < -10) {
+    insights.push({
+      type: "negative",
+      title: "Queda na Receita",
+      message: `Sua receita caiu ${Math.abs(incomeChange).toFixed(1)}% em relação ao período anterior.`,
+    });
+  }
+
+  // Top spending category
+  if (categorySpending.length > 0 && expenses > 0) {
+    const top = categorySpending[0];
+    const pct = (top.value / expenses) * 100;
+    if (pct > 30) {
+      insights.push({
+        type: "neutral",
+        title: top.name,
+        message: `Representa ${pct.toFixed(0)}% dos seus gastos — ${formatCurrency(top.value, locale, currency)}.`,
+      });
+    }
+  }
+
+  // Net savings insight
+  if (netDifference > 0 && income > 0) {
+    const savingsRate = (netDifference / income) * 100;
+    if (savingsRate >= 20) {
+      insights.push({
+        type: "success",
+        title: "Meta de Poupança",
+        message: `Você poupou ${savingsRate.toFixed(0)}% da receita. Continue assim!`,
+      });
+    } else {
+      insights.push({
+        type: "success",
+        title: "Saldo Positivo",
+        message: `Sobrou ${formatCurrency(netDifference, locale, currency)} no período. Bom trabalho!`,
+      });
+    }
+  } else if (netDifference < 0 && income > 0) {
+    insights.push({
+      type: "warning",
+      title: "Gastos Acima da Receita",
+      message: `Seus gastos superaram a receita em ${formatCurrency(Math.abs(netDifference), locale, currency)}.`,
+    });
+  }
+
+  return insights.slice(0, 4);
+}
+
 export default async function DashboardPage({
   searchParams,
 }: {
@@ -217,6 +305,17 @@ export default async function DashboardPage({
   );
 
   const data = await getDashboardData(session.user.id, locale, start, end);
+
+  const insights = generateInsights({
+    income: data.income,
+    expenses: data.expenses,
+    netDifference: data.netDifference,
+    incomeChange: data.incomeChange,
+    expensesChange: data.expensesChange,
+    categorySpending: data.categorySpending,
+    currency: data.currency,
+    locale,
+  });
 
   return (
     <div className="space-y-6">
@@ -261,6 +360,9 @@ export default async function DashboardPage({
           currency={data.currency}
         />
       </div>
+
+      {/* Insights */}
+      <DashboardInsights insights={insights} />
 
       {/* Charts row */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 items-stretch">
