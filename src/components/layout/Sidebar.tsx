@@ -11,6 +11,7 @@ import {
   BarChart3,
   FileUp,
   TrendingUp,
+  BookOpen,
   Settings2,
   ChevronLeft,
   ChevronRight,
@@ -27,6 +28,7 @@ export function Sidebar() {
     { href: "/reports", label: t("reports"), icon: BarChart3 },
     { href: "/import", label: t("import"), icon: FileUp },
     { href: "/investments", label: t("investments"), icon: TrendingUp },
+    { href: "/journal", label: t("journal"), icon: BookOpen },
     { href: "/settings", label: t("settings"), icon: Settings2 },
   ];
 

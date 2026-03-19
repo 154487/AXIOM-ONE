@@ -70,6 +70,7 @@ src/
 │   │   ├── dashboard/page.tsx     # force-dynamic — fetch KPIs, gráficos, moeda padrão
 │   │   ├── transactions/page.tsx  # Server Component — auth + fetch transactions+categories → TransactionList
 │   │   ├── reports/page.tsx       # force-dynamic — auth + fetch moeda/locale → ReportsShell
+│   │   ├── journal/page.tsx       # force-dynamic — auth guard → JournalShell
 │   │   ├── import/page.tsx        # Server Component — fetch categories → ImportWizard
 │   │   ├── settings/page.tsx      # Server Component — fetch user+categories+currencies → SettingsPage
 │   │   └── layout.tsx
@@ -99,7 +100,9 @@ src/
 │   │   ├── reports/trends/        # GET ?cats=&start=&end= → categories[], series[] com mean/stdDev
 │   │   ├── reports/merchants/     # GET ?start=&end= → top 10 merchants por valor
 │   │   ├── reports/seasonal/      # GET → hasEnoughData, months[] variação sazonal (all-time)
-│   │   └── reports/fire/          # GET ?patrimony=&monthlyIncome=&monthlyExpenses=&rate= (sem Prisma)
+│   │   ├── reports/fire/          # GET ?patrimony=&monthlyIncome=&monthlyExpenses=&rate= (sem Prisma)
+│   │   ├── journal/               # GET ?month=&type=&tag= (max 100), POST (cria + snapshot)
+│   │   └── journal/[id]/          # PATCH (ownership check, healthScore imutável), DELETE → 204
 │   ├── layout.tsx                 # Root layout (lê AXIOM_THEME cookie → class "dark")
 │   ├── globals.css                # Tailwind v4 + tokens Axiom + dark/light via CSS vars
 │   └── page.tsx                   # Redirect: autenticado → /dashboard, anon → /login
@@ -147,6 +150,11 @@ src/
 │   │       ├── NetWorthChart.tsx    # Line com área preenchida (cor por saldo positivo/negativo)
 │   │       ├── SavingsRateChart.tsx # Bar por mês + linha meta 20% (dataset line borderDash)
 │   │       └── FireProjection.tsx   # FIRE: slider poupança + 3 cenários + Line chart
+│   ├── journal/
+│   │   ├── JournalShell.tsx       # "use client" — estado global, fetch entries, upsert/delete local
+│   │   ├── JournalList.tsx        # Filtros mês/tipo + grid de cards
+│   │   ├── JournalEntryCard.tsx   # Card com preview, health badge colorido, botões hover
+│   │   └── JournalEditor.tsx      # Dialog criar/editar: Markdown editor + preview (react-markdown)
 │   ├── shared/
 │   │   └── PeriodFilter.tsx       # Seletor período compartilhado: URL mode (dashboard) ou callback mode (reports)
 │   └── ui/                        # shadcn/ui instalados: button, card, input, label,
@@ -199,6 +207,12 @@ Notification
   id, userId, type (TRANSACTION|BUDGET_ALERT|MONTHLY_REPORT|SYSTEM),
   title, message, read (bool, default false), createdAt
   → relations: user
+
+JournalEntry
+  id, userId, title, content (Markdown), entryType (NOTE|APORTE|RESGATE|REFLEXAO|META),
+  tags (String[]), date, healthScoreAtTime (Int?, snapshot imutável), sustainableSurplusAtTime (Decimal?),
+  createdAt, updatedAt
+  → relations: user
 ```
 
 ### Lib — Cache e APIs externas
@@ -206,6 +220,7 @@ Notification
 - `src/lib/cache.ts` — `MemCache` singleton, TTL por entrada, função `cached(key, ttlMs, fetcher)`
 - `src/lib/quotes.ts` — `fetchQuotes(tickers[])` → `Record<ticker, price>`, cache 1h, brapi.dev (1 req/ticker)
 - `src/lib/benchmarks.ts` — `fetchBenchmarks()` → `BenchmarkData`, cache 1h, BCB SGS + AwesomeAPI
+- `src/lib/healthSnapshot.ts` — `getHealthSnapshot(userId)` → `HealthSnapshot` (max 90pts, pilar 4 omitido intencionalmente)
 
 ### Auth
 
@@ -320,6 +335,7 @@ A moeda padrão do usuário vem de `UserCurrency` com `isDefault: true`. O dashb
 | v0.6 | Reports | ✅ concluída — branch feature/v0.6-reports |
 | v0.7 | Investimentos | ✅ concluída — release v0.7.0 |
 | v0.8 | Cotações + Benchmarks Realtime | ✅ concluída — release v0.8.0 |
+| v0.9 | Financial Journal | ✅ concluída — release v0.9.0 |
 
 ---
 
