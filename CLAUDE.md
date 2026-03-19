@@ -186,7 +186,7 @@ src/
 User
   id, name?, email (unique), password (bcrypt), createdAt, updatedAt
   notifTransactions (bool, default true), notifBudgetAlerts (bool, default true),
-  notifMonthlyReport (bool, default false)
+  notifMonthlyReport (bool, default false), patrimonyGoal (Decimal?, meta de patrimônio)
   → relations: transactions[], categories[], currencies[], notifications[]
 
 Category
@@ -338,6 +338,7 @@ A moeda padrão do usuário vem de `UserCurrency` com `isDefault: true`. O dashb
 | v0.9 | Financial Journal | ✅ concluída — release v0.9.0 |
 | v0.10 | Journal ↔ Investments Link + Patrimônio dedicado | ✅ concluída |
 | v1.0 | Intelligence Layer | ✅ concluída — release v1.0.0 |
+| v1.1 | Patrimônio Evoluído | ✅ concluída — release v1.1.0 |
 
 ---
 
