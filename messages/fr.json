@@ -4,6 +4,7 @@
     "transactions": "Transactions",
     "reports": "Rapports",
     "import": "Importer",
+    "investments": "Investissements",
     "settings": "Paramètres"
   },
   "Topbar": {
@@ -251,5 +252,61 @@
     "selectCategory": "Sélectionner une catégorie",
     "newCategory": "Nouvelle catégorie...",
     "selectedSummary": "{count} sélectionnées · Total : {total}"
+  },
+  "Investments": {
+    "title": "Investissements",
+    "tabs": {
+      "portfolio": "Portefeuille",
+      "entries": "Opérations"
+    },
+    "summary": {
+      "totalInvested": "Total Investi",
+      "currentValue": "Valeur Actuelle",
+      "pnl": "P&L"
+    },
+    "assetTypes": {
+      "STOCK": "Actions BR",
+      "FII": "Fonds Immobiliers",
+      "ETF": "ETF",
+      "BDR": "BDR",
+      "CRYPTO": "Crypto",
+      "FIXED_INCOME": "Revenu Fixe",
+      "STOCK_INT": "Actions Internationales",
+      "OTHER": "Autres"
+    },
+    "entryTypes": {
+      "PURCHASE": "Achat",
+      "SALE": "Vente",
+      "DIVIDEND": "Dividende",
+      "SPLIT": "Division"
+    },
+    "table": {
+      "asset": "Actif",
+      "type": "Type",
+      "quantity": "Qté",
+      "avgCost": "Coût Moyen",
+      "currentPrice": "Prix Actuel",
+      "currentValue": "Valeur",
+      "pnl": "P&L",
+      "date": "Date",
+      "price": "Prix Unit.",
+      "total": "Total",
+      "notes": "Notes"
+    },
+    "dialog": {
+      "newAsset": "Nouvel Actif",
+      "editAsset": "Modifier l'Actif",
+      "newEntry": "Nouvelle Opération",
+      "editEntry": "Modifier l'Opération",
+      "name": "Nom",
+      "ticker": "Ticker (optionnel)",
+      "currentPrice": "Prix Actuel (optionnel)",
+      "currency": "Devise"
+    },
+    "empty": "Aucun actif enregistré",
+    "emptyEntries": "Aucune opération enregistrée",
+    "deleteConfirm": "Êtes-vous sûr ? Cette action est irréversible.",
+    "hasEntries": "Impossible de supprimer un actif avec des opérations",
+    "saleExceedsPosition": "La quantité vendue dépasse la position actuelle"
   }
 }

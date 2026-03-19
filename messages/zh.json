@@ -4,6 +4,7 @@
     "transactions": "交易记录",
     "reports": "财务报告",
     "import": "导入",
+    "investments": "投资",
     "settings": "设置"
   },
   "Topbar": {
@@ -251,5 +252,61 @@
     "selectCategory": "选择类别",
     "newCategory": "新建类别...",
     "selectedSummary": "已选 {count} 笔 · 合计：{total}"
+  },
+  "Investments": {
+    "title": "投资",
+    "tabs": {
+      "portfolio": "投资组合",
+      "entries": "交易记录"
+    },
+    "summary": {
+      "totalInvested": "总投资",
+      "currentValue": "当前价值",
+      "pnl": "盈亏"
+    },
+    "assetTypes": {
+      "STOCK": "巴西股票",
+      "FII": "房地产基金",
+      "ETF": "ETF",
+      "BDR": "BDR",
+      "CRYPTO": "加密货币",
+      "FIXED_INCOME": "固定收益",
+      "STOCK_INT": "国际股票",
+      "OTHER": "其他"
+    },
+    "entryTypes": {
+      "PURCHASE": "买入",
+      "SALE": "卖出",
+      "DIVIDEND": "分红",
+      "SPLIT": "拆股"
+    },
+    "table": {
+      "asset": "资产",
+      "type": "类型",
+      "quantity": "数量",
+      "avgCost": "平均成本",
+      "currentPrice": "当前价格",
+      "currentValue": "价值",
+      "pnl": "盈亏",
+      "date": "日期",
+      "price": "单价",
+      "total": "总计",
+      "notes": "备注"
+    },
+    "dialog": {
+      "newAsset": "新增资产",
+      "editAsset": "编辑资产",
+      "newEntry": "新增交易",
+      "editEntry": "编辑交易",
+      "name": "名称",
+      "ticker": "代码（可选）",
+      "currentPrice": "当前价格（可选）",
+      "currency": "货币"
+    },
+    "empty": "暂无资产",
+    "emptyEntries": "暂无交易记录",
+    "deleteConfirm": "确定删除？此操作不可撤销。",
+    "hasEntries": "无法删除含交易记录的资产",
+    "saleExceedsPosition": "卖出数量超过当前持仓"
   }
 }

@@ -4,6 +4,7 @@
     "transactions": "Transactions",
     "reports": "Reports",
     "import": "Import",
+    "investments": "Investments",
     "settings": "Settings"
   },
   "Topbar": {
@@ -251,5 +252,61 @@
     "selectCategory": "Select category",
     "newCategory": "New category...",
     "selectedSummary": "{count} selected · Total: {total}"
+  },
+  "Investments": {
+    "title": "Investments",
+    "tabs": {
+      "portfolio": "Portfolio",
+      "entries": "Transactions"
+    },
+    "summary": {
+      "totalInvested": "Total Invested",
+      "currentValue": "Current Value",
+      "pnl": "P&L"
+    },
+    "assetTypes": {
+      "STOCK": "BR Stocks",
+      "FII": "Real Estate Funds",
+      "ETF": "ETF",
+      "BDR": "BDR",
+      "CRYPTO": "Crypto",
+      "FIXED_INCOME": "Fixed Income",
+      "STOCK_INT": "International Stocks",
+      "OTHER": "Other"
+    },
+    "entryTypes": {
+      "PURCHASE": "Purchase",
+      "SALE": "Sale",
+      "DIVIDEND": "Dividend",
+      "SPLIT": "Split"
+    },
+    "table": {
+      "asset": "Asset",
+      "type": "Type",
+      "quantity": "Qty",
+      "avgCost": "Avg Cost",
+      "currentPrice": "Current Price",
+      "currentValue": "Value",
+      "pnl": "P&L",
+      "date": "Date",
+      "price": "Unit Price",
+      "total": "Total",
+      "notes": "Notes"
+    },
+    "dialog": {
+      "newAsset": "New Asset",
+      "editAsset": "Edit Asset",
+      "newEntry": "New Entry",
+      "editEntry": "Edit Entry",
+      "name": "Name",
+      "ticker": "Ticker (optional)",
+      "currentPrice": "Current Price (optional)",
+      "currency": "Currency"
+    },
+    "empty": "No assets registered",
+    "emptyEntries": "No entries recorded",
+    "deleteConfirm": "Are you sure? This action cannot be undone.",
+    "hasEntries": "Cannot delete an asset with entries",
+    "saleExceedsPosition": "Sale quantity exceeds current position"
   }
 }

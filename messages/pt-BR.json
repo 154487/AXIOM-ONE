@@ -4,6 +4,7 @@
     "transactions": "Transações",
     "reports": "Relatórios",
     "import": "Importar",
+    "investments": "Investimentos",
     "settings": "Configurações"
   },
   "Topbar": {
@@ -251,5 +252,61 @@
     "selectCategory": "Selecionar categoria",
     "newCategory": "Nova categoria...",
     "selectedSummary": "{count} selecionada(s) · Total: {total}"
+  },
+  "Investments": {
+    "title": "Investimentos",
+    "tabs": {
+      "portfolio": "Carteira",
+      "entries": "Lançamentos"
+    },
+    "summary": {
+      "totalInvested": "Total Investido",
+      "currentValue": "Valor Atual",
+      "pnl": "Resultado"
+    },
+    "assetTypes": {
+      "STOCK": "Ações BR",
+      "FII": "Fundos Imobiliários",
+      "ETF": "ETF",
+      "BDR": "BDR",
+      "CRYPTO": "Criptomoedas",
+      "FIXED_INCOME": "Renda Fixa",
+      "STOCK_INT": "Ações Internacionais",
+      "OTHER": "Outros"
+    },
+    "entryTypes": {
+      "PURCHASE": "Compra",
+      "SALE": "Venda",
+      "DIVIDEND": "Dividendo",
+      "SPLIT": "Desdobramento"
+    },
+    "table": {
+      "asset": "Ativo",
+      "type": "Tipo",
+      "quantity": "Qtd",
+      "avgCost": "Custo Médio",
+      "currentPrice": "Preço Atual",
+      "currentValue": "Valor",
+      "pnl": "P&L",
+      "date": "Data",
+      "price": "Preço Unit.",
+      "total": "Total",
+      "notes": "Notas"
+    },
+    "dialog": {
+      "newAsset": "Novo Ativo",
+      "editAsset": "Editar Ativo",
+      "newEntry": "Novo Lançamento",
+      "editEntry": "Editar Lançamento",
+      "name": "Nome",
+      "ticker": "Ticker (opcional)",
+      "currentPrice": "Preço Atual (opcional)",
+      "currency": "Moeda"
+    },
+    "empty": "Nenhum ativo cadastrado",
+    "emptyEntries": "Nenhum lançamento registrado",
+    "deleteConfirm": "Tem certeza? Esta ação não pode ser desfeita.",
+    "hasEntries": "Não é possível excluir um ativo com lançamentos",
+    "saleExceedsPosition": "Quantidade vendida excede posição atual"
   }
 }

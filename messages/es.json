@@ -4,6 +4,7 @@
     "transactions": "Transacciones",
     "reports": "Informes",
     "import": "Importar",
+    "investments": "Inversiones",
     "settings": "Configuración"
   },
   "Topbar": {
@@ -251,5 +252,61 @@
     "selectCategory": "Seleccionar categoría",
     "newCategory": "Nueva categoría...",
     "selectedSummary": "{count} seleccionadas · Total: {total}"
+  },
+  "Investments": {
+    "title": "Inversiones",
+    "tabs": {
+      "portfolio": "Cartera",
+      "entries": "Movimientos"
+    },
+    "summary": {
+      "totalInvested": "Total Invertido",
+      "currentValue": "Valor Actual",
+      "pnl": "Resultado"
+    },
+    "assetTypes": {
+      "STOCK": "Acciones BR",
+      "FII": "Fondos Inmobiliarios",
+      "ETF": "ETF",
+      "BDR": "BDR",
+      "CRYPTO": "Criptomonedas",
+      "FIXED_INCOME": "Renta Fija",
+      "STOCK_INT": "Acciones Internacionales",
+      "OTHER": "Otros"
+    },
+    "entryTypes": {
+      "PURCHASE": "Compra",
+      "SALE": "Venta",
+      "DIVIDEND": "Dividendo",
+      "SPLIT": "Desdoblamiento"
+    },
+    "table": {
+      "asset": "Activo",
+      "type": "Tipo",
+      "quantity": "Cant.",
+      "avgCost": "Costo Promedio",
+      "currentPrice": "Precio Actual",
+      "currentValue": "Valor",
+      "pnl": "Resultado",
+      "date": "Fecha",
+      "price": "Precio Unit.",
+      "total": "Total",
+      "notes": "Notas"
+    },
+    "dialog": {
+      "newAsset": "Nuevo Activo",
+      "editAsset": "Editar Activo",
+      "newEntry": "Nuevo Movimiento",
+      "editEntry": "Editar Movimiento",
+      "name": "Nombre",
+      "ticker": "Ticker (opcional)",
+      "currentPrice": "Precio Actual (opcional)",
+      "currency": "Moneda"
+    },
+    "empty": "Sin activos registrados",
+    "emptyEntries": "Sin movimientos registrados",
+    "deleteConfirm": "¿Está seguro? Esta acción no se puede deshacer.",
+    "hasEntries": "No se puede eliminar un activo con movimientos",
+    "saleExceedsPosition": "La cantidad vendida supera la posición actual"
   }
 }
