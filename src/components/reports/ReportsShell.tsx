@@ -9,6 +9,7 @@ import { SavingsRateChart } from "./patrimonio/SavingsRateChart";
 import { HealthScoreCard } from "./visao-geral/HealthScoreCard";
 import { InsightsCard } from "./visao-geral/InsightsCard";
 import { SpendingVelocityCard } from "./visao-geral/SpendingVelocityCard";
+import { RecurringList } from "./fluxo-caixa/RecurringList";
 import type { OverviewData, CashflowData, NetworthData } from "./types";
 
 type TabKey = "overview" | "cashflow" | "trends" | "patrimonio";
@@ -252,8 +253,7 @@ function CashflowTab({
       <div style={{ minHeight: 360 }}>
         <CashFlowChart cashflowData={data} currency={currency} locale={locale} />
       </div>
-      {/* RecurringList — Issue #36 */}
-      <SkeletonCard label={t("recurring")} />
+      <RecurringList currency={currency} />
     </div>
   );
 }
