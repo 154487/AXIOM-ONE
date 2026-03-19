@@ -8,11 +8,13 @@ export interface CurrencyRate {
 }
 
 export interface BenchmarkData {
-  selicAnual: number | null;    // % ao ano
-  ibovPrice: number | null;     // pontos ex: 125430
-  ibovDayChange: number | null; // variação % do dia ex: +1.23
-  ipca: number | null;          // % no mês
-  currencies: Partial<Record<string, CurrencyRate>>; // USD, EUR, GBP, ARS
+  selicAnual: number | null;      // % ao ano
+  ibovPrice: number | null;       // pontos ex: 125430
+  ibovDayChange: number | null;   // variação % do dia ex: +1.23
+  sp500Price: number | null;      // pontos ex: 5480
+  sp500DayChange: number | null;  // variação % do dia
+  ipca: number | null;            // % no mês
+  currencies: Partial<Record<string, CurrencyRate>>; // USD, EUR, GBP, ARS, JPY, CAD, CHF, AUD, CNY, MXN, CLP
   updatedAt: string;
 }
 
@@ -30,12 +32,13 @@ async function fetchBcbSeries(series: number): Promise<number | null> {
   }
 }
 
-async function fetchIbov(): Promise<{ price: number | null; dayChange: number | null }> {
+async function fetchIndex(ticker: string): Promise<{ price: number | null; dayChange: number | null }> {
   const token = process.env.BRAPI_TOKEN;
   if (!token) return { price: null, dayChange: null };
   try {
+    const encoded = encodeURIComponent(ticker);
     const res = await fetch(
-      `https://brapi.dev/api/quote/%5EBVSP?token=${token}&fundamental=false`,
+      `https://brapi.dev/api/quote/${encoded}?token=${token}&fundamental=false`,
       { cache: "no-store" }
     );
     if (!res.ok) return { price: null, dayChange: null };
@@ -52,12 +55,13 @@ async function fetchIbov(): Promise<{ price: number | null; dayChange: number | 
 
 export async function fetchBenchmarks(): Promise<BenchmarkData> {
   return cached("benchmarks", BCB_CACHE_TTL, async () => {
-    const [selicR, ibovR, ipcaR, awesomeR] = await Promise.allSettled([
-      fetchBcbSeries(12),   // SELIC diária
-      fetchIbov(),          // Ibovespa preço + variação
-      fetchBcbSeries(433),  // IPCA mensal
+    const [selicR, ibovR, sp500R, ipcaR, awesomeR] = await Promise.allSettled([
+      fetchBcbSeries(12),          // SELIC diária
+      fetchIndex("^BVSP"),         // Ibovespa preço + variação
+      fetchIndex("^GSPC"),         // S&P 500 preço + variação
+      fetchBcbSeries(433),         // IPCA mensal
       fetch(
-        "https://economia.awesomeapi.com.br/json/last/USD-BRL,EUR-BRL,GBP-BRL,ARS-BRL",
+        "https://economia.awesomeapi.com.br/json/last/USD-BRL,EUR-BRL,GBP-BRL,ARS-BRL,JPY-BRL,CAD-BRL,CHF-BRL,AUD-BRL,CNY-BRL,MXN-BRL,CLP-BRL",
         { cache: "no-store" }
       ).then((r) => r.json()),
     ]);
@@ -67,7 +71,8 @@ export async function fetchBenchmarks(): Promise<BenchmarkData> {
     const selicAnual =
       selicDaily !== null ? ((1 + selicDaily / 100) ** 252 - 1) * 100 : null;
 
-    const ibov = ibovR.status === "fulfilled" ? ibovR.value : { price: null, dayChange: null };
+    const ibov  = ibovR.status  === "fulfilled" ? ibovR.value  : { price: null, dayChange: null };
+    const sp500 = sp500R.status === "fulfilled" ? sp500R.value : { price: null, dayChange: null };
 
     const aw = awesomeR.status === "fulfilled" ? awesomeR.value : null;
     const currencies: Partial<Record<string, CurrencyRate>> = {};
@@ -77,6 +82,13 @@ export async function fetchBenchmarks(): Promise<BenchmarkData> {
         ["EURBRL", "EUR"],
         ["GBPBRL", "GBP"],
         ["ARSBRL", "ARS"],
+        ["JPYBRL", "JPY"],
+        ["CADBRL", "CAD"],
+        ["CHFBRL", "CHF"],
+        ["AUDBRL", "AUD"],
+        ["CNYBRL", "CNY"],
+        ["MXNBRL", "MXN"],
+        ["CLPBRL", "CLP"],
       ] as [string, string][]) {
         const entry = aw[awKey];
         if (entry) {
@@ -90,9 +102,11 @@ export async function fetchBenchmarks(): Promise<BenchmarkData> {
 
     return {
       selicAnual,
-      ibovPrice:     ibov.price,
-      ibovDayChange: ibov.dayChange,
-      ipca:          ipcaR.status === "fulfilled" ? ipcaR.value : null,
+      ibovPrice:      ibov.price,
+      ibovDayChange:  ibov.dayChange,
+      sp500Price:     sp500.price,
+      sp500DayChange: sp500.dayChange,
+      ipca:           ipcaR.status === "fulfilled" ? ipcaR.value : null,
       currencies,
       updatedAt: new Date().toISOString(),
     };

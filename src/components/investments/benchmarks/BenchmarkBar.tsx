@@ -8,11 +8,16 @@ const LS_KEY = "axiom:benchmark:currency";
 
 const CURRENCY_OPTIONS = [
   { code: "EUR", label: "Euro" },
-  { code: "GBP", label: "Libra" },
-  { code: "ARS", label: "Peso AR" },
-] as const;
-
-type CurrencyCode = (typeof CURRENCY_OPTIONS)[number]["code"];
+  { code: "GBP", label: "Libra Esterlina" },
+  { code: "ARS", label: "Peso Argentino" },
+  { code: "JPY", label: "Iene Japonês" },
+  { code: "CAD", label: "Dólar Canadense" },
+  { code: "CHF", label: "Franco Suíço" },
+  { code: "AUD", label: "Dólar Australiano" },
+  { code: "CNY", label: "Yuan Chinês" },
+  { code: "MXN", label: "Peso Mexicano" },
+  { code: "CLP", label: "Peso Chileno" },
+];
 
 // ── Escala de cores semântica ─────────────────────────────────────────────────
 
@@ -78,18 +83,47 @@ function SelicCard({ value }: { value: number | null }) {
   );
 }
 
-function IbovCard({ price, dayChange }: { price: number | null; dayChange: number | null }) {
+// ── Card Ibovespa ↔ S&P 500 com rotação a cada 10s ───────────────────────────
+
+function MarketIndexCard({
+  ibovPrice, ibovDayChange, sp500Price, sp500DayChange,
+}: {
+  ibovPrice: number | null; ibovDayChange: number | null;
+  sp500Price: number | null; sp500DayChange: number | null;
+}) {
+  const [showSP500, setShowSP500] = useState(false);
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setVisible(false);
+      setTimeout(() => {
+        setShowSP500((prev) => !prev);
+        setVisible(true);
+      }, 300);
+    }, 10000);
+    return () => clearInterval(id);
+  }, []);
+
+  const price     = showSP500 ? sp500Price     : ibovPrice;
+  const dayChange = showSP500 ? sp500DayChange : ibovDayChange;
+  const label     = showSP500 ? "S&P 500"      : "Ibovespa";
+
+  const fade = { opacity: visible ? 1 : 0, transition: "opacity 0.3s ease" };
+
   return (
     <div className="bg-axiom-card border border-axiom-border rounded-xl p-5">
       <div className="flex items-center gap-2 mb-2">
         <BarChart2 size={16} className="text-axiom-muted" />
-        <span className="text-axiom-muted text-sm">Ibovespa</span>
+        <span className="text-axiom-muted text-sm" style={fade}>{label}</span>
       </div>
-      <p className="text-xl font-semibold tabular-nums text-white">
-        {price != null ? price.toLocaleString("pt-BR", { maximumFractionDigits: 0 }) + " pts" : "—"}
+      <p className="text-xl font-semibold tabular-nums text-white" style={fade}>
+        {price != null
+          ? price.toLocaleString("pt-BR", { maximumFractionDigits: 0 }) + " pts"
+          : "—"}
       </p>
       {dayChange != null && (
-        <p className={`text-xs mt-1 font-medium ${changeColor(dayChange)}`}>
+        <p className={`text-xs mt-1 font-medium ${changeColor(dayChange)}`} style={fade}>
           {changeStr(dayChange)} hoje
         </p>
       )}
@@ -146,11 +180,11 @@ function EditableCurrencyCard({
   onSelect,
   currencies,
 }: {
-  selected: CurrencyCode;
-  onSelect: (c: CurrencyCode) => void;
+  selected: string;
+  onSelect: (c: string) => void;
   currencies: BenchmarkData["currencies"];
 }) {
-  const rate = currencies[selected];
+  const rate  = currencies[selected];
   const label = CURRENCY_OPTIONS.find((o) => o.code === selected)?.label ?? selected;
 
   return (
@@ -160,7 +194,7 @@ function EditableCurrencyCard({
         <div className="relative flex items-center gap-1">
           <select
             value={selected}
-            onChange={(e) => onSelect(e.target.value as CurrencyCode)}
+            onChange={(e) => onSelect(e.target.value)}
             className="appearance-none bg-transparent text-axiom-muted text-sm pr-4 cursor-pointer focus:outline-none hover:text-white transition-colors"
           >
             {CURRENCY_OPTIONS.map((o) => (
@@ -181,6 +215,9 @@ function EditableCurrencyCard({
           {changeStr(rate.pctChange)} hoje
         </p>
       )}
+      {!rate && label !== selected && (
+        <p className="text-xs mt-1 text-axiom-muted opacity-70">{label}</p>
+      )}
     </div>
   );
 }
@@ -193,16 +230,16 @@ interface BenchmarkBarProps {
 }
 
 export function BenchmarkBar({ data, loading }: BenchmarkBarProps) {
-  const [selectedCurrency, setSelectedCurrency] = useState<CurrencyCode>("EUR");
+  const [selectedCurrency, setSelectedCurrency] = useState("EUR");
 
   useEffect(() => {
-    const saved = localStorage.getItem(LS_KEY) as CurrencyCode | null;
+    const saved = localStorage.getItem(LS_KEY);
     if (saved && CURRENCY_OPTIONS.some((o) => o.code === saved)) {
       setSelectedCurrency(saved);
     }
   }, []);
 
-  function handleCurrencyChange(code: CurrencyCode) {
+  function handleCurrencyChange(code: string) {
     setSelectedCurrency(code);
     localStorage.setItem(LS_KEY, code);
   }
@@ -227,7 +264,12 @@ export function BenchmarkBar({ data, loading }: BenchmarkBarProps) {
       </p>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         <SelicCard value={data?.selicAnual ?? null} />
-        <IbovCard price={data?.ibovPrice ?? null} dayChange={data?.ibovDayChange ?? null} />
+        <MarketIndexCard
+          ibovPrice={data?.ibovPrice ?? null}
+          ibovDayChange={data?.ibovDayChange ?? null}
+          sp500Price={data?.sp500Price ?? null}
+          sp500DayChange={data?.sp500DayChange ?? null}
+        />
         <IpcaCard value={data?.ipca ?? null} />
         <CurrencyCard label="USD" rate={data?.currencies["USD"]} />
         <EditableCurrencyCard
