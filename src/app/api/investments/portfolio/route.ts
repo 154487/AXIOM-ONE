@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { AssetType } from "@/generated/prisma/client";
+import { fetchQuotes } from "@/lib/quotes";
 
 export interface AssetPosition {
   id: string;
@@ -17,6 +18,7 @@ export interface AssetPosition {
   pnl: number;
   pnlPct: number;
   totalDividends: number;
+  priceSource: "live" | "manual";
 }
 
 export async function GET() {
@@ -27,6 +29,10 @@ export async function GET() {
     where: { userId: session.user.id },
     include: { entries: { orderBy: { date: "asc" } } },
   });
+
+  // Fetch live quotes for all tickers (sequencial — tickers derivados do findMany)
+  const tickers = assets.filter((a) => a.ticker).map((a) => a.ticker!);
+  const liveQuotes = await fetchQuotes(tickers);
 
   const positions: AssetPosition[] = assets.map((asset) => {
     let totalQty = 0;
@@ -52,10 +58,8 @@ export async function GET() {
         totalDividends += amount;
       } else if (e.type === "SPLIT") {
         // SPLIT: new quantity = qty field (absolute new total)
-        // We just add the extra shares at 0 cost
         const extra = qty - totalQty;
         totalQty = qty;
-        // cost stays the same, avg cost decreases
         void extra;
       }
     }
@@ -64,7 +68,11 @@ export async function GET() {
     if (totalQty < 0.000001) totalQty = 0;
 
     const avgCost = totalQty > 0 ? totalCost / totalQty : 0;
-    const currentPrice = asset.currentPrice ? parseFloat(String(asset.currentPrice)) : avgCost;
+    const livePrice = asset.ticker ? liveQuotes[asset.ticker] : undefined;
+    const currentPrice =
+      livePrice ??
+      (asset.currentPrice ? parseFloat(String(asset.currentPrice)) : avgCost);
+    const priceSource: "live" | "manual" = livePrice !== undefined ? "live" : "manual";
     const totalInvested = totalQty * avgCost;
     const currentValue = totalQty * currentPrice;
     const pnl = currentValue - totalInvested;
@@ -84,12 +92,24 @@ export async function GET() {
       pnl,
       pnlPct,
       totalDividends,
+      priceSource,
     };
   });
 
   // Keep assets with active position OR with no entries yet (freshly registered)
   const assetsWithEntries = new Set(assets.filter((a) => a.entries.length > 0).map((a) => a.id));
   const activePositions = positions.filter((p) => p.totalQuantity > 0 || !assetsWithEntries.has(p.id));
+
+  // Fire-and-forget: update currentPrice in DB for live-priced assets
+  const updates = activePositions
+    .filter((p) => p.priceSource === "live" && p.ticker)
+    .map((p) =>
+      prisma.asset.update({
+        where: { id: p.id },
+        data: { currentPrice: p.currentPrice },
+      })
+    );
+  Promise.all(updates).catch(() => {});
 
   const totalInvested = activePositions.reduce((acc, p) => acc + p.totalInvested, 0);
   const totalCurrentValue = activePositions.reduce((acc, p) => acc + p.currentValue, 0);
