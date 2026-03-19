@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { PeriodFilter } from "@/components/shared/PeriodFilter";
+import { CashFlowChart } from "./fluxo-caixa/CashFlowChart";
 import type { OverviewData, CashflowData, NetworthData } from "./types";
 
 type TabKey = "overview" | "cashflow" | "trends" | "patrimonio";
@@ -331,22 +332,15 @@ function CashflowTab({
     );
   }
 
-  // CashFlowChart e SankeyDiagram serão implementados nas Issues #32 e #39
-  // RecurringList será implementado na Issue #36
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-      <div className="bg-axiom-card border border-axiom-border rounded-xl p-6 h-full flex flex-col xl:col-span-2">
-        <p className="text-axiom-muted text-sm font-medium mb-4">{t("cashFlow")}</p>
-        <p className="text-axiom-muted text-sm">
-          {/* CashFlowChart — Issue #32 */}
-          {data.monthlyBars.length === 0
-            ? t("noData")
-            : `${data.monthlyBars.length} meses carregados — gráfico será implementado na Issue #32`}
-        </p>
+    <div className="grid grid-cols-1 gap-4">
+      <div style={{ minHeight: 360 }}>
+        <CashFlowChart cashflowData={data} currency={currency} locale={locale} />
       </div>
+      {/* RecurringList — Issue #36 */}
+      <SkeletonCard label={t("recurring")} />
     </div>
   );
-  void currency; void locale;
 }
 
 function TrendsTab({
