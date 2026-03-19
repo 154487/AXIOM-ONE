@@ -6,6 +6,8 @@ import { PeriodFilter } from "@/components/shared/PeriodFilter";
 import { CashFlowChart } from "./fluxo-caixa/CashFlowChart";
 import { NetWorthChart } from "./patrimonio/NetWorthChart";
 import { SavingsRateChart } from "./patrimonio/SavingsRateChart";
+import { HealthScoreCard } from "./visao-geral/HealthScoreCard";
+import { InsightsCard } from "./visao-geral/InsightsCard";
 import type { OverviewData, CashflowData, NetworthData } from "./types";
 
 type TabKey = "overview" | "cashflow" | "trends" | "patrimonio";
@@ -209,105 +211,11 @@ function OverviewTab({
   }
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-      {/* HealthScoreCard — Issue #34 */}
-      <div className="bg-axiom-card border border-axiom-border rounded-xl p-6 h-full flex flex-col">
-        <p className="text-axiom-muted text-sm font-medium mb-4">{t("healthScore")}</p>
-        <div className="flex-1 flex flex-col items-center justify-center gap-4">
-          <span
-            className={`text-6xl font-bold ${
-              data.healthScore === null
-                ? "text-axiom-muted"
-                : data.healthScore >= 70
-                ? "text-axiom-income"
-                : data.healthScore >= 40
-                ? "text-yellow-400"
-                : "text-axiom-expense"
-            }`}
-          >
-            {data.healthScore === null ? "N/A" : data.healthScore}
-          </span>
-          <div className="w-full space-y-2">
-            {data.pillars.map((p) => (
-              <div key={p.label}>
-                <div className="flex justify-between text-xs text-axiom-muted mb-1">
-                  <span>{p.label}</span>
-                  <span>{p.earnedPoints}/{p.maxPoints}pts</span>
-                </div>
-                <div className="w-full h-1.5 bg-axiom-hover rounded-full">
-                  <div
-                    className="h-1.5 bg-axiom-primary rounded-full transition-all"
-                    style={{ width: `${p.value}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* InsightsCard — Issue #34 */}
-      <div className="bg-axiom-card border border-axiom-border rounded-xl p-6 h-full flex flex-col">
-        <p className="text-axiom-muted text-sm font-medium mb-4">{t("insights")}</p>
-        <div className="flex-1 flex flex-col gap-3">
-          {data.insights.map((insight, i) => (
-            <div key={i} className="flex items-start gap-3 p-3 bg-axiom-hover rounded-lg">
-              <div className="flex-1">
-                <p className="text-white text-sm">{insight.text}</p>
-              </div>
-              <span
-                className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${
-                  insight.type === "positive"
-                    ? "bg-axiom-income/20 text-axiom-income"
-                    : insight.type === "negative"
-                    ? "bg-axiom-expense/20 text-axiom-expense"
-                    : "bg-yellow-400/20 text-yellow-400"
-                }`}
-              >
-                {insight.badgeText}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
+    <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 items-stretch">
+      <HealthScoreCard overviewData={data} />
+      <InsightsCard overviewData={data} />
       {/* SpendingVelocityCard — Issue #35 */}
-      <div className="bg-axiom-card border border-axiom-border rounded-xl p-6 h-full flex flex-col">
-        <p className="text-axiom-muted text-sm font-medium mb-4">{t("spendingVelocity")}</p>
-        {data.velocity === null ? (
-          <p className="text-axiom-muted text-sm flex-1 flex items-center">
-            Velocidade disponível apenas para o mês atual.
-          </p>
-        ) : (
-          <div className="flex-1 flex flex-col gap-4 justify-center">
-            <div>
-              <div className="flex justify-between text-xs text-axiom-muted mb-1">
-                <span>Dia {data.velocity.dayOfMonth} de {data.velocity.daysInMonth}</span>
-                <span>{Math.round(data.velocity.spent / data.velocity.budget * 100)}%</span>
-              </div>
-              <div className="w-full h-2 bg-axiom-hover rounded-full">
-                <div
-                  className={`h-2 rounded-full transition-all ${
-                    data.velocity.spent / data.velocity.budget < 0.7
-                      ? "bg-axiom-income"
-                      : data.velocity.spent / data.velocity.budget < 0.9
-                      ? "bg-yellow-400"
-                      : "bg-axiom-expense"
-                  }`}
-                  style={{
-                    width: `${Math.min(100, (data.velocity.spent / data.velocity.budget) * 100)}%`,
-                  }}
-                />
-              </div>
-            </div>
-            <p className="text-axiom-muted text-sm">
-              {data.velocity.projectedOverrun >= 0
-                ? `No ritmo atual, terminará ${Math.round(data.velocity.projectedOverrun)}% acima do estimado.`
-                : `No ritmo atual, terminará ${Math.abs(Math.round(data.velocity.projectedOverrun))}% abaixo do estimado.`}
-            </p>
-          </div>
-        )}
-      </div>
+      <SkeletonCard label={t("spendingVelocity")} />
     </div>
   );
 }
