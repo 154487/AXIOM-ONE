@@ -55,15 +55,30 @@ export function EntryDialog({ open, onClose, entry, assets, onSave }: EntryDialo
 
   useEffect(() => {
     if (open) {
-      setAssetId(entry?.assetId ?? (assets[0]?.id ?? ""));
+      const defaultAssetId = entry?.assetId ?? (assets[0]?.id ?? "");
+      setAssetId(defaultAssetId);
       setType(entry?.type ?? "PURCHASE");
       setDate(entry?.date ? entry.date.substring(0, 10) : new Date().toISOString().substring(0, 10));
       setQuantity(entry?.quantity != null ? String(entry.quantity) : "");
-      setPrice(entry?.price != null ? String(entry.price) : "");
+      // For new entries, pre-fill price with asset's current price
+      if (entry?.price != null) {
+        setPrice(String(entry.price));
+      } else {
+        const defaultAsset = assets.find((a) => a.id === defaultAssetId);
+        setPrice(defaultAsset?.currentPrice != null ? String(defaultAsset.currentPrice) : "");
+      }
       setNotes(entry?.notes ?? "");
       setError("");
     }
   }, [open, entry, assets]);
+
+  // When user changes the asset on a new entry, update price to that asset's current price
+  useEffect(() => {
+    if (!entry?.id && assetId) {
+      const selected = assets.find((a) => a.id === assetId);
+      if (selected?.currentPrice != null) setPrice(String(selected.currentPrice));
+    }
+  }, [assetId, assets, entry?.id]);
 
   async function handleSave() {
     if (!assetId) { setError("Ativo obrigatório"); return; }
