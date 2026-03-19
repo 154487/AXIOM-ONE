@@ -20,6 +20,7 @@ Dark theme com acento laranja. Interface premium estilo fintech.
 | Ícones | lucide-react | 0.577 |
 | Fonte | system-ui / SF Pro (nativa do OS) | — |
 | Package mgr | npm | — |
+| APIs externas | brapi.dev (B3), BCB SGS (SELIC/CDI/IPCA), AwesomeAPI (câmbio) | — |
 
 ---
 
@@ -200,6 +201,12 @@ Notification
   → relations: user
 ```
 
+### Lib — Cache e APIs externas
+
+- `src/lib/cache.ts` — `MemCache` singleton, TTL por entrada, função `cached(key, ttlMs, fetcher)`
+- `src/lib/quotes.ts` — `fetchQuotes(tickers[])` → `Record<ticker, price>`, cache 1h, brapi.dev (1 req/ticker)
+- `src/lib/benchmarks.ts` — `fetchBenchmarks()` → `BenchmarkData`, cache 1h, BCB SGS + AwesomeAPI
+
 ### Auth
 
 - **`auth()`** — usar em Server Components e API Routes (importar de `@/lib/auth`)
@@ -311,6 +318,7 @@ A moeda padrão do usuário vem de `UserCurrency` com `isDefault: true`. O dashb
 | v0.4 | i18n | ✅ concluída — release v0.4.0 |
 | v0.5 | Import | ✅ concluída — release v0.5.0 |
 | v0.6 | Reports | ✅ concluída — branch feature/v0.6-reports |
+| v0.7 | Investimentos | ✅ concluída — release v0.7.0 |
 
 ---
 
@@ -326,6 +334,7 @@ A moeda padrão do usuário vem de `UserCurrency` com `isDefault: true`. O dashb
 8. **Import de transações:** `categoryId` é NOT NULL — o confirm endpoint filtra linhas sem categoria antes do `createMany`
 9. **Dashboard:** `export const dynamic = "force-dynamic"` — nunca cachear dados financeiros
 10. **XLSX multi-seção (Nubank/Inter):** parseXLSX detecta a linha de cabeçalho dinamicamente, suporta DD-MM-YYYY e valores BR (vírgula decimal)
+11. **BRAPI_TOKEN:** obrigatório em `.env.local` para cotações em tempo real; sem token o portfolio usa `currentPrice` do banco (fallback silencioso)
 
 ---
 
