@@ -2,17 +2,32 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getHealthSnapshot } from "@/lib/healthSnapshot";
-import { JournalEntry, Prisma } from "@/generated/prisma/client";
+import { JournalEntry, InvestmentEntry, Asset, Prisma } from "@/generated/prisma/client";
 
-function serializeEntry(entry: JournalEntry) {
+type JournalEntryWithInvestment = JournalEntry & {
+  investmentEntry: (InvestmentEntry & { asset: Asset }) | null;
+};
+
+function serializeEntry(entry: JournalEntryWithInvestment) {
   return {
     ...entry,
     sustainableSurplusAtTime: entry.sustainableSurplusAtTime
       ? parseFloat(String(entry.sustainableSurplusAtTime))
       : null,
-    date: entry.date instanceof Date ? entry.date.toISOString() : entry.date,
+    date:      entry.date instanceof Date      ? entry.date.toISOString()      : entry.date,
     createdAt: entry.createdAt instanceof Date ? entry.createdAt.toISOString() : entry.createdAt,
     updatedAt: entry.updatedAt instanceof Date ? entry.updatedAt.toISOString() : entry.updatedAt,
+    investmentEntry: entry.investmentEntry
+      ? {
+          ...entry.investmentEntry,
+          quantity:  parseFloat(String(entry.investmentEntry.quantity)),
+          price:     parseFloat(String(entry.investmentEntry.price)),
+          amount:    parseFloat(String(entry.investmentEntry.amount)),
+          date:      entry.investmentEntry.date instanceof Date ? entry.investmentEntry.date.toISOString() : entry.investmentEntry.date,
+          createdAt: entry.investmentEntry.createdAt instanceof Date ? entry.investmentEntry.createdAt.toISOString() : entry.investmentEntry.createdAt,
+          asset: entry.investmentEntry.asset,
+        }
+      : null,
   };
 }
 
@@ -40,6 +55,7 @@ export async function GET(req: NextRequest) {
     where,
     orderBy: { date: "desc" },
     take: 100,
+    include: { investmentEntry: { include: { asset: true } } },
   });
 
   return NextResponse.json(entries.map(serializeEntry));
@@ -50,10 +66,18 @@ export async function POST(req: NextRequest) {
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { title, content, entryType, tags, date } = body;
+  const { title, content, entryType, tags, date, investmentEntryId } = body;
 
   if (!title?.trim()) return NextResponse.json({ error: "Título obrigatório" }, { status: 400 });
   if (!content?.trim()) return NextResponse.json({ error: "Conteúdo obrigatório" }, { status: 400 });
+
+  // Ownership check
+  if (investmentEntryId) {
+    const invEntry = await prisma.investmentEntry.findUnique({ where: { id: investmentEntryId } });
+    if (!invEntry || invEntry.userId !== session.user.id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+  }
 
   const snapshot = await getHealthSnapshot(session.user.id);
 
@@ -67,7 +91,9 @@ export async function POST(req: NextRequest) {
       date: date ? new Date(date) : new Date(),
       healthScoreAtTime: snapshot.healthScore,
       sustainableSurplusAtTime: snapshot.sustainableSurplus,
+      ...(investmentEntryId ? { investmentEntryId } : {}),
     },
+    include: { investmentEntry: { include: { asset: true } } },
   });
 
   return NextResponse.json(serializeEntry(entry), { status: 201 });

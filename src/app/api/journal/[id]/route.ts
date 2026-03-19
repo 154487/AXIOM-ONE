@@ -1,17 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { JournalEntry } from "@/generated/prisma/client";
+import { JournalEntry, InvestmentEntry, Asset } from "@/generated/prisma/client";
 
-function serializeEntry(entry: JournalEntry) {
+type JournalEntryWithInvestment = JournalEntry & {
+  investmentEntry: (InvestmentEntry & { asset: Asset }) | null;
+};
+
+function serializeEntry(entry: JournalEntryWithInvestment) {
   return {
     ...entry,
     sustainableSurplusAtTime: entry.sustainableSurplusAtTime
       ? parseFloat(String(entry.sustainableSurplusAtTime))
       : null,
-    date: entry.date instanceof Date ? entry.date.toISOString() : entry.date,
+    date:      entry.date instanceof Date      ? entry.date.toISOString()      : entry.date,
     createdAt: entry.createdAt instanceof Date ? entry.createdAt.toISOString() : entry.createdAt,
     updatedAt: entry.updatedAt instanceof Date ? entry.updatedAt.toISOString() : entry.updatedAt,
+    investmentEntry: entry.investmentEntry
+      ? {
+          ...entry.investmentEntry,
+          quantity:  parseFloat(String(entry.investmentEntry.quantity)),
+          price:     parseFloat(String(entry.investmentEntry.price)),
+          amount:    parseFloat(String(entry.investmentEntry.amount)),
+          date:      entry.investmentEntry.date instanceof Date ? entry.investmentEntry.date.toISOString() : entry.investmentEntry.date,
+          createdAt: entry.investmentEntry.createdAt instanceof Date ? entry.investmentEntry.createdAt.toISOString() : entry.investmentEntry.createdAt,
+          asset: entry.investmentEntry.asset,
+        }
+      : null,
   };
 }
 
@@ -28,18 +43,28 @@ export async function PATCH(
   if (entry.userId !== session.user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await req.json();
-  const { title, content, entryType, tags, date } = body;
+  const { title, content, entryType, tags, date, investmentEntryId } = body;
+
+  // Ownership check para investmentEntryId
+  if (investmentEntryId) {
+    const invEntry = await prisma.investmentEntry.findUnique({ where: { id: investmentEntryId } });
+    if (!invEntry || invEntry.userId !== session.user.id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+  }
 
   const updated = await prisma.journalEntry.update({
     where: { id },
     data: {
-      ...(title     !== undefined && { title: title.trim() }),
-      ...(content   !== undefined && { content: content.trim() }),
-      ...(entryType !== undefined && { entryType }),
-      ...(tags      !== undefined && { tags }),
-      ...(date      !== undefined && { date: new Date(date) }),
+      ...(title             !== undefined && { title: title.trim() }),
+      ...(content           !== undefined && { content: content.trim() }),
+      ...(entryType         !== undefined && { entryType }),
+      ...(tags              !== undefined && { tags }),
+      ...(date              !== undefined && { date: new Date(date) }),
+      ...(investmentEntryId !== undefined && { investmentEntryId: investmentEntryId ?? null }),
       // healthScoreAtTime: NUNCA atualizar — snapshot imutável
     },
+    include: { investmentEntry: { include: { asset: true } } },
   });
 
   return NextResponse.json(serializeEntry(updated));
