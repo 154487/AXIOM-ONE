@@ -27,6 +27,13 @@
     "income": "आय",
     "expenses": "व्यय"
   },
+  "DashboardFilters": {
+    "day": "दिन",
+    "month": "माह",
+    "year": "साल",
+    "period": "अवधि",
+    "to": "से"
+  },
   "SpendingDonut": {
     "title": "श्रेणी अनुसार व्यय"
   },
@@ -188,6 +195,35 @@
     "errorCategory": "श्रेणी चुनें",
     "saveError": "सहेजने में त्रुटि",
     "connectionError": "कनेक्शन त्रुटि"
+  },
+  "Reports": {
+    "tabOverview": "अवलोकन",
+    "tabCashflow": "नकद प्रवाह",
+    "tabTrends": "रुझान",
+    "tabPatrimonio": "नेट वर्थ",
+    "healthScore": "वित्तीय स्वास्थ्य",
+    "insights": "मुख्य अंतर्दृष्टि",
+    "spendingVelocity": "खर्च की गति",
+    "cashFlow": "नकद प्रवाह",
+    "sankey": "पैसा कहाँ जाता है",
+    "recurring": "सदस्यता और आवर्ती",
+    "categoryTrend": "श्रेणी रुझान",
+    "merchantSpotlight": "शीर्ष व्यापारी",
+    "seasonal": "मौसमी पैटर्न",
+    "netWorth": "संपत्ति का विकास",
+    "savingsRate": "बचत दर",
+    "fire": "वित्तीय स्वतंत्रता प्रक्षेपण",
+    "fireDisclaimer": "शैक्षिक प्रक्षेपण। वित्तीय सलाह नहीं।",
+    "fireNotProjectable": "आपका खर्च आय से अधिक है — प्रक्षेपण के लिए बजट समायोजित करें।",
+    "noData": "चुनी गई अवधि के लिए कोई डेटा नहीं",
+    "insufficientHistory": "12 महीने के उपयोग के बाद उपलब्ध",
+    "periodLast30": "पिछले 30 दिन",
+    "periodCurrentMonth": "वर्तमान माह",
+    "periodLastMonth": "पिछला माह",
+    "periodCurrentQuarter": "वर्तमान तिमाही",
+    "periodLast6Months": "पिछले 6 महीने",
+    "periodLastYear": "पिछला साल",
+    "periodCustom": "कस्टम"
   },
   "Import": {
     "dropzoneTitle": "यहां अपनी फ़ाइल छोड़ें",

@@ -3,8 +3,8 @@
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useState, useCallback } from "react";
-import { Moon, Bell, LogOut, User, CheckCheck, Wallet, TriangleAlert, CalendarRange, Info } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Moon, Sun, Bell, LogOut, User, CheckCheck, Wallet, TriangleAlert, CalendarRange, Info } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +18,7 @@ import { useRouter } from "next/navigation";
 interface TopbarProps {
   userName?: string | null;
   userEmail?: string | null;
+  userImage?: string | null;
 }
 
 interface Notification {
@@ -46,15 +47,31 @@ function timeAgo(dateStr: string) {
   return `${Math.floor(hrs / 24)}d`;
 }
 
-export function Topbar({ userName, userEmail }: TopbarProps) {
+export function Topbar({ userName, userEmail, userImage }: TopbarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const t = useTranslations("Topbar");
   const title = t(`pageTitles.${pathname}` as Parameters<typeof t>[0]) ?? t("pageTitles./dashboard");
   const initial = userName ? userName.charAt(0).toUpperCase() : "U";
 
+  const [isDark, setIsDark] = useState(true);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [notifOpen, setNotifOpen] = useState(false);
+
+  useEffect(() => {
+    setIsDark(document.documentElement.classList.contains("dark"));
+  }, []);
+
+  async function handleThemeToggle() {
+    const next = isDark ? "light" : "dark";
+    await fetch("/api/settings/theme", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ theme: next }),
+    });
+    setIsDark(!isDark);
+    router.refresh();
+  }
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -94,8 +111,12 @@ export function Topbar({ userName, userEmail }: TopbarProps) {
       </div>
 
       <div className="flex items-center gap-3">
-        <button className="w-9 h-9 flex items-center justify-center rounded-full text-axiom-muted hover:text-white hover:bg-axiom-hover transition-colors">
-          <Moon size={18} />
+        <button
+          onClick={handleThemeToggle}
+          className="w-9 h-9 flex items-center justify-center rounded-full text-axiom-muted hover:text-white hover:bg-axiom-hover transition-colors"
+          title={isDark ? "Mudar para tema claro" : "Mudar para tema escuro"}
+        >
+          {isDark ? <Sun size={18} /> : <Moon size={18} />}
         </button>
 
         {/* Notification Bell */}
@@ -171,6 +192,7 @@ export function Topbar({ userName, userEmail }: TopbarProps) {
         <DropdownMenu>
           <DropdownMenuTrigger className="rounded-full focus:outline-none focus:ring-2 focus:ring-axiom-primary focus:ring-offset-2 focus:ring-offset-axiom-bg">
             <Avatar className="w-9 h-9 bg-axiom-primary cursor-pointer hover:opacity-90 transition-opacity">
+              {userImage && <AvatarImage src={userImage} alt={userName ?? "Avatar"} className="object-cover" />}
               <AvatarFallback className="bg-axiom-primary text-white font-semibold text-sm">
                 {initial}
               </AvatarFallback>
@@ -184,6 +206,7 @@ export function Topbar({ userName, userEmail }: TopbarProps) {
             {/* User info */}
             <div className="flex items-center gap-3 px-3 py-3">
               <Avatar className="w-9 h-9 bg-axiom-primary shrink-0">
+                {userImage && <AvatarImage src={userImage} alt={userName ?? "Avatar"} className="object-cover" />}
                 <AvatarFallback className="bg-axiom-primary text-white font-semibold text-sm">
                   {initial}
                 </AvatarFallback>
