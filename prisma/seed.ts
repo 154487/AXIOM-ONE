@@ -8,1007 +8,388 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
 import "dotenv/config";
 
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL!,
-});
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
 
-async function main() {
-  console.log("Seeding database...");
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const d = (year: number, month: number, day: number) =>
+  new Date(year, month - 1, day);
 
-  // ─── 1. Upsert user ───────────────────────────────────────────────────────
-  const hashedPassword = await bcrypt.hash("axiom123", 10);
+type TxRow = {
+  desc: string;
+  amount: number;
+  cat: string;
+  day: number;
+  type?: "INCOME" | "EXPENSE";
+};
+
+async function main() {
+  console.log("🌱  Iniciando seed...");
+
+  // ── 1. Usuário ───────────────────────────────────────────────────────────────
+  const hash = await bcrypt.hash("axiom123", 10);
   const user = await prisma.user.upsert({
     where: { email: "test@axiom.com" },
-    update: {},
-    create: {
-      name: "Gustavo Oliveira",
-      email: "test@axiom.com",
-      password: hashedPassword,
-    },
+    update: { name: "Carlos Silva" },
+    create: { name: "Carlos Silva", email: "test@axiom.com", password: hash },
   });
-  console.log(`User: ${user.email} (${user.id})`);
 
-  // ─── 2. Clean existing data ───────────────────────────────────────────────
+  // ── 2. Limpar dados existentes ───────────────────────────────────────────────
+  await prisma.asset.deleteMany({ where: { userId: user.id } }); // cascade entries
   await prisma.transaction.deleteMany({ where: { userId: user.id } });
   await prisma.category.deleteMany({ where: { userId: user.id } });
-  await prisma.asset.deleteMany({ where: { userId: user.id } }); // cascades InvestmentEntry
   await prisma.userCurrency.deleteMany({ where: { userId: user.id } });
-  console.log("Cleared existing data.");
+  console.log("   Dados anteriores removidos.");
 
-  // ─── 3. Currency ─────────────────────────────────────────────────────────
+  // ── 3. Moeda ─────────────────────────────────────────────────────────────────
   await prisma.userCurrency.create({
-    data: {
-      code: "BRL",
-      symbol: "R$",
-      name: "Real Brasileiro",
-      isDefault: true,
-      userId: user.id,
-    },
+    data: { code: "BRL", symbol: "R$", name: "Real Brasileiro", isDefault: true, userId: user.id },
   });
-  console.log("Created currency: BRL (default)");
 
-  // ─── 4. Categories ────────────────────────────────────────────────────────
-  const categoryData = [
-    { key: "salario",     name: "Salário",           color: "#10B981", icon: "trending-up" },
-    { key: "moradia",     name: "Moradia",            color: "#FF6B35", icon: "home" },
-    { key: "alimentacao", name: "Alimentação",        color: "#F7931E", icon: "shopping-cart" },
-    { key: "transporte",  name: "Transporte",         color: "#AAB2BD", icon: "car" },
-    { key: "saude",       name: "Saúde",              color: "#EF4444", icon: "heart" },
-    { key: "lazer",       name: "Lazer",              color: "#A78BFA", icon: "gamepad-2" },
-    { key: "utilidades",  name: "Utilidades",         color: "#3B82F6", icon: "zap" },
-    { key: "freelance",   name: "Freelance",          color: "#10B981", icon: "briefcase" },
-    { key: "cartao_ml",   name: "Cartão credito ML",  color: "#6B7280", icon: "credit-card" },
+  // ── 4. Categorias ────────────────────────────────────────────────────────────
+  const catDefs = [
+    { key: "salario",     name: "Salário",       color: "#10B981", icon: "trending-up"   },
+    { key: "freelance",   name: "Freelance",      color: "#06B6D4", icon: "briefcase"     },
+    { key: "moradia",     name: "Moradia",        color: "#FF6B35", icon: "home"          },
+    { key: "alimentacao", name: "Alimentação",    color: "#F59E0B", icon: "shopping-cart" },
+    { key: "transporte",  name: "Transporte",     color: "#64748B", icon: "bus"           },
+    { key: "saude",       name: "Saúde",          color: "#EF4444", icon: "heart"         },
+    { key: "lazer",       name: "Lazer",          color: "#A78BFA", icon: "tv"            },
+    { key: "utilidades",  name: "Utilidades",     color: "#3B82F6", icon: "zap"           },
+    { key: "educacao",    name: "Educação",       color: "#0EA5E9", icon: "book-open"     },
   ];
-
   const cat: Record<string, string> = {};
-  for (const c of categoryData) {
+  for (const c of catDefs) {
     const created = await prisma.category.create({
-      data: {
-        name: c.name,
-        color: c.color,
-        icon: c.icon,
-        userId: user.id,
-      },
+      data: { name: c.name, color: c.color, icon: c.icon, userId: user.id },
     });
     cat[c.key] = created.id;
   }
-  console.log(`Created ${categoryData.length} categories`);
+  console.log(`   ${catDefs.length} categorias criadas.`);
 
-  // ─── 5. Transactions ──────────────────────────────────────────────────────
-  // March 2026 — income slightly above expenses (~R$57 surplus)
-  // Total income  : 8500 + 694 cartão ML debts cancel → income alone 8500
-  // Total expenses: ~8443  → aluguel 1800 + cartão ML 694 + alimentação 840
-  //                          + transporte 280 + saude 150 + lazer 330 + utilidades 349
-  //                          = 4443 → surplus = 8500 - 4443 = 4057  (plenty positive)
-  // To get ~R$57 surplus we raise expenses closer to 8443:
-  //   moradia 1800 + cartao_ml 694 + alimentacao 840 + transporte 280
-  //   + saude 150 + lazer 330 + utilidades 349 + extra alimentacao 4000? no
-  // Let's just set it up naturally — the "Saldo Positivo" just needs income > expenses.
+  // ── 5. Transações — 13 meses (mar/25 → mar/26) ───────────────────────────────
+  //
+  //  Perfil: CLT, R$1.650/mês, divide kitnet (aluguel R$550),
+  //          usa transporte público, faz freelance esporádico,
+  //          investe R$210/mês (MXRF11 + BOVA11).
+  //
+  //  Estrutura mensal:
+  //    Receita fixa:   R$1.650 (salário)
+  //    Fixos:          aluguel 550 + ônibus 138 + internet 89.90 + Netflix 29.90 + Spotify 21.90
+  //    Variáveis:      energia, supermercado, feira, iFood, farmácia, lazer, educação (esporádico)
+  //    Meta de gasto:  R$1.230–1.380 → sobra R$270–420 → R$210 p/ investimento
 
-  const transactions = [
-    // ── MARCH 2026 ──────────────────────────────────────────────────────────
-    {
-      description: "Salário março",
-      amount: 8500.0,
-      type: TransactionType.INCOME,
-      date: new Date(2026, 2, 5),
-      categoryId: cat["salario"],
-    },
-    {
-      description: "Aluguel março",
-      amount: 1800.0,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 2, 1),
-      categoryId: cat["moradia"],
-    },
-    // Cartão ML — totaling ~R$694
-    {
-      description: "Mercado Livre - parcela tênis",
-      amount: 219.9,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 2, 3),
-      categoryId: cat["cartao_ml"],
-    },
-    {
-      description: "Mercado Livre - fone bluetooth",
-      amount: 189.9,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 2, 9),
-      categoryId: cat["cartao_ml"],
-    },
-    {
-      description: "Mercado Livre - livro programação",
-      amount: 97.5,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 2, 14),
-      categoryId: cat["cartao_ml"],
-    },
-    {
-      description: "Mercado Livre - cabo USB-C",
-      amount: 59.9,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 2, 17),
-      categoryId: cat["cartao_ml"],
-    },
-    {
-      description: "Mercado Livre - suporte notebook",
-      amount: 126.8,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 2, 22),
-      categoryId: cat["cartao_ml"],
-    },
-    // Alimentação março ~R$840
-    {
-      description: "Mercadão Extra - compras semana",
-      amount: 312.4,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 2, 7),
-      categoryId: cat["alimentacao"],
-    },
-    {
-      description: "iFood - pizza sexta",
-      amount: 67.9,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 2, 14),
-      categoryId: cat["alimentacao"],
-    },
-    {
-      description: "Restaurante Japonês",
-      amount: 98.0,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 2, 19),
-      categoryId: cat["alimentacao"],
-    },
-    {
-      description: "Padaria do bairro",
-      amount: 42.5,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 2, 24),
-      categoryId: cat["alimentacao"],
-    },
-    {
-      description: "iFood - hamburguer",
-      amount: 55.8,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 2, 28),
-      categoryId: cat["alimentacao"],
-    },
-    // Transporte março ~R$280
-    {
-      description: "Gasolina Shell",
-      amount: 180.0,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 2, 10),
-      categoryId: cat["transporte"],
-    },
-    {
-      description: "Uber - trabalho",
-      amount: 62.4,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 2, 13),
-      categoryId: cat["transporte"],
-    },
-    {
-      description: "Ônibus mensal",
-      amount: 37.0,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 2, 2),
-      categoryId: cat["transporte"],
-    },
-    // Saúde março ~R$150
-    {
-      description: "Plano de saúde",
-      amount: 150.0,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 2, 5),
-      categoryId: cat["saude"],
-    },
-    // Lazer março ~R$330
-    {
-      description: "Netflix",
-      amount: 44.9,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 2, 8),
-      categoryId: cat["lazer"],
-    },
-    {
-      description: "Spotify",
-      amount: 21.9,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 2, 8),
-      categoryId: cat["lazer"],
-    },
-    {
-      description: "Steam - jogo",
-      amount: 79.9,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 2, 15),
-      categoryId: cat["lazer"],
-    },
-    {
-      description: "Cinema - dois ingressos",
-      amount: 68.0,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 2, 21),
-      categoryId: cat["lazer"],
-    },
-    {
-      description: "Bar com amigos",
-      amount: 115.0,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 2, 29),
-      categoryId: cat["lazer"],
-    },
-    // Utilidades março ~R$349
-    {
-      description: "Conta de luz - Enel",
-      amount: 134.5,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 2, 12),
-      categoryId: cat["utilidades"],
-    },
-    {
-      description: "Conta de água - SABESP",
-      amount: 67.3,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 2, 12),
-      categoryId: cat["utilidades"],
-    },
-    {
-      description: "Internet Vivo Fibra",
-      amount: 99.9,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 2, 5),
-      categoryId: cat["utilidades"],
-    },
-    {
-      description: "Celular - plano pós-pago",
-      amount: 47.9,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 2, 5),
-      categoryId: cat["utilidades"],
-    },
+  type MonthDef = {
+    year: number; month: number; // mês calendário (1-based)
+    extraIncome?: { desc: string; amount: number; cat: string; day: number }[];
+    energia: number;
+    super1: { desc: string; amount: number; day: number };
+    super2: { desc: string; amount: number; day: number };
+    feira: number;
+    ifood: number;
+    farmacia?: number;
+    lazerExtra?: { desc: string; amount: number; day: number };
+    educacao?: number;
+  };
 
-    // ── FEBRUARY 2026 ────────────────────────────────────────────────────────
-    {
-      description: "Salário fevereiro",
-      amount: 7800.0,
-      type: TransactionType.INCOME,
-      date: new Date(2026, 1, 5),
-      categoryId: cat["salario"],
-    },
-    {
-      description: "Freelance - landing page",
-      amount: 1200.0,
-      type: TransactionType.INCOME,
-      date: new Date(2026, 1, 22),
-      categoryId: cat["freelance"],
-    },
-    {
-      description: "Aluguel fevereiro",
-      amount: 1800.0,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 1, 1),
-      categoryId: cat["moradia"],
-    },
-    {
-      description: "Mercadão Extra - compras mês",
-      amount: 428.6,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 1, 8),
-      categoryId: cat["alimentacao"],
-    },
-    {
-      description: "iFood - domingo",
-      amount: 54.9,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 1, 16),
-      categoryId: cat["alimentacao"],
-    },
-    {
-      description: "Restaurante almoço",
-      amount: 78.0,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 1, 20),
-      categoryId: cat["alimentacao"],
-    },
-    {
-      description: "Gasolina Ipiranga",
-      amount: 200.0,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 1, 12),
-      categoryId: cat["transporte"],
-    },
-    {
-      description: "Uber - aeroporto",
-      amount: 89.5,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 1, 18),
-      categoryId: cat["transporte"],
-    },
-    {
-      description: "Plano de saúde",
-      amount: 150.0,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 1, 5),
-      categoryId: cat["saude"],
-    },
-    {
-      description: "Farmácia Drogasil",
-      amount: 87.4,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 1, 14),
-      categoryId: cat["saude"],
-    },
-    {
-      description: "Netflix",
-      amount: 44.9,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 1, 8),
-      categoryId: cat["lazer"],
-    },
-    {
-      description: "Spotify",
-      amount: 21.9,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 1, 8),
-      categoryId: cat["lazer"],
-    },
-    {
-      description: "Show - ingresso",
-      amount: 180.0,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 1, 24),
-      categoryId: cat["lazer"],
-    },
-    {
-      description: "Conta de luz - Enel",
-      amount: 112.8,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 1, 12),
-      categoryId: cat["utilidades"],
-    },
-    {
-      description: "Conta de água - SABESP",
-      amount: 61.0,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 1, 12),
-      categoryId: cat["utilidades"],
-    },
-    {
-      description: "Internet Vivo Fibra",
-      amount: 99.9,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 1, 5),
-      categoryId: cat["utilidades"],
-    },
-    {
-      description: "Celular - plano pós-pago",
-      amount: 47.9,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 1, 5),
-      categoryId: cat["utilidades"],
-    },
-
-    // ── JANUARY 2026 ─────────────────────────────────────────────────────────
-    {
-      description: "Salário janeiro",
-      amount: 8200.0,
-      type: TransactionType.INCOME,
-      date: new Date(2026, 0, 5),
-      categoryId: cat["salario"],
-    },
-    {
-      description: "Aluguel janeiro",
-      amount: 1800.0,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 0, 1),
-      categoryId: cat["moradia"],
-    },
-    {
-      description: "Supermercado Pão de Açúcar",
-      amount: 389.9,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 0, 10),
-      categoryId: cat["alimentacao"],
-    },
-    {
-      description: "iFood - churrascaria",
-      amount: 112.0,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 0, 18),
-      categoryId: cat["alimentacao"],
-    },
-    {
-      description: "Restaurante jantar",
-      amount: 96.5,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 0, 25),
-      categoryId: cat["alimentacao"],
-    },
-    {
-      description: "Gasolina Shell",
-      amount: 190.0,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 0, 8),
-      categoryId: cat["transporte"],
-    },
-    {
-      description: "Uber diversas",
-      amount: 55.0,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 0, 20),
-      categoryId: cat["transporte"],
-    },
-    {
-      description: "Plano de saúde",
-      amount: 150.0,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 0, 5),
-      categoryId: cat["saude"],
-    },
-    {
-      description: "Academia Smart Fit",
-      amount: 79.9,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 0, 5),
-      categoryId: cat["saude"],
-    },
-    {
-      description: "Netflix",
-      amount: 44.9,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 0, 8),
-      categoryId: cat["lazer"],
-    },
-    {
-      description: "Spotify",
-      amount: 21.9,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 0, 8),
-      categoryId: cat["lazer"],
-    },
-    {
-      description: "Steam - bundle jogos",
-      amount: 149.9,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 0, 12),
-      categoryId: cat["lazer"],
-    },
-    {
-      description: "Conta de luz - Enel",
-      amount: 145.2,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 0, 12),
-      categoryId: cat["utilidades"],
-    },
-    {
-      description: "Conta de água - SABESP",
-      amount: 58.7,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 0, 12),
-      categoryId: cat["utilidades"],
-    },
-    {
-      description: "Internet Vivo Fibra",
-      amount: 99.9,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 0, 5),
-      categoryId: cat["utilidades"],
-    },
-    {
-      description: "Celular - plano pós-pago",
-      amount: 47.9,
-      type: TransactionType.EXPENSE,
-      date: new Date(2026, 0, 5),
-      categoryId: cat["utilidades"],
-    },
-
-    // ── DECEMBER 2025 ────────────────────────────────────────────────────────
-    {
-      description: "Salário dezembro",
-      amount: 8500.0,
-      type: TransactionType.INCOME,
-      date: new Date(2025, 11, 5),
-      categoryId: cat["salario"],
-    },
-    {
-      description: "Freelance - sistema web",
-      amount: 2000.0,
-      type: TransactionType.INCOME,
-      date: new Date(2025, 11, 18),
-      categoryId: cat["freelance"],
-    },
-    {
-      description: "Aluguel dezembro",
-      amount: 1800.0,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 11, 1),
-      categoryId: cat["moradia"],
-    },
-    {
-      description: "Mercadão Extra - ceia natal",
-      amount: 520.0,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 11, 22),
-      categoryId: cat["alimentacao"],
-    },
-    {
-      description: "Restaurante família",
-      amount: 210.0,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 11, 27),
-      categoryId: cat["alimentacao"],
-    },
-    {
-      description: "iFood - reveillon",
-      amount: 145.0,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 11, 31),
-      categoryId: cat["alimentacao"],
-    },
-    {
-      description: "Gasolina viagem natal",
-      amount: 280.0,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 11, 23),
-      categoryId: cat["transporte"],
-    },
-    {
-      description: "Uber diversas",
-      amount: 70.0,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 11, 15),
-      categoryId: cat["transporte"],
-    },
-    {
-      description: "Plano de saúde",
-      amount: 150.0,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 11, 5),
-      categoryId: cat["saude"],
-    },
-    {
-      description: "Netflix",
-      amount: 44.9,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 11, 8),
-      categoryId: cat["lazer"],
-    },
-    {
-      description: "Spotify",
-      amount: 21.9,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 11, 8),
-      categoryId: cat["lazer"],
-    },
-    {
-      description: "Presentes de natal",
-      amount: 380.0,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 11, 20),
-      categoryId: cat["lazer"],
-    },
-    {
-      description: "Conta de luz - Enel",
-      amount: 128.4,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 11, 12),
-      categoryId: cat["utilidades"],
-    },
-    {
-      description: "Conta de água - SABESP",
-      amount: 59.2,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 11, 12),
-      categoryId: cat["utilidades"],
-    },
-    {
-      description: "Internet Vivo Fibra",
-      amount: 99.9,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 11, 5),
-      categoryId: cat["utilidades"],
-    },
-    {
-      description: "Celular - plano pós-pago",
-      amount: 47.9,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 11, 5),
-      categoryId: cat["utilidades"],
-    },
-
-    // ── NOVEMBER 2025 ────────────────────────────────────────────────────────
-    {
-      description: "Salário novembro",
-      amount: 8200.0,
-      type: TransactionType.INCOME,
-      date: new Date(2025, 10, 5),
-      categoryId: cat["salario"],
-    },
-    {
-      description: "Aluguel novembro",
-      amount: 1800.0,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 10, 1),
-      categoryId: cat["moradia"],
-    },
-    {
-      description: "Supermercado Carrefour",
-      amount: 445.3,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 10, 8),
-      categoryId: cat["alimentacao"],
-    },
-    {
-      description: "iFood - sushi",
-      amount: 89.9,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 10, 14),
-      categoryId: cat["alimentacao"],
-    },
-    {
-      description: "Restaurante almoço exec.",
-      amount: 65.0,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 10, 19),
-      categoryId: cat["alimentacao"],
-    },
-    {
-      description: "Gasolina BR",
-      amount: 210.0,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 10, 11),
-      categoryId: cat["transporte"],
-    },
-    {
-      description: "Uber diversas",
-      amount: 48.0,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 10, 22),
-      categoryId: cat["transporte"],
-    },
-    {
-      description: "Plano de saúde",
-      amount: 150.0,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 10, 5),
-      categoryId: cat["saude"],
-    },
-    {
-      description: "Consulta médica",
-      amount: 180.0,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 10, 16),
-      categoryId: cat["saude"],
-    },
-    {
-      description: "Netflix",
-      amount: 44.9,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 10, 8),
-      categoryId: cat["lazer"],
-    },
-    {
-      description: "Spotify",
-      amount: 21.9,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 10, 8),
-      categoryId: cat["lazer"],
-    },
-    {
-      description: "Cinema IMAX",
-      amount: 78.0,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 10, 22),
-      categoryId: cat["lazer"],
-    },
-    {
-      description: "Conta de luz - Enel",
-      amount: 108.9,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 10, 12),
-      categoryId: cat["utilidades"],
-    },
-    {
-      description: "Conta de água - SABESP",
-      amount: 55.4,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 10, 12),
-      categoryId: cat["utilidades"],
-    },
-    {
-      description: "Internet Vivo Fibra",
-      amount: 99.9,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 10, 5),
-      categoryId: cat["utilidades"],
-    },
-    {
-      description: "Celular - plano pós-pago",
-      amount: 47.9,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 10, 5),
-      categoryId: cat["utilidades"],
-    },
-
-    // ── OCTOBER 2025 ─────────────────────────────────────────────────────────
-    {
-      description: "Salário outubro",
-      amount: 7500.0,
-      type: TransactionType.INCOME,
-      date: new Date(2025, 9, 5),
-      categoryId: cat["salario"],
-    },
-    {
-      description: "Aluguel outubro",
-      amount: 1800.0,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 9, 1),
-      categoryId: cat["moradia"],
-    },
-    {
-      description: "Mercadão Extra - compras",
-      amount: 398.7,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 9, 9),
-      categoryId: cat["alimentacao"],
-    },
-    {
-      description: "iFood - pizza",
-      amount: 62.9,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 9, 17),
-      categoryId: cat["alimentacao"],
-    },
-    {
-      description: "Almoço trabalho",
-      amount: 145.0,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 9, 23),
-      categoryId: cat["alimentacao"],
-    },
-    {
-      description: "Gasolina Shell",
-      amount: 175.0,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 9, 7),
-      categoryId: cat["transporte"],
-    },
-    {
-      description: "Uber diversas",
-      amount: 62.0,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 9, 20),
-      categoryId: cat["transporte"],
-    },
-    {
-      description: "Plano de saúde",
-      amount: 150.0,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 9, 5),
-      categoryId: cat["saude"],
-    },
-    {
-      description: "Consulta dentista",
-      amount: 250.0,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 9, 14),
-      categoryId: cat["saude"],
-    },
-    {
-      description: "Netflix",
-      amount: 44.9,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 9, 8),
-      categoryId: cat["lazer"],
-    },
-    {
-      description: "Spotify",
-      amount: 21.9,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 9, 8),
-      categoryId: cat["lazer"],
-    },
-    {
-      description: "Viagem fim de semana",
-      amount: 320.0,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 9, 24),
-      categoryId: cat["lazer"],
-    },
-    {
-      description: "Conta de luz - Enel",
-      amount: 118.6,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 9, 12),
-      categoryId: cat["utilidades"],
-    },
-    {
-      description: "Conta de água - SABESP",
-      amount: 54.1,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 9, 12),
-      categoryId: cat["utilidades"],
-    },
-    {
-      description: "Internet Vivo Fibra",
-      amount: 99.9,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 9, 5),
-      categoryId: cat["utilidades"],
-    },
-    {
-      description: "Celular - plano pós-pago",
-      amount: 47.9,
-      type: TransactionType.EXPENSE,
-      date: new Date(2025, 9, 5),
-      categoryId: cat["utilidades"],
+  const months: MonthDef[] = [
+    // ── mar/25 ────────────────────────────────────────────────────────────────
+    {
+      year: 2025, month: 3,
+      energia: 68.40,
+      super1: { desc: "Supermercado Atacadão", amount: 187.50, day: 8 },
+      super2: { desc: "Mercadinho do Bairro",  amount:  91.20, day: 22 },
+      feira: 54.00, ifood: 32.90,
+      farmacia: 42.80,
+    },
+    // ── abr/25 ────────────────────────────────────────────────────────────────
+    {
+      year: 2025, month: 4,
+      extraIncome: [{ desc: "Freelance - site loja", amount: 280.00, cat: "freelance", day: 18 }],
+      energia: 74.20,
+      super1: { desc: "Supermercado BH",          amount: 196.30, day: 9 },
+      super2: { desc: "Mercadinho do Bairro",      amount:  88.70, day: 24 },
+      feira: 58.00, ifood: 44.50,
+      lazerExtra: { desc: "Cinema - ingresso", amount: 32.00, day: 13 },
+      educacao: 39.90,
+    },
+    // ── mai/25 ────────────────────────────────────────────────────────────────
+    {
+      year: 2025, month: 5,
+      energia: 71.80,
+      super1: { desc: "Supermercado Atacadão", amount: 182.00, day: 7 },
+      super2: { desc: "Mercadinho do Bairro",  amount:  79.40, day: 20 },
+      feira: 51.00, ifood: 28.40,
+      farmacia: 25.90,
+    },
+    // ── jun/25 ────────────────────────────────────────────────────────────────
+    {
+      year: 2025, month: 6,
+      energia: 65.10,
+      super1: { desc: "Supermercado Extra",     amount: 201.80, day: 6 },
+      super2: { desc: "Mercadinho do Bairro",   amount:  94.30, day: 21 },
+      feira: 56.00, ifood: 37.80,
+      educacao: 39.90,
+    },
+    // ── jul/25 ────────────────────────────────────────────────────────────────
+    {
+      year: 2025, month: 7,
+      extraIncome: [{ desc: "Freelance - identidade visual", amount: 350.00, cat: "freelance", day: 22 }],
+      energia: 63.50,
+      super1: { desc: "Supermercado BH",        amount: 178.90, day: 5 },
+      super2: { desc: "Mercadinho do Bairro",   amount:  85.60, day: 19 },
+      feira: 49.00, ifood: 42.00,
+      lazerExtra: { desc: "Churrasco com amigos - contribuição", amount: 45.00, day: 20 },
+    },
+    // ── ago/25 ────────────────────────────────────────────────────────────────
+    {
+      year: 2025, month: 8,
+      energia: 78.90,
+      super1: { desc: "Supermercado Atacadão", amount: 209.40, day: 10 },
+      super2: { desc: "Mercadinho do Bairro",  amount:  97.80, day: 25 },
+      feira: 60.00, ifood: 35.20,
+      farmacia: 58.40,
+      educacao: 39.90,
+    },
+    // ── set/25 ────────────────────────────────────────────────────────────────
+    {
+      year: 2025, month: 9,
+      energia: 72.60,
+      super1: { desc: "Supermercado Extra",    amount: 193.70, day: 6 },
+      super2: { desc: "Mercadinho do Bairro",  amount:  86.40, day: 20 },
+      feira: 53.00, ifood: 31.90,
+    },
+    // ── out/25 ────────────────────────────────────────────────────────────────
+    {
+      year: 2025, month: 10,
+      energia: 69.80,
+      super1: { desc: "Supermercado BH",       amount: 185.20, day: 8 },
+      super2: { desc: "Mercadinho do Bairro",  amount:  92.50, day: 23 },
+      feira: 57.00, ifood: 38.60,
+      educacao: 39.90,
+    },
+    // ── nov/25 ─── (1ª parcela 13º = R$825) ─────────────────────────────────
+    {
+      year: 2025, month: 11,
+      extraIncome: [
+        { desc: "Freelance - app cardápio",      amount: 200.00, cat: "freelance", day: 20 },
+        { desc: "13º salário - 1ª parcela",      amount: 825.00, cat: "salario",   day: 20 },
+      ],
+      energia: 76.30,
+      super1: { desc: "Supermercado Atacadão", amount: 218.60, day: 9 },
+      super2: { desc: "Mercadinho do Bairro",  amount: 104.30, day: 24 },
+      feira: 62.00, ifood: 46.90,
+      lazerExtra: { desc: "Presente amigo secreto", amount: 60.00, day: 28 },
+      farmacia: 35.00,
+    },
+    // ── dez/25 ─── (2ª parcela 13º) ─────────────────────────────────────────
+    {
+      year: 2025, month: 12,
+      extraIncome: [
+        { desc: "13º salário - 2ª parcela", amount: 825.00, cat: "salario", day: 20 },
+      ],
+      energia: 82.50,
+      super1: { desc: "Supermercado Extra",    amount: 243.80, day: 7 },
+      super2: { desc: "Mercadinho do Bairro",  amount: 118.40, day: 22 },
+      feira: 68.00, ifood: 55.30,
+      lazerExtra: { desc: "Ceia de Natal - contribuição", amount: 80.00, day: 23 },
+      farmacia: 29.90,
+    },
+    // ── jan/26 ────────────────────────────────────────────────────────────────
+    {
+      year: 2026, month: 1,
+      energia: 88.20, // verão — ar condicionado
+      super1: { desc: "Supermercado Atacadão", amount: 198.90, day: 8 },
+      super2: { desc: "Mercadinho do Bairro",  amount:  93.40, day: 23 },
+      feira: 55.00, ifood: 42.10,
+      farmacia: 48.70, // início do ano — consulta
+      educacao: 39.90,
+    },
+    // ── fev/26 ────────────────────────────────────────────────────────────────
+    {
+      year: 2026, month: 2,
+      energia: 91.40, // verão ainda quente
+      super1: { desc: "Supermercado BH",       amount: 191.60, day: 6 },
+      super2: { desc: "Mercadinho do Bairro",  amount:  88.20, day: 20 },
+      feira: 52.00, ifood: 38.70,
+      lazerExtra: { desc: "Saída de carnaval", amount: 55.00, day: 3 },
+    },
+    // ── mar/26 ────────────────────────────────────────────────────────────────
+    {
+      year: 2026, month: 3,
+      energia: 79.60,
+      super1: { desc: "Supermercado Atacadão", amount: 204.30, day: 7 },
+      super2: { desc: "Mercadinho do Bairro",  amount:  96.80, day: 21 },
+      feira: 58.00, ifood: 34.20,
+      educacao: 39.90,
     },
   ];
 
-  await prisma.transaction.createMany({
-    data: transactions.map((tx) => ({ ...tx, userId: user.id })),
-  });
-  console.log(`Created ${transactions.length} transactions`);
+  const txRows: {
+    description: string;
+    amount: number;
+    type: TransactionType;
+    date: Date;
+    categoryId: string;
+    userId: string;
+  }[] = [];
 
-  // ─── 6. Assets ────────────────────────────────────────────────────────────
-  const petr4 = await prisma.asset.create({
+  for (const m of months) {
+    const y = m.year;
+    const mo = m.month;
+
+    // Salário (todo dia 5)
+    txRows.push({
+      description: `Salário - ${mo.toString().padStart(2, "0")}/${String(y).slice(2)}`,
+      amount: 1650.00,
+      type: TransactionType.INCOME,
+      date: d(y, mo, 5),
+      categoryId: cat["salario"],
+      userId: user.id,
+    });
+
+    // Renda extra (freelance, 13º etc.)
+    for (const ei of m.extraIncome ?? []) {
+      txRows.push({
+        description: ei.desc,
+        amount: ei.amount,
+        type: TransactionType.INCOME,
+        date: d(y, mo, ei.day),
+        categoryId: cat[ei.cat],
+        userId: user.id,
+      });
+    }
+
+    // ── Fixos mensais ──────────────────────────────────────────────────────
+    txRows.push({ description: `Aluguel ${mo.toString().padStart(2,"0")}/${String(y).slice(2)}`, amount: 550.00, type: TransactionType.EXPENSE, date: d(y, mo, 5),  categoryId: cat["moradia"],     userId: user.id });
+    txRows.push({ description: "Passagem ônibus mensal",   amount: 138.00, type: TransactionType.EXPENSE, date: d(y, mo, 2),  categoryId: cat["transporte"],  userId: user.id });
+    txRows.push({ description: "Internet Claro Fibra",     amount:  89.90, type: TransactionType.EXPENSE, date: d(y, mo, 10), categoryId: cat["utilidades"],  userId: user.id });
+    txRows.push({ description: "Energia elétrica",         amount: m.energia, type: TransactionType.EXPENSE, date: d(y, mo, 15), categoryId: cat["utilidades"], userId: user.id });
+    txRows.push({ description: "Água",                     amount:  35.00, type: TransactionType.EXPENSE, date: d(y, mo, 15), categoryId: cat["utilidades"],  userId: user.id });
+    txRows.push({ description: "Netflix",                  amount:  29.90, type: TransactionType.EXPENSE, date: d(y, mo, 14), categoryId: cat["lazer"],       userId: user.id });
+    txRows.push({ description: "Spotify",                  amount:  21.90, type: TransactionType.EXPENSE, date: d(y, mo, 14), categoryId: cat["lazer"],       userId: user.id });
+
+    // ── Variáveis ─────────────────────────────────────────────────────────
+    txRows.push({ description: m.super1.desc, amount: m.super1.amount, type: TransactionType.EXPENSE, date: d(y, mo, m.super1.day), categoryId: cat["alimentacao"], userId: user.id });
+    txRows.push({ description: m.super2.desc, amount: m.super2.amount, type: TransactionType.EXPENSE, date: d(y, mo, m.super2.day), categoryId: cat["alimentacao"], userId: user.id });
+    txRows.push({ description: "Feira livre",   amount: m.feira, type: TransactionType.EXPENSE, date: d(y, mo, Math.floor(mo % 2 === 0 ? 13 : 11)), categoryId: cat["alimentacao"], userId: user.id });
+    txRows.push({ description: "iFood",         amount: m.ifood, type: TransactionType.EXPENSE, date: d(y, mo, 18),               categoryId: cat["alimentacao"], userId: user.id });
+
+    if (m.farmacia) {
+      txRows.push({ description: "Farmácia Droga Raia", amount: m.farmacia, type: TransactionType.EXPENSE, date: d(y, mo, 12), categoryId: cat["saude"], userId: user.id });
+    }
+    if (m.lazerExtra) {
+      txRows.push({ description: m.lazerExtra.desc, amount: m.lazerExtra.amount, type: TransactionType.EXPENSE, date: d(y, mo, m.lazerExtra.day), categoryId: cat["lazer"], userId: user.id });
+    }
+    if (m.educacao) {
+      txRows.push({ description: "Alura - assinatura", amount: m.educacao, type: TransactionType.EXPENSE, date: d(y, mo, 20), categoryId: cat["educacao"], userId: user.id });
+    }
+  }
+
+  await prisma.transaction.createMany({ data: txRows });
+  console.log(`   ${txRows.length} transações criadas (13 meses).`);
+
+  // ── 6. Investimentos ─────────────────────────────────────────────────────────
+  //
+  //  MXRF11 (FII Maxi Renda): compra 10 cotas/mês ≈ R$100
+  //  BOVA11 (ETF Ibovespa):   compra 1 cota/mês  ≈ R$110
+  //  Total investido/mês: ≈ R$210
+  //
+  //  MXRF11 paga dividendos mensais (~R$0.095/cota), creditado no dia 15.
+
+  const mxrf11 = await prisma.asset.create({
     data: {
-      userId: user.id,
-      ticker: "PETR4",
-      name: "Petrobras PN",
-      type: AssetType.STOCK,
-      currency: "BRL",
-      currentPrice: 38.42,
+      userId: user.id, ticker: "MXRF11", name: "Maxi Renda FII",
+      type: AssetType.FII, currency: "BRL", currentPrice: 10.35,
     },
   });
 
-  const hglg11 = await prisma.asset.create({
+  const bova11 = await prisma.asset.create({
     data: {
-      userId: user.id,
-      ticker: "HGLG11",
-      name: "CSHG Logística FII",
-      type: AssetType.FII,
-      currency: "BRL",
-      currentPrice: 155.41,
+      userId: user.id, ticker: "BOVA11", name: "iShares Ibovespa ETF",
+      type: AssetType.ETF, currency: "BRL", currentPrice: 118.90,
     },
   });
 
-  const ivvb11 = await prisma.asset.create({
-    data: {
-      userId: user.id,
-      ticker: "IVVB11",
-      name: "iShares S&P 500 ETF",
-      type: AssetType.ETF,
-      currency: "BRL",
-      currentPrice: 312.8,
-    },
-  });
+  console.log("   2 ativos criados: MXRF11 (FII), BOVA11 (ETF).");
 
-  const btc = await prisma.asset.create({
-    data: {
-      userId: user.id,
-      ticker: "BTC",
-      name: "Bitcoin",
-      type: AssetType.CRYPTO,
-      currency: "USD",
-      currentPrice: 95000,
-    },
-  });
-
-  console.log("Created 4 assets: PETR4, HGLG11, IVVB11, BTC");
-
-  // ─── 7. Investment Entries ────────────────────────────────────────────────
-  const entries = [
-    // PETR4
-    {
-      assetId: petr4.id,
-      userId: user.id,
-      type: EntryType.PURCHASE,
-      date: new Date(2024, 9, 15), // 2024-10-15
-      quantity: 100,
-      price: 32.5,
-      amount: 3250.0,
-      notes: "Compra inicial PETR4",
-    },
-    {
-      assetId: petr4.id,
-      userId: user.id,
-      type: EntryType.PURCHASE,
-      date: new Date(2025, 0, 20), // 2025-01-20
-      quantity: 50,
-      price: 35.0,
-      amount: 1750.0,
-      notes: "Aporte PETR4",
-    },
-    {
-      assetId: petr4.id,
-      userId: user.id,
-      type: EntryType.DIVIDEND,
-      date: new Date(2025, 2, 10), // 2025-03-10
-      quantity: 150,
-      price: 0,
-      amount: 187.5,
-      notes: "Dividendos PETR4 — R$1,25/ação",
-    },
-    // HGLG11
-    {
-      assetId: hglg11.id,
-      userId: user.id,
-      type: EntryType.PURCHASE,
-      date: new Date(2024, 10, 8), // 2024-11-08
-      quantity: 10,
-      price: 148.0,
-      amount: 1480.0,
-      notes: "Compra HGLG11",
-    },
-    {
-      assetId: hglg11.id,
-      userId: user.id,
-      type: EntryType.DIVIDEND,
-      date: new Date(2025, 1, 13), // 2025-02-13
-      quantity: 10,
-      price: 0,
-      amount: 82.3,
-      notes: "Rendimento HGLG11 fev/25",
-    },
-    {
-      assetId: hglg11.id,
-      userId: user.id,
-      type: EntryType.DIVIDEND,
-      date: new Date(2025, 2, 13), // 2025-03-13
-      quantity: 10,
-      price: 0,
-      amount: 82.3,
-      notes: "Rendimento HGLG11 mar/25",
-    },
-    // IVVB11
-    {
-      assetId: ivvb11.id,
-      userId: user.id,
-      type: EntryType.PURCHASE,
-      date: new Date(2025, 1, 5), // 2025-02-05
-      quantity: 20,
-      price: 298.0,
-      amount: 5960.0,
-      notes: "Compra IVVB11",
-    },
-    // BTC
-    {
-      assetId: btc.id,
-      userId: user.id,
-      type: EntryType.PURCHASE,
-      date: new Date(2024, 11, 1), // 2024-12-01
-      quantity: 0.05,
-      price: 340000,
-      amount: 17000.0,
-      notes: "Compra BTC — equivalente BRL",
-    },
+  // MXRF11 — preços de compra por mês (mar/25 → mar/26)
+  const mxrf11Prices = [
+    9.87, 9.92, 10.05, 9.98, 10.12, 10.08, 10.20, 10.15, 10.22, 10.18, 10.25, 10.30, 10.35,
+  ];
+  // BOVA11 — preços de compra por mês
+  const bova11Prices = [
+    107.50, 104.20, 108.90, 111.30, 109.50, 113.20, 110.80, 108.60, 112.40, 115.80, 113.20, 116.50, 118.90,
   ];
 
-  await prisma.investmentEntry.createMany({ data: entries });
-  console.log(`Created ${entries.length} investment entries`);
+  // Estrutura dos 13 meses na mesma ordem de `months`
+  const investMonths = months.map((m) => ({ year: m.year, month: m.month }));
 
-  // ─── Summary ──────────────────────────────────────────────────────────────
-  console.log("\n✅ Seed concluído!");
-  console.log("──────────────────────────────────────");
-  console.log(`  Usuário  : test@axiom.com`);
-  console.log(`  Senha    : axiom123`);
-  console.log(`  Moeda    : BRL (padrão)`);
-  console.log(`  Categorias: ${categoryData.length}`);
-  console.log(`  Transações: ${transactions.length} (6 meses)`);
-  console.log(`  Ativos   : 4 (PETR4, HGLG11, IVVB11, BTC)`);
-  console.log(`  Entradas : ${entries.length} investment entries`);
-  console.log("──────────────────────────────────────");
+  const entryRows: Parameters<typeof prisma.investmentEntry.create>[0]["data"][] = [];
+
+  let mxrf11Units = 0; // acumulado para calcular dividendo correto
+
+  for (let i = 0; i < investMonths.length; i++) {
+    const { year, month } = investMonths[i];
+    const mxrfPrice = mxrf11Prices[i];
+    const bovaPrice = bova11Prices[i];
+
+    // Compra MXRF11 — dia 5 (junto com salário)
+    entryRows.push({
+      assetId: mxrf11.id, userId: user.id,
+      type: EntryType.PURCHASE,
+      date: d(year, month, 5),
+      quantity: 10, price: mxrfPrice, amount: +(10 * mxrfPrice).toFixed(2),
+      notes: `Compra mensal ${month.toString().padStart(2,"0")}/${String(year).slice(2)}`,
+    });
+    mxrf11Units += 10;
+
+    // Compra BOVA11 — dia 5
+    entryRows.push({
+      assetId: bova11.id, userId: user.id,
+      type: EntryType.PURCHASE,
+      date: d(year, month, 5),
+      quantity: 1, price: bovaPrice, amount: +bovaPrice.toFixed(2),
+      notes: `Compra mensal ${month.toString().padStart(2,"0")}/${String(year).slice(2)}`,
+    });
+
+    // Dividendo MXRF11 — creditado no mês seguinte, dia 15
+    // (começa em abr/25, com base nas cotas de mar/25)
+    if (i < investMonths.length - 1) {
+      const nextM = investMonths[i + 1];
+      const dividendPerUnit = 0.095 + (i % 3 === 0 ? 0.005 : 0); // leve variação
+      const dividendTotal = +(mxrf11Units * dividendPerUnit).toFixed(2);
+      entryRows.push({
+        assetId: mxrf11.id, userId: user.id,
+        type: EntryType.DIVIDEND,
+        date: d(nextM.year, nextM.month, 15),
+        quantity: mxrf11Units, price: dividendPerUnit, amount: dividendTotal,
+        notes: `Provento ref. ${month.toString().padStart(2,"0")}/${String(year).slice(2)}`,
+      });
+    }
+  }
+
+  for (const entry of entryRows) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await prisma.investmentEntry.create({ data: entry as any });
+  }
+
+  console.log(`   ${entryRows.length} lançamentos de investimento criados.`);
+  console.log("");
+  console.log("✅  Seed concluído!");
+  console.log("──────────────────────────────────────────────────────────");
+  console.log(`  Usuário    : test@axiom.com`);
+  console.log(`  Senha      : axiom123`);
+  console.log(`  Período    : mar/2025 → mar/2026 (13 meses)`);
+  console.log(`  Renda      : R$1.650/mês + freelance esporádico + 13º`);
+  console.log(`  Categorias : ${catDefs.length}`);
+  console.log(`  Transações : ${txRows.length}`);
+  console.log(`  Ativos     : MXRF11 (FII) · BOVA11 (ETF)`);
+  console.log(`  Aportes    : ~R$210/mês · ${investMonths.length} meses`);
+  console.log(`  Proventos  : ${investMonths.length - 1} pagamentos de dividendo MXRF11`);
+  console.log("──────────────────────────────────────────────────────────");
 }
 
 main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+  .catch((e) => { console.error(e); process.exit(1); })
+  .finally(() => prisma.$disconnect());
