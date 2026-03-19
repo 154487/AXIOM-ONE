@@ -6,9 +6,11 @@ import { SavingsRateChart } from "@/components/reports/patrimonio/SavingsRateCha
 import { FireProjection } from "@/components/reports/patrimonio/FireProjection";
 import { AssetBreakdown } from "./AssetBreakdown";
 import { BenchmarkComparison } from "./BenchmarkComparison";
+import { WealthItems } from "./WealthItems";
 import { PatrimonioGoal } from "./PatrimonioGoal";
 import type { NetworthData } from "@/components/reports/types";
 import type { BenchmarkData } from "@/lib/benchmarks";
+import type { WealthItemsResponse } from "@/app/api/patrimonio/items/route";
 
 interface PortfolioTotals {
   totalCurrentValue: number;
@@ -46,6 +48,9 @@ export function PatrimonioShell({ initialCurrency, initialLocale }: PatrimonioSh
   const [goalData, setGoalData] = useState<{ goal: number | null } | null>(null);
   const [goalLoading, setGoalLoading] = useState(false);
 
+  const [itemsData, setItemsData] = useState<WealthItemsResponse | null>(null);
+  const [itemsLoading, setItemsLoading] = useState(false);
+
   const fetchGoal = useCallback(async () => {
     setGoalLoading(true);
     try {
@@ -58,17 +63,31 @@ export function PatrimonioShell({ initialCurrency, initialLocale }: PatrimonioSh
     }
   }, []);
 
+  const fetchItems = useCallback(async () => {
+    setItemsLoading(true);
+    try {
+      const res = await fetch("/api/patrimonio/items");
+      if (res.ok) setItemsData(await res.json());
+    } catch {
+      // silent
+    } finally {
+      setItemsLoading(false);
+    }
+  }, []);
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     setPortfolioLoading(true);
     setBenchmarksLoading(true);
     setGoalLoading(true);
+    setItemsLoading(true);
 
-    const [networthRes, portfolioRes, benchmarksRes, goalRes] = await Promise.allSettled([
+    const [networthRes, portfolioRes, benchmarksRes, goalRes, itemsRes] = await Promise.allSettled([
       fetch("/api/reports/networth"),
       fetch("/api/investments/portfolio"),
       fetch("/api/investments/benchmarks"),
       fetch("/api/patrimonio/goal"),
+      fetch("/api/patrimonio/items"),
     ]);
 
     if (networthRes.status === "fulfilled" && networthRes.value.ok) {
@@ -90,6 +109,11 @@ export function PatrimonioShell({ initialCurrency, initialLocale }: PatrimonioSh
       setGoalData(await goalRes.value.json());
     }
     setGoalLoading(false);
+
+    if (itemsRes.status === "fulfilled" && itemsRes.value.ok) {
+      setItemsData(await itemsRes.value.json());
+    }
+    setItemsLoading(false);
   }, []);
 
   useEffect(() => {
@@ -102,6 +126,9 @@ export function PatrimonioShell({ initialCurrency, initialLocale }: PatrimonioSh
       ? data.months.reduce((acc, m) => acc + (m.monthIncome - m.monthExpenses), 0) /
         data.months.length
       : 0;
+
+  // Patrimônio ajustado: transações + bens - passivos
+  const adjustedNetWorth = (data?.currentNetWorth ?? 0) + (itemsData?.net ?? 0);
 
   return (
     <div className="flex flex-col gap-6">
@@ -132,7 +159,7 @@ export function PatrimonioShell({ initialCurrency, initialLocale }: PatrimonioSh
         </div>
       )}
 
-      {/* Novos componentes v1.1 */}
+      {/* AssetBreakdown */}
       {portfolioLoading ? (
         <SkeletonCard label="Breakdown por Classe de Ativo" />
       ) : (
@@ -144,7 +171,8 @@ export function PatrimonioShell({ initialCurrency, initialLocale }: PatrimonioSh
         />
       )}
 
-      {(loading || benchmarksLoading) ? (
+      {/* BenchmarkComparison */}
+      {loading || benchmarksLoading ? (
         <SkeletonCard label="Comparação vs Benchmark" />
       ) : data ? (
         <BenchmarkComparison
@@ -156,11 +184,27 @@ export function PatrimonioShell({ initialCurrency, initialLocale }: PatrimonioSh
         />
       ) : null}
 
+      {/* Bens e Passivos */}
+      {itemsLoading ? (
+        <SkeletonCard label="Bens e Passivos" />
+      ) : (
+        <WealthItems
+          items={itemsData?.items ?? []}
+          totalAssets={itemsData?.totalAssets ?? 0}
+          totalLiabilities={itemsData?.totalLiabilities ?? 0}
+          net={itemsData?.net ?? 0}
+          currency={initialCurrency}
+          locale={initialLocale}
+          onRefresh={fetchItems}
+        />
+      )}
+
+      {/* Meta de Patrimônio — usa adjustedNetWorth */}
       {goalLoading ? (
         <SkeletonCard label="Meta de Patrimônio" />
       ) : (
         <PatrimonioGoal
-          currentNetWorth={data?.currentNetWorth ?? 0}
+          currentNetWorth={adjustedNetWorth}
           goal={goalData?.goal ?? null}
           avgMonthlySavings={avgMonthlySavings}
           currency={initialCurrency}
