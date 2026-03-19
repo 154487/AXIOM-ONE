@@ -114,9 +114,9 @@ async function getDashboardData(
       prisma.userCurrency.findFirst({
         where: { userId, isDefault: true },
       }),
-      // Proventos (dividendos) no período
+      // Proventos all-time (não filtrado por período)
       prisma.investmentEntry.findMany({
-        where: { userId, type: "DIVIDEND", date: { gte: start, lte: end } },
+        where: { userId, type: "DIVIDEND" },
       }),
       // Ativos com entradas para calcular P&L da carteira
       prisma.asset.findMany({
@@ -198,6 +198,7 @@ async function getDashboardData(
   // P&L da carteira + alocação por tipo (all-time)
   let portfolioTotalInvested = 0;
   let portfolioCurrentValue = 0;
+  let hasPriceData = false;
   const allocationMap: Record<string, number> = {};
   for (const asset of portfolioAssets) {
     let qty = 0, cost = 0;
@@ -209,7 +210,9 @@ async function getDashboardData(
     }
     if (qty < 0.000001) qty = 0;
     const avgCost = qty > 0 ? cost / qty : 0;
-    const currentPrice = asset.currentPrice ? toNumber(asset.currentPrice) : avgCost;
+    const hasPrice = !!asset.currentPrice && toNumber(asset.currentPrice) > 0;
+    if (hasPrice) hasPriceData = true;
+    const currentPrice = hasPrice ? toNumber(asset.currentPrice!) : avgCost;
     const val = qty * currentPrice;
     portfolioTotalInvested += qty * avgCost;
     portfolioCurrentValue += val;
@@ -217,6 +220,7 @@ async function getDashboardData(
   }
   const portfolioPnl = portfolioCurrentValue - portfolioTotalInvested;
   const portfolioPnlPct = portfolioTotalInvested > 0 ? (portfolioPnl / portfolioTotalInvested) * 100 : 0;
+  const allTimeDividends = dividendEntries.reduce((acc, e) => acc + toNumber(e.amount), 0);
 
   return {
     totalBalance,
@@ -229,7 +233,8 @@ async function getDashboardData(
     monthlyData,
     categorySpending,
     currency,
-    periodDividends,
+    allTimeDividends,
+    hasPriceData,
     portfolioTotalInvested,
     portfolioCurrentValue,
     portfolioPnl,
@@ -420,14 +425,14 @@ export default async function DashboardPage({
             pct: data.portfolioCurrentValue > 0 ? (val / data.portfolioCurrentValue) * 100 : 0,
             value: val,
           }));
-        const hasInvestments = data.periodDividends > 0 || data.portfolioTotalInvested > 0;
+        const hasInvestments = data.allTimeDividends > 0 || data.portfolioTotalInvested > 0;
         const hasInsights = insights.length > 0;
         if (!hasInvestments && !hasInsights) return null;
 
         return (
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-            {/* Portfolio P&L */}
-            {data.portfolioTotalInvested > 0 && (
+            {/* Portfolio P&L — só mostra se tem preço de mercado configurado */}
+            {data.portfolioTotalInvested > 0 && data.hasPriceData && (
               <div className={`bg-axiom-card border ${pnlPositive ? "border-axiom-income/30" : "border-axiom-expense/30"} rounded-xl p-4 flex flex-col gap-2`}>
                 <div className="flex items-center gap-2">
                   <div className={`w-7 h-7 rounded-lg ${pnlPositive ? "bg-axiom-income/10" : "bg-axiom-expense/10"} flex items-center justify-center shrink-0`}>
@@ -442,8 +447,22 @@ export default async function DashboardPage({
                 </p>
               </div>
             )}
-            {/* Dividends */}
-            {data.periodDividends > 0 && (
+            {/* Total investido — quando não há preços de mercado configurados */}
+            {data.portfolioTotalInvested > 0 && !data.hasPriceData && (
+              <div className="bg-axiom-card border border-axiom-border rounded-xl p-4 flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-axiom-hover flex items-center justify-center shrink-0">
+                    <TrendingUp size={14} className="text-axiom-muted" />
+                  </div>
+                  <p className="text-sm font-semibold text-axiom-muted">Total Investido</p>
+                </div>
+                <p className="text-axiom-muted text-xs leading-relaxed">
+                  {formatCurrency(data.portfolioTotalInvested, locale, data.currency)} aportados. Adicione o preço atual dos ativos para ver o P&L.
+                </p>
+              </div>
+            )}
+            {/* Dividends all-time */}
+            {data.allTimeDividends > 0 && (
               <div className="bg-axiom-card border border-axiom-income/30 rounded-xl p-4 flex flex-col gap-2">
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded-lg bg-axiom-income/10 flex items-center justify-center shrink-0">
@@ -452,7 +471,7 @@ export default async function DashboardPage({
                   <p className="text-sm font-semibold text-axiom-income">Proventos Recebidos</p>
                 </div>
                 <p className="text-axiom-muted text-xs leading-relaxed">
-                  {formatCurrency(data.periodDividends, locale, data.currency)} em dividendos no período.
+                  {formatCurrency(data.allTimeDividends, locale, data.currency)} em dividendos acumulados.
                 </p>
               </div>
             )}
