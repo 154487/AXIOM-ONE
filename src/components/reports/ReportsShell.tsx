@@ -4,9 +4,6 @@ import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { PeriodFilter } from "@/components/shared/PeriodFilter";
 import { CashFlowChart } from "./fluxo-caixa/CashFlowChart";
-import { NetWorthChart } from "./patrimonio/NetWorthChart";
-import { SavingsRateChart } from "./patrimonio/SavingsRateChart";
-import { FireProjection } from "./patrimonio/FireProjection";
 import { HealthScoreCard } from "./visao-geral/HealthScoreCard";
 import { InsightsCard } from "./visao-geral/InsightsCard";
 import { SpendingVelocityCard } from "./visao-geral/SpendingVelocityCard";
@@ -15,9 +12,9 @@ import { SankeyDiagram } from "./fluxo-caixa/SankeyDiagram";
 import { CategoryTrendChart } from "./tendencias/CategoryTrendChart";
 import { MerchantSpotlight } from "./tendencias/MerchantSpotlight";
 import { SeasonalAnalysis } from "./tendencias/SeasonalAnalysis";
-import type { OverviewData, CashflowData, NetworthData } from "./types";
+import type { OverviewData, CashflowData } from "./types";
 
-type TabKey = "overview" | "cashflow" | "trends" | "patrimonio";
+type TabKey = "overview" | "cashflow" | "trends";
 
 interface TabData<T> {
   data: T | null;
@@ -47,7 +44,6 @@ export function ReportsShell({ initialCurrency, initialLocale }: ReportsShellPro
 
   const [overviewState, setOverviewState] = useState<TabData<OverviewData>>({ data: null, loading: false });
   const [cashflowState, setCashflowState] = useState<TabData<CashflowData>>({ data: null, loading: false });
-  const [networthState, setNetworthState] = useState<TabData<NetworthData>>({ data: null, loading: false });
 
   const fetchOverview = useCallback(async (start: string, end: string) => {
     setOverviewState((s) => ({ ...s, loading: true }));
@@ -79,32 +75,15 @@ export function ReportsShell({ initialCurrency, initialLocale }: ReportsShellPro
     }
   }, []);
 
-  const fetchNetworth = useCallback(async () => {
-    setNetworthState((s) => ({ ...s, loading: true }));
-    try {
-      const res = await fetch(`/api/reports/networth`);
-      if (res.ok) {
-        const data = await res.json();
-        setNetworthState({ data, loading: false });
-      } else {
-        setNetworthState({ data: null, loading: false });
-      }
-    } catch {
-      setNetworthState({ data: null, loading: false });
-    }
-  }, []);
-
   // Fetch quando aba muda ou período muda
   useEffect(() => {
     if (activeTab === "overview") {
       fetchOverview(period.start, period.end);
     } else if (activeTab === "cashflow") {
       fetchCashflow(period.start, period.end);
-    } else if (activeTab === "patrimonio") {
-      fetchNetworth();
     }
     // trends: cada componente filho faz seu próprio fetch
-  }, [activeTab, period, fetchOverview, fetchCashflow, fetchNetworth]);
+  }, [activeTab, period, fetchOverview, fetchCashflow]);
 
   function handlePeriodChange(start: string, end: string) {
     setPeriod({ start, end });
@@ -114,7 +93,6 @@ export function ReportsShell({ initialCurrency, initialLocale }: ReportsShellPro
     { key: "overview", label: t("tabOverview") },
     { key: "cashflow", label: t("tabCashflow") },
     { key: "trends", label: t("tabTrends") },
-    { key: "patrimonio", label: t("tabPatrimonio") },
   ];
 
   return (
@@ -167,14 +145,6 @@ export function ReportsShell({ initialCurrency, initialLocale }: ReportsShellPro
         />
       )}
 
-      {activeTab === "patrimonio" && (
-        <PatrimonioTab
-          data={networthState.data}
-          loading={networthState.loading}
-          currency={initialCurrency}
-          locale={initialLocale}
-        />
-      )}
     </div>
   );
 }
@@ -287,42 +257,3 @@ function TrendsTab({
   );
 }
 
-function PatrimonioTab({
-  data,
-  loading,
-  currency,
-  locale,
-}: {
-  data: NetworthData | null;
-  loading: boolean;
-  currency: string;
-  locale: string;
-}) {
-  const t = useTranslations("Reports");
-
-  if (loading || !data) {
-    return (
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        <div className="xl:col-span-2">
-          <SkeletonCard label={t("netWorth")} />
-        </div>
-        <SkeletonCard label={t("savingsRate")} />
-        <div className="xl:col-span-3">
-          <SkeletonCard label={t("fire")} />
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="grid grid-cols-1 gap-4">
-      <div style={{ minHeight: 320 }}>
-        <NetWorthChart networthData={data} currency={currency} locale={locale} />
-      </div>
-      <div style={{ minHeight: 280 }}>
-        <SavingsRateChart networthData={data} currency={currency} locale={locale} />
-      </div>
-      <FireProjection networthData={data} currency={currency} />
-    </div>
-  );
-}
