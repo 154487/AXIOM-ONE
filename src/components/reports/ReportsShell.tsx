@@ -8,6 +8,7 @@ import { NetWorthChart } from "./patrimonio/NetWorthChart";
 import { SavingsRateChart } from "./patrimonio/SavingsRateChart";
 import { HealthScoreCard } from "./visao-geral/HealthScoreCard";
 import { InsightsCard } from "./visao-geral/InsightsCard";
+import { SpendingVelocityCard } from "./visao-geral/SpendingVelocityCard";
 import type { OverviewData, CashflowData, NetworthData } from "./types";
 
 type TabKey = "overview" | "cashflow" | "trends" | "patrimonio";
@@ -214,8 +215,12 @@ function OverviewTab({
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 items-stretch">
       <HealthScoreCard overviewData={data} />
       <InsightsCard overviewData={data} />
-      {/* SpendingVelocityCard — Issue #35 */}
-      <SkeletonCard label={t("spendingVelocity")} />
+      <SpendingVelocityCard
+        overviewData={data}
+        currency={_currency}
+        locale={_locale}
+        periodStart={_periodStart}
+      />
     </div>
   );
 }
