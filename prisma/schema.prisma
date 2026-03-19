@@ -21,6 +21,7 @@ model User {
   notifTransactions   Boolean        @default(true)
   notifBudgetAlerts   Boolean        @default(true)
   notifMonthlyReport  Boolean        @default(false)
+  patrimonyGoal       Decimal?       // meta de patrimônio em reais — opcional
   transactions        Transaction[]
   categories          Category[]
   currencies          UserCurrency[]
