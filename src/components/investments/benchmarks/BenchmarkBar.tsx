@@ -1,4 +1,4 @@
-import { Landmark, Percent, TrendingUp, DollarSign, Globe } from "lucide-react";
+import { Landmark, BarChart2, TrendingUp, TrendingDown, DollarSign, Globe } from "lucide-react";
 import type { BenchmarkData } from "@/lib/benchmarks";
 
 // ── Escala de cores semântica ─────────────────────────────────────────────────
@@ -83,6 +83,8 @@ interface BenchmarkBarProps {
 }
 
 export function BenchmarkBar({ data, loading }: BenchmarkBarProps) {
+  const ibovPositive = (data?.ibovDayChange ?? 0) >= 0;
+
   const cards = [
     {
       icon: Landmark,
@@ -93,12 +95,14 @@ export function BenchmarkBar({ data, loading }: BenchmarkBarProps) {
       sublabel: data?.selicAnual != null ? rateLabel(data.selicAnual) : null,
     },
     {
-      icon: Percent,
-      label: "CDI",
-      value: data?.cdi ?? null,
-      format: (v: number) => `${v.toFixed(2)}% a.a.`,
-      color: data?.cdi != null ? rateColor(data.cdi) : "text-axiom-muted",
-      sublabel: data?.cdi != null ? rateLabel(data.cdi) : null,
+      icon: ibovPositive ? TrendingUp : TrendingDown,
+      label: "Ibovespa (dia)",
+      value: data?.ibovDayChange ?? null,
+      format: (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(2)}%`,
+      color: data?.ibovDayChange != null
+        ? data.ibovDayChange >= 0 ? "text-axiom-income" : "text-axiom-expense"
+        : "text-axiom-muted",
+      sublabel: null,
     },
     {
       icon: TrendingUp,

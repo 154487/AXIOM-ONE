@@ -3,12 +3,12 @@ import { cached } from "./cache";
 const BCB_CACHE_TTL = 60 * 60 * 1000; // 1h
 
 export interface BenchmarkData {
-  selicAnual: number | null; // % ao ano ex: 13.65
-  cdi: number | null;        // % ao ano ex: 14.90
-  ipca: number | null;       // % no mês ex: 0.70
-  usdBrl: number | null;     // ex: 5.73
-  eurBrl: number | null;     // ex: 6.21
-  updatedAt: string;         // ISO timestamp
+  selicAnual: number | null;  // % ao ano ex: 13.65
+  ibovDayChange: number | null; // variação % do dia ex: +1.23 ou -0.87
+  ipca: number | null;        // % no mês ex: 0.70
+  usdBrl: number | null;      // ex: 5.73
+  eurBrl: number | null;      // ex: 6.21
+  updatedAt: string;          // ISO timestamp
 }
 
 async function fetchBcbSeries(series: number): Promise<number | null> {
@@ -25,12 +25,28 @@ async function fetchBcbSeries(series: number): Promise<number | null> {
   }
 }
 
+async function fetchIbovDayChange(): Promise<number | null> {
+  const token = process.env.BRAPI_TOKEN;
+  if (!token) return null;
+  try {
+    const res = await fetch(
+      `https://brapi.dev/api/quote/%5EBVSP?token=${token}&fundamental=false`,
+      { cache: "no-store" }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    return (data.results?.[0]?.regularMarketChangePercent as number) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function fetchBenchmarks(): Promise<BenchmarkData> {
   return cached("benchmarks", BCB_CACHE_TTL, async () => {
-    const [selicR, cdiR, ipcaR, awesomeR] = await Promise.allSettled([
-      fetchBcbSeries(12),    // SELIC diária
-      fetchBcbSeries(4389),  // CDI anual
-      fetchBcbSeries(433),   // IPCA mensal
+    const [selicR, ibovR, ipcaR, awesomeR] = await Promise.allSettled([
+      fetchBcbSeries(12),      // SELIC diária
+      fetchIbovDayChange(),    // Ibovespa variação % do dia
+      fetchBcbSeries(433),     // IPCA mensal
       fetch("https://economia.awesomeapi.com.br/json/last/USD-BRL,EUR-BRL", {
         cache: "no-store",
       }).then((r) => r.json()),
@@ -45,8 +61,8 @@ export async function fetchBenchmarks(): Promise<BenchmarkData> {
 
     return {
       selicAnual,
-      cdi:    cdiR.status === "fulfilled" ? cdiR.value : null,
-      ipca:   ipcaR.status === "fulfilled" ? ipcaR.value : null,
+      ibovDayChange: ibovR.status === "fulfilled" ? ibovR.value : null,
+      ipca:          ipcaR.status === "fulfilled" ? ipcaR.value : null,
       usdBrl: awesome ? parseFloat(awesome.USDBRL?.bid) || null : null,
       eurBrl: awesome ? parseFloat(awesome.EURBRL?.bid) || null : null,
       updatedAt: new Date().toISOString(),
