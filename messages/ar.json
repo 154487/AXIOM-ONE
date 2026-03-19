@@ -4,6 +4,7 @@
     "transactions": "المعاملات",
     "reports": "التقارير",
     "import": "استيراد",
+    "investments": "الاستثمارات",
     "settings": "الإعدادات"
   },
   "Topbar": {
@@ -251,5 +252,61 @@
     "selectCategory": "اختر فئة",
     "newCategory": "فئة جديدة...",
     "selectedSummary": "{count} محدد · الإجمالي: {total}"
+  },
+  "Investments": {
+    "title": "الاستثمارات",
+    "tabs": {
+      "portfolio": "المحفظة",
+      "entries": "العمليات"
+    },
+    "summary": {
+      "totalInvested": "إجمالي الاستثمار",
+      "currentValue": "القيمة الحالية",
+      "pnl": "الربح/الخسارة"
+    },
+    "assetTypes": {
+      "STOCK": "أسهم البرازيل",
+      "FII": "صناديق عقارية",
+      "ETF": "صندوق ETF",
+      "BDR": "BDR",
+      "CRYPTO": "عملات مشفرة",
+      "FIXED_INCOME": "دخل ثابت",
+      "STOCK_INT": "أسهم دولية",
+      "OTHER": "أخرى"
+    },
+    "entryTypes": {
+      "PURCHASE": "شراء",
+      "SALE": "بيع",
+      "DIVIDEND": "توزيعات",
+      "SPLIT": "تقسيم"
+    },
+    "table": {
+      "asset": "الأصل",
+      "type": "النوع",
+      "quantity": "الكمية",
+      "avgCost": "متوسط التكلفة",
+      "currentPrice": "السعر الحالي",
+      "currentValue": "القيمة",
+      "pnl": "الربح/الخسارة",
+      "date": "التاريخ",
+      "price": "سعر الوحدة",
+      "total": "الإجمالي",
+      "notes": "ملاحظات"
+    },
+    "dialog": {
+      "newAsset": "أصل جديد",
+      "editAsset": "تعديل الأصل",
+      "newEntry": "عملية جديدة",
+      "editEntry": "تعديل العملية",
+      "name": "الاسم",
+      "ticker": "الرمز (اختياري)",
+      "currentPrice": "السعر الحالي (اختياري)",
+      "currency": "العملة"
+    },
+    "empty": "لا توجد أصول مسجلة",
+    "emptyEntries": "لا توجد عمليات مسجلة",
+    "deleteConfirm": "هل أنت متأكد؟ لا يمكن التراجع عن هذا الإجراء.",
+    "hasEntries": "لا يمكن حذف أصل يحتوي على عمليات",
+    "saleExceedsPosition": "كمية البيع تتجاوز المركز الحالي"
   }
 }

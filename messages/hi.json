@@ -4,6 +4,7 @@
     "transactions": "लेनदेन",
     "reports": "रिपोर्ट",
     "import": "आयात",
+    "investments": "निवेश",
     "settings": "सेटिंग्स"
   },
   "Topbar": {
@@ -251,5 +252,61 @@
     "selectCategory": "श्रेणी चुनें",
     "newCategory": "नई श्रेणी...",
     "selectedSummary": "{count} चुने · कुल: {total}"
+  },
+  "Investments": {
+    "title": "निवेश",
+    "tabs": {
+      "portfolio": "पोर्टफोलियो",
+      "entries": "लेनदेन"
+    },
+    "summary": {
+      "totalInvested": "कुल निवेश",
+      "currentValue": "वर्तमान मूल्य",
+      "pnl": "लाभ/हानि"
+    },
+    "assetTypes": {
+      "STOCK": "BR शेयर",
+      "FII": "रियल एस्टेट फंड",
+      "ETF": "ETF",
+      "BDR": "BDR",
+      "CRYPTO": "क्रिप्टो",
+      "FIXED_INCOME": "निश्चित आय",
+      "STOCK_INT": "अंतर्राष्ट्रीय शेयर",
+      "OTHER": "अन्य"
+    },
+    "entryTypes": {
+      "PURCHASE": "खरीद",
+      "SALE": "बिक्री",
+      "DIVIDEND": "लाभांश",
+      "SPLIT": "विभाजन"
+    },
+    "table": {
+      "asset": "संपत्ति",
+      "type": "प्रकार",
+      "quantity": "मात्रा",
+      "avgCost": "औसत लागत",
+      "currentPrice": "वर्तमान मूल्य",
+      "currentValue": "मूल्य",
+      "pnl": "लाभ/हानि",
+      "date": "तारीख",
+      "price": "इकाई मूल्य",
+      "total": "कुल",
+      "notes": "नोट्स"
+    },
+    "dialog": {
+      "newAsset": "नई संपत्ति",
+      "editAsset": "संपत्ति संपादित करें",
+      "newEntry": "नया लेनदेन",
+      "editEntry": "लेनदेन संपादित करें",
+      "name": "नाम",
+      "ticker": "टिकर (वैकल्पिक)",
+      "currentPrice": "वर्तमान मूल्य (वैकल्पिक)",
+      "currency": "मुद्रा"
+    },
+    "empty": "कोई संपत्ति दर्ज नहीं",
+    "emptyEntries": "कोई लेनदेन दर्ज नहीं",
+    "deleteConfirm": "क्या आप सुनिश्चित हैं? यह क्रिया पूर्ववत नहीं की जा सकती।",
+    "hasEntries": "लेनदेन वाली संपत्ति को हटाया नहीं जा सकता",
+    "saleExceedsPosition": "बिक्री मात्रा वर्तमान स्थिति से अधिक है"
   }
 }
