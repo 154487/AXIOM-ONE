@@ -10,6 +10,7 @@ import { HealthScoreCard } from "./visao-geral/HealthScoreCard";
 import { InsightsCard } from "./visao-geral/InsightsCard";
 import { SpendingVelocityCard } from "./visao-geral/SpendingVelocityCard";
 import { RecurringList } from "./fluxo-caixa/RecurringList";
+import { SankeyDiagram } from "./fluxo-caixa/SankeyDiagram";
 import { CategoryTrendChart } from "./tendencias/CategoryTrendChart";
 import { MerchantSpotlight } from "./tendencias/MerchantSpotlight";
 import type { OverviewData, CashflowData, NetworthData } from "./types";
@@ -254,6 +255,9 @@ function CashflowTab({
     <div className="grid grid-cols-1 gap-4">
       <div style={{ minHeight: 360 }}>
         <CashFlowChart cashflowData={data} currency={currency} locale={locale} />
+      </div>
+      <div style={{ minHeight: 280 }}>
+        <SankeyDiagram cashflowData={data} />
       </div>
       <RecurringList currency={currency} />
     </div>
