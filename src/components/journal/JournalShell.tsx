@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Plus } from "lucide-react";
 import { JournalList } from "./JournalList";
 import { JournalEditor } from "./JournalEditor";
@@ -30,6 +30,11 @@ export interface JournalEntry {
   updatedAt: string;
 }
 
+export interface EditorPrefill {
+  investmentEntryId?: string;
+  entryType?: string;
+}
+
 function currentMonth(): string {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -42,7 +47,8 @@ export function JournalShell() {
   const [filterType, setFilterType] = useState<string | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null);
-  const [uncatalogedCount, setUncatalogedCount] = useState(0);
+  const [editorPrefill, setEditorPrefill] = useState<EditorPrefill | undefined>();
+  const [uncatalogedOps, setUncatalogedOps] = useState<InvestmentEntryLinked[]>([]);
 
   const fetchEntries = useCallback(async () => {
     setLoading(true);
@@ -63,18 +69,20 @@ export function JournalShell() {
       const res = await fetch("/api/journal/uncataloged");
       if (res.ok) {
         const data = await res.json();
-        setUncatalogedCount(data.count ?? 0);
+        setUncatalogedOps(data.entries ?? []);
       }
     } catch { /* silent */ }
   }, []);
 
-  useEffect(() => {
-    fetchEntries();
-  }, [fetchEntries]);
+  useEffect(() => { fetchEntries(); }, [fetchEntries]);
+  useEffect(() => { fetchUncataloged(); }, [fetchUncataloged]);
 
-  useEffect(() => {
-    fetchUncataloged();
-  }, [fetchUncataloged]);
+  // Tags únicas de todas as entradas carregadas
+  const allTags = useMemo(() => {
+    const set = new Set<string>();
+    entries.forEach((e) => e.tags.forEach((t) => set.add(t)));
+    return Array.from(set).sort();
+  }, [entries]);
 
   const handleSaved = useCallback((entry: JournalEntry) => {
     setEntries((prev) => {
@@ -94,12 +102,14 @@ export function JournalShell() {
     }
   }, [fetchUncataloged]);
 
-  const openNew = () => {
+  const openNew = (prefill?: EditorPrefill) => {
     setEditingEntry(null);
+    setEditorPrefill(prefill);
     setEditorOpen(true);
   };
 
   const openEdit = (entry: JournalEntry) => {
+    setEditorPrefill(undefined);
     setEditingEntry(entry);
     setEditorOpen(true);
   };
@@ -115,7 +125,7 @@ export function JournalShell() {
           </p>
         </div>
         <button
-          onClick={openNew}
+          onClick={() => openNew()}
           className="flex items-center gap-2 bg-axiom-primary hover:bg-axiom-primary/90 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
         >
           <Plus size={16} />
@@ -124,23 +134,41 @@ export function JournalShell() {
       </div>
 
       {/* Banner — movimentações não catalogadas */}
-      {uncatalogedCount > 0 && (
-        <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-axiom-primary/30 bg-axiom-primary/5">
+      {uncatalogedOps.length > 0 && (
+        <div className="flex flex-col gap-2 px-4 py-3 rounded-xl border border-axiom-primary/30 bg-axiom-primary/5">
           <div className="flex items-center gap-2 text-sm">
             <span className="text-axiom-primary font-medium">⚠</span>
             <span className="text-white">
-              {uncatalogedCount === 1
+              {uncatalogedOps.length === 1
                 ? "1 movimentação não catalogada"
-                : `${uncatalogedCount} movimentações não catalogadas`}
+                : `${uncatalogedOps.length} movimentações não catalogadas`}
             </span>
             <span className="text-axiom-muted text-xs">(últimos 30 dias)</span>
           </div>
-          <button
-            onClick={openNew}
-            className="text-xs text-axiom-primary hover:underline shrink-0"
-          >
-            Criar nota
-          </button>
+          <div className="flex flex-col gap-1.5">
+            {uncatalogedOps.map((op) => {
+              const ticker = op.asset.ticker ?? op.asset.name;
+              const typeLabel = op.type === "PURCHASE" ? "Compra" : "Venda";
+              const entryType = op.type === "PURCHASE" ? "APORTE" : "RESGATE";
+              const opDate = new Date(op.date).toLocaleDateString("pt-BR");
+              return (
+                <div key={op.id} className="flex items-center justify-between gap-3 pl-1">
+                  <span className="text-xs text-axiom-muted">
+                    <span className="text-axiom-primary font-mono font-semibold">{ticker}</span>
+                    {" · "}{typeLabel}
+                    {" · "}{op.quantity}× R$ {op.price.toFixed(2)}
+                    {" · "}{opDate}
+                  </span>
+                  <button
+                    onClick={() => openNew({ investmentEntryId: op.id, entryType })}
+                    className="text-xs text-axiom-primary hover:underline shrink-0"
+                  >
+                    Criar nota
+                  </button>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
@@ -161,6 +189,8 @@ export function JournalShell() {
         open={editorOpen}
         onOpenChange={setEditorOpen}
         entry={editingEntry}
+        prefill={editorPrefill}
+        suggestedTags={allTags}
         onSaved={handleSaved}
       />
     </div>

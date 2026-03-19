@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
-import type { JournalEntry } from "./JournalShell";
+import type { JournalEntry, EditorPrefill } from "./JournalShell";
 
 const ENTRY_TYPE_LABELS: Record<string, string> = {
   NOTE: "Nota livre",
@@ -43,10 +43,12 @@ interface JournalEditorProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   entry?: JournalEntry | null;
+  prefill?: EditorPrefill;
+  suggestedTags?: string[];
   onSaved: (entry: JournalEntry) => void;
 }
 
-export function JournalEditor({ open, onOpenChange, entry, onSaved }: JournalEditorProps) {
+export function JournalEditor({ open, onOpenChange, entry, prefill, suggestedTags = [], onSaved }: JournalEditorProps) {
   const isEdit = Boolean(entry);
 
   const [title, setTitle] = useState("");
@@ -74,16 +76,16 @@ export function JournalEditor({ open, onOpenChange, entry, onSaved }: JournalEdi
         setInvestmentEntryId(entry.investmentEntryId ?? null);
       } else {
         setTitle("");
-        setEntryType("NOTE");
+        setEntryType(prefill?.entryType ?? "NOTE");
         setDate(todayISO());
         setTags([]);
         setContent("");
-        setInvestmentEntryId(null);
+        setInvestmentEntryId(prefill?.investmentEntryId ?? null);
       }
       setTagInput("");
       setError(null);
     }
-  }, [open, entry]);
+  }, [open, entry, prefill]);
 
   // Fetch recent uncataloged ops when type = APORTE or RESGATE
   const alreadyLinked = entry?.investmentEntryId;
@@ -287,6 +289,23 @@ export function JournalEditor({ open, onOpenChange, entry, onSaved }: JournalEdi
                 className="bg-transparent text-sm text-white outline-none flex-1 min-w-[100px] placeholder:text-axiom-muted"
               />
             </div>
+            {/* Sugestões de tags já usadas */}
+            {suggestedTags.filter((t) => !tags.includes(t)).length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {suggestedTags
+                  .filter((t) => !tags.includes(t))
+                  .map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setTags((p) => [...p, t])}
+                      className="text-xs px-2 py-0.5 rounded-full border border-axiom-border text-axiom-muted hover:text-white hover:border-axiom-primary/50 transition-colors"
+                    >
+                      +#{t}
+                    </button>
+                  ))}
+              </div>
+            )}
           </div>
 
           {/* Content with tabs */}
