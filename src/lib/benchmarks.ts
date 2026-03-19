@@ -2,13 +2,18 @@ import { cached } from "./cache";
 
 const BCB_CACHE_TTL = 60 * 60 * 1000; // 1h
 
+export interface CurrencyRate {
+  bid: number;        // cotação (compra)
+  pctChange: number;  // variação % vs. dia anterior
+}
+
 export interface BenchmarkData {
-  selicAnual: number | null;  // % ao ano ex: 13.65
-  ibovDayChange: number | null; // variação % do dia ex: +1.23 ou -0.87
-  ipca: number | null;        // % no mês ex: 0.70
-  usdBrl: number | null;      // ex: 5.73
-  eurBrl: number | null;      // ex: 6.21
-  updatedAt: string;          // ISO timestamp
+  selicAnual: number | null;    // % ao ano
+  ibovPrice: number | null;     // pontos ex: 125430
+  ibovDayChange: number | null; // variação % do dia ex: +1.23
+  ipca: number | null;          // % no mês
+  currencies: Partial<Record<string, CurrencyRate>>; // USD, EUR, GBP, ARS
+  updatedAt: string;
 }
 
 async function fetchBcbSeries(series: number): Promise<number | null> {
@@ -25,46 +30,70 @@ async function fetchBcbSeries(series: number): Promise<number | null> {
   }
 }
 
-async function fetchIbovDayChange(): Promise<number | null> {
+async function fetchIbov(): Promise<{ price: number | null; dayChange: number | null }> {
   const token = process.env.BRAPI_TOKEN;
-  if (!token) return null;
+  if (!token) return { price: null, dayChange: null };
   try {
     const res = await fetch(
       `https://brapi.dev/api/quote/%5EBVSP?token=${token}&fundamental=false`,
       { cache: "no-store" }
     );
-    if (!res.ok) return null;
+    if (!res.ok) return { price: null, dayChange: null };
     const data = await res.json();
-    return (data.results?.[0]?.regularMarketChangePercent as number) ?? null;
+    const r = data.results?.[0];
+    return {
+      price:     (r?.regularMarketPrice as number) ?? null,
+      dayChange: (r?.regularMarketChangePercent as number) ?? null,
+    };
   } catch {
-    return null;
+    return { price: null, dayChange: null };
   }
 }
 
 export async function fetchBenchmarks(): Promise<BenchmarkData> {
   return cached("benchmarks", BCB_CACHE_TTL, async () => {
     const [selicR, ibovR, ipcaR, awesomeR] = await Promise.allSettled([
-      fetchBcbSeries(12),      // SELIC diária
-      fetchIbovDayChange(),    // Ibovespa variação % do dia
-      fetchBcbSeries(433),     // IPCA mensal
-      fetch("https://economia.awesomeapi.com.br/json/last/USD-BRL,EUR-BRL", {
-        cache: "no-store",
-      }).then((r) => r.json()),
+      fetchBcbSeries(12),   // SELIC diária
+      fetchIbov(),          // Ibovespa preço + variação
+      fetchBcbSeries(433),  // IPCA mensal
+      fetch(
+        "https://economia.awesomeapi.com.br/json/last/USD-BRL,EUR-BRL,GBP-BRL,ARS-BRL",
+        { cache: "no-store" }
+      ).then((r) => r.json()),
     ]);
 
-    // série 12 retorna taxa diária decimal (ex: 0.052345 = 0.052345% ao dia)
+    // série 12: taxa diária decimal → anualizar com 252 dias úteis
     const selicDaily = selicR.status === "fulfilled" ? selicR.value : null;
     const selicAnual =
       selicDaily !== null ? ((1 + selicDaily / 100) ** 252 - 1) * 100 : null;
 
-    const awesome = awesomeR.status === "fulfilled" ? awesomeR.value : null;
+    const ibov = ibovR.status === "fulfilled" ? ibovR.value : { price: null, dayChange: null };
+
+    const aw = awesomeR.status === "fulfilled" ? awesomeR.value : null;
+    const currencies: Partial<Record<string, CurrencyRate>> = {};
+    if (aw) {
+      for (const [awKey, code] of [
+        ["USDBRL", "USD"],
+        ["EURBRL", "EUR"],
+        ["GBPBRL", "GBP"],
+        ["ARSBRL", "ARS"],
+      ] as [string, string][]) {
+        const entry = aw[awKey];
+        if (entry) {
+          currencies[code] = {
+            bid:       parseFloat(entry.bid)       || 0,
+            pctChange: parseFloat(entry.pctChange) || 0,
+          };
+        }
+      }
+    }
 
     return {
       selicAnual,
-      ibovDayChange: ibovR.status === "fulfilled" ? ibovR.value : null,
+      ibovPrice:     ibov.price,
+      ibovDayChange: ibov.dayChange,
       ipca:          ipcaR.status === "fulfilled" ? ipcaR.value : null,
-      usdBrl: awesome ? parseFloat(awesome.USDBRL?.bid) || null : null,
-      eurBrl: awesome ? parseFloat(awesome.EURBRL?.bid) || null : null,
+      currencies,
       updatedAt: new Date().toISOString(),
     };
   });
