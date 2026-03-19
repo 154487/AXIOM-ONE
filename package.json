@@ -35,6 +35,8 @@
     "react-chartjs-2": "^5.3.1",
     "react-dom": "19.2.3",
     "react-is": "^19.2.4",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
     "resend": "^6.9.4",
     "server-only": "^0.0.1",
     "shadcn": "^4.0.8",

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Plus } from "lucide-react";
 import { JournalList } from "./JournalList";
+import { JournalEditor } from "./JournalEditor";
 
 export interface JournalEntry {
   id: string;
@@ -22,17 +23,7 @@ function currentMonth(): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 }
 
-interface JournalShellProps {
-  // JournalEditor will be added in issue #65
-  renderEditor?: (props: {
-    open: boolean;
-    entry: JournalEntry | null;
-    onClose: () => void;
-    onSaved: (entry: JournalEntry) => void;
-  }) => React.ReactNode;
-}
-
-export function JournalShell({ renderEditor }: JournalShellProps) {
+export function JournalShell() {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterMonth, setFilterMonth] = useState(currentMonth);
@@ -113,13 +104,13 @@ export function JournalShell({ renderEditor }: JournalShellProps) {
         onDelete={handleDelete}
       />
 
-      {/* Editor (injected by page after issue #65) */}
-      {renderEditor?.({
-        open: editorOpen,
-        entry: editingEntry,
-        onClose: () => setEditorOpen(false),
-        onSaved: handleSaved,
-      })}
+      {/* Editor */}
+      <JournalEditor
+        open={editorOpen}
+        onOpenChange={setEditorOpen}
+        entry={editingEntry}
+        onSaved={handleSaved}
+      />
     </div>
   );
 }
