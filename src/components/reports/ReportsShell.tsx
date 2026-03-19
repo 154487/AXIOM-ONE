@@ -6,6 +6,7 @@ import { PeriodFilter } from "@/components/shared/PeriodFilter";
 import { CashFlowChart } from "./fluxo-caixa/CashFlowChart";
 import { NetWorthChart } from "./patrimonio/NetWorthChart";
 import { SavingsRateChart } from "./patrimonio/SavingsRateChart";
+import { FireProjection } from "./patrimonio/FireProjection";
 import { HealthScoreCard } from "./visao-geral/HealthScoreCard";
 import { InsightsCard } from "./visao-geral/InsightsCard";
 import { SpendingVelocityCard } from "./visao-geral/SpendingVelocityCard";
@@ -321,8 +322,7 @@ function PatrimonioTab({
       <div style={{ minHeight: 280 }}>
         <SavingsRateChart networthData={data} currency={currency} locale={locale} />
       </div>
-      {/* FireProjection — Issue #41 */}
-      <SkeletonCard label={t("fire")} />
+      <FireProjection networthData={data} currency={currency} />
     </div>
   );
 }
