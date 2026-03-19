@@ -9,10 +9,17 @@ import { MonthlyChart } from "@/components/dashboard/MonthlyChart";
 import { SpendingDonut } from "@/components/dashboard/SpendingDonut";
 import { RecentTransactions } from "@/components/dashboard/RecentTransactions";
 import { DashboardInsights } from "@/components/dashboard/DashboardInsights";
+import { PortfolioRotatingCard } from "@/components/dashboard/PortfolioRotatingCard";
 import { PeriodFilter } from "@/components/shared/PeriodFilter";
 import { formatCurrency } from "@/lib/utils";
-import { Wallet, ArrowUpRight, ArrowDownRight, Scale, Coins, BarChart2 } from "lucide-react";
+import { Wallet, ArrowUpRight, ArrowDownRight, Scale, Coins, TrendingUp, TrendingDown } from "lucide-react";
 import type { DashboardInsight } from "@/components/dashboard/DashboardInsights";
+
+const ASSET_TYPE_LABELS: Record<string, string> = {
+  STOCK: "Ações BR", FII: "Fundos Imobiliários", ETF: "ETFs",
+  BDR: "BDRs", CRYPTO: "Cripto", FIXED_INCOME: "Renda Fixa",
+  STOCK_INT: "Ações Internacionais", OTHER: "Outros",
+};
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function toNumber(val: any): number {
@@ -188,9 +195,10 @@ async function getDashboardData(
   // Proventos do período
   const periodDividends = dividendEntries.reduce((acc, e) => acc + toNumber(e.amount), 0);
 
-  // P&L da carteira (all-time)
+  // P&L da carteira + alocação por tipo (all-time)
   let portfolioTotalInvested = 0;
   let portfolioCurrentValue = 0;
+  const allocationMap: Record<string, number> = {};
   for (const asset of portfolioAssets) {
     let qty = 0, cost = 0;
     for (const e of asset.entries) {
@@ -202,8 +210,10 @@ async function getDashboardData(
     if (qty < 0.000001) qty = 0;
     const avgCost = qty > 0 ? cost / qty : 0;
     const currentPrice = asset.currentPrice ? toNumber(asset.currentPrice) : avgCost;
+    const val = qty * currentPrice;
     portfolioTotalInvested += qty * avgCost;
-    portfolioCurrentValue += qty * currentPrice;
+    portfolioCurrentValue += val;
+    if (qty > 0) allocationMap[asset.type] = (allocationMap[asset.type] ?? 0) + val;
   }
   const portfolioPnl = portfolioCurrentValue - portfolioTotalInvested;
   const portfolioPnlPct = portfolioTotalInvested > 0 ? (portfolioPnl / portfolioTotalInvested) * 100 : 0;
@@ -224,6 +234,7 @@ async function getDashboardData(
     portfolioCurrentValue,
     portfolioPnl,
     portfolioPnlPct,
+    allocationByType: allocationMap,
     recentTransactions: recentTx.map((tx) => ({
       id: tx.id,
       description: tx.description,
@@ -398,28 +409,58 @@ export default async function DashboardPage({
         />
       </div>
 
-      {/* Investment snapshot (dividends + portfolio P&L) */}
-      {(data.periodDividends > 0 || data.portfolioTotalInvested > 0) && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <KPICard
-            title={`Proventos no Período`}
-            value={data.periodDividends}
-            icon={<Coins size={20} />}
-            type="income"
-            locale={locale}
-            currency={data.currency}
-          />
-          <KPICard
-            title="Valorização da Carteira"
-            value={data.portfolioPnl}
-            change={data.portfolioPnlPct}
-            icon={<BarChart2 size={20} />}
-            type={data.portfolioPnl >= 0 ? "income" : "expense"}
-            locale={locale}
-            currency={data.currency}
-          />
-        </div>
-      )}
+      {/* Investment snapshot — compact insight style */}
+      {(data.periodDividends > 0 || data.portfolioTotalInvested > 0) && (() => {
+        const pnlPositive = data.portfolioPnl >= 0;
+        const allocations = Object.entries(data.allocationByType)
+          .sort(([, a], [, b]) => b - a)
+          .map(([type, val]) => ({
+            type,
+            label: ASSET_TYPE_LABELS[type] ?? type,
+            pct: data.portfolioCurrentValue > 0 ? (val / data.portfolioCurrentValue) * 100 : 0,
+            value: val,
+          }));
+        return (
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+            {/* Dividends */}
+            {data.periodDividends > 0 && (
+              <div className="bg-axiom-card border border-axiom-income/30 rounded-xl p-4 flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-axiom-income/10 flex items-center justify-center shrink-0">
+                    <Coins size={14} className="text-axiom-income" />
+                  </div>
+                  <p className="text-sm font-semibold text-axiom-income">Proventos Recebidos</p>
+                </div>
+                <p className="text-axiom-muted text-xs leading-relaxed">
+                  {formatCurrency(data.periodDividends, locale, data.currency)} em dividendos no período selecionado.
+                </p>
+              </div>
+            )}
+            {/* Portfolio P&L */}
+            {data.portfolioTotalInvested > 0 && (
+              <div className={`bg-axiom-card border ${pnlPositive ? "border-axiom-income/30" : "border-axiom-expense/30"} rounded-xl p-4 flex flex-col gap-2`}>
+                <div className="flex items-center gap-2">
+                  <div className={`w-7 h-7 rounded-lg ${pnlPositive ? "bg-axiom-income/10" : "bg-axiom-expense/10"} flex items-center justify-center shrink-0`}>
+                    {pnlPositive
+                      ? <TrendingUp size={14} className="text-axiom-income" />
+                      : <TrendingDown size={14} className="text-axiom-expense" />}
+                  </div>
+                  <p className={`text-sm font-semibold ${pnlPositive ? "text-axiom-income" : "text-axiom-expense"}`}>
+                    {pnlPositive ? "Carteira Valorizada" : "Carteira Desvalorizada"}
+                  </p>
+                </div>
+                <p className="text-axiom-muted text-xs leading-relaxed">
+                  {pnlPositive ? "+" : ""}{formatCurrency(data.portfolioPnl, locale, data.currency)} ({data.portfolioPnlPct.toFixed(2)}%) desde o início.
+                </p>
+              </div>
+            )}
+            {/* Rotating allocation */}
+            {allocations.length > 0 && (
+              <PortfolioRotatingCard allocations={allocations} currency={data.currency} locale={locale} />
+            )}
+          </div>
+        );
+      })()}
 
       {/* Insights */}
       <DashboardInsights insights={insights} />
