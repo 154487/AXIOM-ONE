@@ -143,8 +143,9 @@ model InvestmentEntry {
   amount    Decimal   @db.Decimal(14, 2)
   notes     String?
   createdAt DateTime  @default(now())
-  asset     Asset     @relation(fields: [assetId], references: [id], onDelete: Cascade)
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  asset        Asset         @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  journalEntry JournalEntry?
 }
 
 model JournalEntry {
@@ -157,7 +158,9 @@ model JournalEntry {
   date                     DateTime         @default(now())
   healthScoreAtTime        Int?
   sustainableSurplusAtTime Decimal?         @db.Decimal(12, 2)
+  investmentEntryId        String?          @unique
   createdAt                DateTime         @default(now())
   updatedAt                DateTime         @updatedAt
   user                     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  investmentEntry          InvestmentEntry? @relation(fields: [investmentEntryId], references: [id], onDelete: SetNull)
 }
