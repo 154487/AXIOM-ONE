@@ -259,7 +259,8 @@
     "title": "الاستثمارات",
     "tabs": {
       "portfolio": "المحفظة",
-      "entries": "العمليات"
+      "entries": "العمليات",
+      "intelligence": "الذكاء"
     },
     "summary": {
       "totalInvested": "إجمالي الاستثمار",

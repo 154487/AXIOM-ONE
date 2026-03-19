@@ -259,7 +259,8 @@
     "title": "निवेश",
     "tabs": {
       "portfolio": "पोर्टफोलियो",
-      "entries": "लेनदेन"
+      "entries": "लेनदेन",
+      "intelligence": "बुद्धिमत्ता"
     },
     "summary": {
       "totalInvested": "कुल निवेश",

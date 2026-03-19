@@ -259,7 +259,8 @@
     "title": "投资",
     "tabs": {
       "portfolio": "投资组合",
-      "entries": "交易记录"
+      "entries": "交易记录",
+      "intelligence": "智能分析"
     },
     "summary": {
       "totalInvested": "总投资",

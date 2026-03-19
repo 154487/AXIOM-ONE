@@ -259,7 +259,8 @@
     "title": "Investissements",
     "tabs": {
       "portfolio": "Portefeuille",
-      "entries": "Opérations"
+      "entries": "Opérations",
+      "intelligence": "Intelligence"
     },
     "summary": {
       "totalInvested": "Total Investi",

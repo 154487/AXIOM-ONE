@@ -259,7 +259,8 @@
     "title": "Inversiones",
     "tabs": {
       "portfolio": "Cartera",
-      "entries": "Movimientos"
+      "entries": "Movimientos",
+      "intelligence": "Inteligencia"
     },
     "summary": {
       "totalInvested": "Total Invertido",

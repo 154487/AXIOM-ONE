@@ -259,7 +259,8 @@
     "title": "Investments",
     "tabs": {
       "portfolio": "Portfolio",
-      "entries": "Transactions"
+      "entries": "Transactions",
+      "intelligence": "Intelligence"
     },
     "summary": {
       "totalInvested": "Total Invested",

@@ -260,7 +260,8 @@
     "title": "Investimentos",
     "tabs": {
       "portfolio": "Carteira",
-      "entries": "Lançamentos"
+      "entries": "Lançamentos",
+      "intelligence": "Inteligência"
     },
     "summary": {
       "totalInvested": "Total Investido",

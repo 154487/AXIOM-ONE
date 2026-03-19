@@ -8,6 +8,7 @@ import { PortfolioDonut } from "./portfolio/PortfolioDonut";
 import { AssetList } from "./portfolio/AssetList";
 import { EntryList } from "./entries/EntryList";
 import { BenchmarkBar } from "./benchmarks/BenchmarkBar";
+import { IntelligenceTab } from "./intelligence/IntelligenceTab";
 import type { AssetPosition } from "@/app/api/investments/portfolio/route";
 import type { AssetType } from "@/generated/prisma/client";
 import type { BenchmarkData } from "@/lib/benchmarks";
@@ -40,7 +41,7 @@ interface InvestmentsShellProps {
 
 export function InvestmentsShell({ initialCurrency, initialLocale }: InvestmentsShellProps) {
   const t = useTranslations("Investments");
-  const [activeTab, setActiveTab] = useState<"portfolio" | "entries">("portfolio");
+  const [activeTab, setActiveTab] = useState<"portfolio" | "entries" | "intelligence">("portfolio");
   const [portfolioKey, setPortfolioKey] = useState(0);
   const [portfolioData, setPortfolioData] = useState<PortfolioData | null>(null);
   const [portfolioLoading, setPortfolioLoading] = useState(false);
@@ -84,13 +85,16 @@ export function InvestmentsShell({ initialCurrency, initialLocale }: Investments
 
       <BenchmarkBar data={benchmarks} loading={benchmarksLoading} />
 
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "portfolio" | "entries")}>
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "portfolio" | "entries" | "intelligence")}>
         <TabsList className="bg-axiom-card border border-axiom-border">
           <TabsTrigger value="portfolio" className="data-[state=active]:bg-axiom-primary data-[state=active]:text-white">
             {t("tabs.portfolio")}
           </TabsTrigger>
           <TabsTrigger value="entries" className="data-[state=active]:bg-axiom-primary data-[state=active]:text-white">
             {t("tabs.entries")}
+          </TabsTrigger>
+          <TabsTrigger value="intelligence" className="data-[state=active]:bg-axiom-primary data-[state=active]:text-white">
+            {t("tabs.intelligence")}
           </TabsTrigger>
         </TabsList>
 
@@ -126,6 +130,13 @@ export function InvestmentsShell({ initialCurrency, initialLocale }: Investments
             currency={initialCurrency}
             locale={initialLocale}
             onEntryCreated={triggerPortfolioRefresh}
+          />
+        </TabsContent>
+
+        <TabsContent value="intelligence" className="mt-6">
+          <IntelligenceTab
+            portfolioTotalValue={portfolioData?.totals.totalCurrentValue ?? 0}
+            currency={initialCurrency}
           />
         </TabsContent>
       </Tabs>
