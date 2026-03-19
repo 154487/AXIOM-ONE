@@ -331,7 +331,9 @@ export function SettingsPage({
             </div>
             <Select value={locale} onValueChange={handleLocaleChange}>
               <SelectTrigger className="w-44 bg-axiom-hover border-axiom-border text-white text-sm focus:ring-axiom-primary">
-                <SelectValue />
+                <SelectValue>
+                  {(() => { const l = LANGUAGE_OPTIONS.find((o) => o.code === locale); return l ? `${l.flag} ${l.label}` : locale; })()}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent className="bg-axiom-card border-axiom-border text-white">
                 {LANGUAGE_OPTIONS.map((lang) => (

@@ -121,7 +121,9 @@ export function EntryDialog({ open, onClose, entry, assets, onSave }: EntryDialo
             <Label className="text-axiom-muted text-sm">{t("table.asset")} *</Label>
             <Select value={assetId} onValueChange={(v) => setAssetId(v ?? "")}>
               <SelectTrigger className="bg-axiom-bg border-axiom-border text-white">
-                <SelectValue placeholder="Selecionar ativo" />
+                <SelectValue placeholder="Selecionar ativo">
+                  {(() => { const a = assets.find((x) => x.id === assetId); return a ? (a.ticker ? `${a.ticker} — ${a.name}` : a.name) : undefined; })()}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent className="bg-axiom-card border-axiom-border">
                 {assets.map((a) => (
@@ -138,7 +140,7 @@ export function EntryDialog({ open, onClose, entry, assets, onSave }: EntryDialo
               <Label className="text-axiom-muted text-sm">Tipo *</Label>
               <Select value={type} onValueChange={(v) => setType(v as EntryType)}>
                 <SelectTrigger className="bg-axiom-bg border-axiom-border text-white">
-                  <SelectValue />
+                  <SelectValue>{t(`entryTypes.${type}`)}</SelectValue>
                 </SelectTrigger>
                 <SelectContent className="bg-axiom-card border-axiom-border">
                   {ENTRY_TYPES.map((et) => (

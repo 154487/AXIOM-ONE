@@ -51,7 +51,9 @@ export function TransactionFilters({ filters, onFilterChange, categories }: Tran
         onValueChange={(v) => onFilterChange({ ...filters, type: v as FilterType })}
       >
         <SelectTrigger className="bg-axiom-hover border-axiom-border text-white w-36 h-9">
-          <SelectValue />
+          <SelectValue>
+            {filters.type === "ALL" ? t("filterTypeAll") : filters.type === "INCOME" ? t("filterTypeIncome") : t("filterTypeExpense")}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent className="bg-axiom-card border-axiom-border">
           <SelectItem value="ALL" className="text-white">{t("filterTypeAll")}</SelectItem>
@@ -66,7 +68,9 @@ export function TransactionFilters({ filters, onFilterChange, categories }: Tran
         onValueChange={(v) => onFilterChange({ ...filters, categoryId: v === "ALL" ? null : v })}
       >
         <SelectTrigger className="bg-axiom-hover border-axiom-border text-white w-44 h-9">
-          <SelectValue />
+          <SelectValue>
+            {filters.categoryId ? (categories.find((c) => c.id === filters.categoryId)?.name ?? t("filterCategoryAll")) : t("filterCategoryAll")}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent className="bg-axiom-card border-axiom-border">
           <SelectItem value="ALL" className="text-white">{t("filterCategoryAll")}</SelectItem>
@@ -84,7 +88,9 @@ export function TransactionFilters({ filters, onFilterChange, categories }: Tran
         onValueChange={(v) => onFilterChange({ ...filters, month: v === "ALL" ? null : v })}
       >
         <SelectTrigger className="bg-axiom-hover border-axiom-border text-white w-44 h-9">
-          <SelectValue placeholder={t("filterMonthAll")} />
+          <SelectValue>
+            {filters.month ? (months.find((m) => m.value === filters.month)?.label ?? t("filterMonthAll")) : t("filterMonthAll")}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent className="bg-axiom-card border-axiom-border">
           <SelectItem value="ALL" className="text-white">{t("filterMonthAll")}</SelectItem>

@@ -53,7 +53,9 @@ export function ImportInlineCategorySelect({
             !value ? "text-axiom-primary" : "text-white"
           }`}
         >
-          <SelectValue placeholder={t("selectCategory")} />
+          <SelectValue placeholder={t("selectCategory")}>
+            {value ? categories.find((c) => c.id === value)?.name : undefined}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent className="bg-axiom-card border-axiom-border">
           {categories.map((cat) => (
