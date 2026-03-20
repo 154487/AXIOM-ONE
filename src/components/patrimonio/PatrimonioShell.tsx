@@ -3,19 +3,20 @@
 import { useState, useEffect, useCallback } from "react";
 import { PatrimonioEvolutionChart } from "./PatrimonioEvolutionChart";
 import { SavingsRateChart } from "@/components/reports/patrimonio/SavingsRateChart";
-import { FireProjection } from "@/components/reports/patrimonio/FireProjection";
 import { AssetBreakdown } from "./AssetBreakdown";
+import { FireDashboard } from "./FireDashboard";
 import { PortfolioPerformanceChart } from "./PortfolioPerformanceChart";
 import { WealthItems } from "./WealthItems";
 import { GoalsList } from "./GoalsList";
 import type { NetworthData } from "@/components/reports/types";
 import type { WealthItemsResponse } from "@/app/api/patrimonio/items/route";
 
-type PatrimonioTab = "evolucao" | "analise" | "bens" | "meta";
+type PatrimonioTab = "evolucao" | "analise" | "independencia" | "bens" | "meta";
 
 const TABS: { key: PatrimonioTab; label: string }[] = [
   { key: "evolucao", label: "Evolução" },
   { key: "analise", label: "Análise" },
+  { key: "independencia", label: "Independência" },
   { key: "bens", label: "Bens & Passivos" },
   { key: "meta", label: "Meta" },
 ];
@@ -177,14 +178,13 @@ export function PatrimonioShell({ initialCurrency, initialLocale }: PatrimonioSh
             />
           )}
 
-          {loading || !data ? (
-            <SkeletonCard label="Projeção FIRE" />
-          ) : (
-            <FireProjection networthData={data} currency={initialCurrency} />
-          )}
-
           <PortfolioPerformanceChart />
         </div>
+      )}
+
+      {/* Aba: Independência */}
+      {activeTab === "independencia" && (
+        <FireDashboard currency={initialCurrency} locale={initialLocale} />
       )}
 
       {/* Aba: Bens & Passivos */}
