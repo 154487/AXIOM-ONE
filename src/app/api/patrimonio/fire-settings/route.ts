@@ -9,6 +9,7 @@ export interface FireSettingsResponse {
   retirementYears: number | null;
   targetMonthlyContrib: number | null;
   targetInvestedAmount: number | null;
+  fiNumberManual: number | null;
 }
 
 export async function GET() {
@@ -24,6 +25,7 @@ export async function GET() {
       fireRetirementYears: true,
       fireTargetMonthlyContrib: true,
       fireTargetInvestedAmount: true,
+      fireNumberManual: true,
     },
   });
 
@@ -40,6 +42,7 @@ export async function GET() {
     targetInvestedAmount: user?.fireTargetInvestedAmount
       ? parseFloat(String(user.fireTargetInvestedAmount))
       : null,
+    fiNumberManual: user?.fireNumberManual ? parseFloat(String(user.fireNumberManual)) : null,
   } satisfies FireSettingsResponse);
 }
 
@@ -55,6 +58,7 @@ export async function PATCH(req: NextRequest) {
     retirementYears,
     targetMonthlyContrib,
     targetInvestedAmount,
+    fiNumberManual,
   } = body;
 
   if (monthlyExpense !== null && monthlyExpense !== undefined && monthlyExpense <= 0)
@@ -73,6 +77,8 @@ export async function PATCH(req: NextRequest) {
     (retirementYears < 1 || retirementYears > 60)
   )
     return NextResponse.json({ error: "Horizonte deve estar entre 1 e 60 anos" }, { status: 400 });
+  if (fiNumberManual !== null && fiNumberManual !== undefined && fiNumberManual <= 0)
+    return NextResponse.json({ error: "FI Number deve ser maior que zero" }, { status: 400 });
 
   await prisma.user.update({
     where: { id: session.user.id },
@@ -89,6 +95,7 @@ export async function PATCH(req: NextRequest) {
       ...(targetInvestedAmount !== undefined && {
         fireTargetInvestedAmount: targetInvestedAmount ?? null,
       }),
+      ...(fiNumberManual !== undefined && { fireNumberManual: fiNumberManual ?? null }),
     },
   });
 

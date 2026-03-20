@@ -13,7 +13,7 @@ export async function PATCH(
 
   const { id } = await params;
   const body = await req.json();
-  const { name, color, icon } = body;
+  const { name, color, icon, isEssential } = body;
 
   const category = await prisma.category.findUnique({ where: { id } });
 
@@ -27,6 +27,7 @@ export async function PATCH(
       ...(name && { name: name.trim() }),
       ...(color && { color }),
       ...(icon !== undefined && { icon: icon?.trim() || null }),
+      ...(isEssential !== undefined && { isEssential }),
     },
   });
 
