@@ -5,6 +5,7 @@ import { FireStatusCard } from "./FireStatusCard";
 import { FireSettingsCard } from "./FireSettingsCard";
 import { FireProjectionChart } from "./FireProjectionChart";
 import { CoastFireCard } from "./CoastFireCard";
+import { FireGoalsCard } from "./FireGoalsCard";
 import { GoalCard } from "./GoalCard";
 import type { NetworthData } from "@/components/reports/types";
 import type { WealthItemsResponse } from "@/app/api/patrimonio/items/route";
@@ -44,14 +45,15 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
   const [loading, setLoading] = useState(true);
   const [fireLoading, setFireLoading] = useState(false);
 
-  // Inputs editáveis (inicializados após carregar fire-settings)
+  // Inputs editáveis
   const [extraSavings, setExtraSavings] = useState(0);
   const [fireMonthlyExpense, setFireMonthlyExpense] = useState<number | null>(null);
-  const [fireSWR, setFireSWR] = useState<number | null>(null);
+  const [targetMonthlyIncome, setTargetMonthlyIncome] = useState<number | null>(null);
+  const [retirementYears, setRetirementYears] = useState(30);
+  const [expensePeriod, setExpensePeriod] = useState<3 | 6 | 12>(12);
 
-  // Debounce ref para fire API
+  // Debounce refs
   const fireDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Debounce ref para PATCH fire-settings
   const settingsDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchAll = useCallback(async () => {
@@ -75,7 +77,8 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
       const s: FireSettingsResponse = await settingsRes.value.json();
       setFireSettings(s);
       if (s.monthlyExpense !== null) setFireMonthlyExpense(s.monthlyExpense);
-      if (s.swr !== null) setFireSWR(s.swr);
+      if (s.targetMonthlyIncome !== null) setTargetMonthlyIncome(s.targetMonthlyIncome);
+      if (s.retirementYears !== null) setRetirementYears(s.retirementYears);
     }
     if (goalsRes.status === "fulfilled" && goalsRes.value.ok) {
       const d = await goalsRes.value.json();
@@ -93,19 +96,34 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
     fetchAll();
   }, [fetchAll]);
 
-  // Médias calculadas do networth
+  // Médias calculadas com janela configurável
+  const allMonths = networthData?.months ?? [];
+
   const avgMonthlyIncome =
-    networthData && networthData.months.length > 0
-      ? networthData.months
+    allMonths.length > 0
+      ? allMonths
           .filter((m) => m.monthIncome > 0)
           .reduce((s, m) => s + m.monthIncome, 0) /
-        Math.max(1, networthData.months.filter((m) => m.monthIncome > 0).length)
+        Math.max(1, allMonths.filter((m) => m.monthIncome > 0).length)
       : 0;
 
   const avgMonthlyExpenses =
-    networthData && networthData.months.length > 0
-      ? networthData.months.reduce((s, m) => s + m.monthExpenses, 0) /
-        networthData.months.length
+    allMonths.length > 0
+      ? allMonths.reduce((s, m) => s + m.monthExpenses, 0) / allMonths.length
+      : 0;
+
+  // Média de despesas pelo período selecionado (últimos N meses)
+  const periodMonths = allMonths.slice(-expensePeriod);
+  const avgExpensesByPeriod =
+    periodMonths.length > 0
+      ? periodMonths.reduce((s, m) => s + m.monthExpenses, 0) / periodMonths.length
+      : avgMonthlyExpenses;
+
+  // Aporte médio mensal (income - expenses, quando positivo)
+  const avgMonthlyContrib =
+    allMonths.length > 0
+      ? allMonths.reduce((s, m) => s + Math.max(0, m.monthIncome - m.monthExpenses), 0) /
+        allMonths.length
       : 0;
 
   const firePatrimony = Math.max(
@@ -115,8 +133,9 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
       (portfolioData?.totals.totalCurrentValue ?? 0)
   );
 
-  const effectiveMonthlyExpense = fireMonthlyExpense ?? avgMonthlyExpenses;
-  const effectiveSWR = fireSWR ?? 4.0;
+  const totalInvested = portfolioData?.totals.totalCurrentValue ?? 0;
+
+  const effectiveMonthlyExpense = fireMonthlyExpense ?? avgExpensesByPeriod;
   const effectiveMonthlyIncome = avgMonthlyIncome * (1 + extraSavings / 100);
   const savingsRate =
     effectiveMonthlyIncome > 0
@@ -126,7 +145,13 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
 
   // Busca fire API com debounce 400ms quando inputs mudam
   const fetchFire = useCallback(
-    (patrimony: number, income: number, expenses: number, swr: number) => {
+    (
+      patrimony: number,
+      income: number,
+      expenses: number,
+      targetIncome: number | null,
+      years: number
+    ) => {
       if (income <= 0) return;
       if (fireDebounce.current) clearTimeout(fireDebounce.current);
       fireDebounce.current = setTimeout(async () => {
@@ -136,7 +161,10 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
             patrimony: String(patrimony),
             monthlyIncome: String(income),
             monthlyExpenses: String(expenses),
-            swr: String(swr),
+            retirementYears: String(years),
+            ...(targetIncome && targetIncome > 0
+              ? { targetMonthlyIncome: String(targetIncome) }
+              : {}),
           });
           const res = await fetch(`/api/reports/fire?${params}`);
           if (res.ok) setFireData(await res.json());
@@ -152,31 +180,56 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
 
   useEffect(() => {
     if (!loading && avgMonthlyIncome > 0) {
-      fetchFire(firePatrimony, effectiveMonthlyIncome, effectiveMonthlyExpense, effectiveSWR);
+      fetchFire(
+        firePatrimony,
+        effectiveMonthlyIncome,
+        effectiveMonthlyExpense,
+        targetMonthlyIncome,
+        retirementYears
+      );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, firePatrimony, effectiveMonthlyIncome, effectiveMonthlyExpense, effectiveSWR]);
+  }, [
+    loading,
+    firePatrimony,
+    effectiveMonthlyIncome,
+    effectiveMonthlyExpense,
+    targetMonthlyIncome,
+    retirementYears,
+  ]);
 
-  // PATCH fire-settings com debounce ao mudar expense ou SWR
-  function patchFireSettings(monthlyExpense: number | null, swr: number | null) {
+  // PATCH fire-settings com debounce
+  function patchFireSettings(patch: Partial<FireSettingsResponse>) {
     if (settingsDebounce.current) clearTimeout(settingsDebounce.current);
     settingsDebounce.current = setTimeout(async () => {
       await fetch("/api/patrimonio/fire-settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ monthlyExpense, swr }),
+        body: JSON.stringify(patch),
       });
     }, 400);
   }
 
   function handleMonthlyExpenseChange(v: number) {
     setFireMonthlyExpense(v);
-    patchFireSettings(v, fireSWR);
+    patchFireSettings({ monthlyExpense: v });
   }
 
-  function handleSWRChange(v: number) {
-    setFireSWR(v);
-    patchFireSettings(fireMonthlyExpense, v);
+  function handleTargetMonthlyIncomeChange(v: number) {
+    setTargetMonthlyIncome(v);
+    patchFireSettings({ targetMonthlyIncome: v });
+  }
+
+  function handleRetirementYearsChange(v: number) {
+    setRetirementYears(v);
+    patchFireSettings({ retirementYears: v });
+  }
+
+  function handleGoalSave(field: keyof FireSettingsResponse, value: number | null) {
+    setFireSettings((prev) => (prev ? { ...prev, [field]: value } : prev));
+    patchFireSettings({ [field]: value });
+    // Se alterou targetMonthlyIncome, propagar para o estado local
+    if (field === "targetMonthlyIncome") setTargetMonthlyIncome(value);
   }
 
   // Aportes mensais das metas
@@ -187,11 +240,12 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
   if (loading) {
     return (
       <div className="flex flex-col gap-4">
-        <SkeletonBlock h={200} />
+        <SkeletonBlock h={160} />
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <SkeletonBlock h={240} />
-          <SkeletonBlock h={240} />
+          <SkeletonBlock h={200} />
+          <SkeletonBlock h={200} />
         </div>
+        <SkeletonBlock h={240} />
         <SkeletonBlock h={260} />
       </div>
     );
@@ -210,11 +264,27 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Metas pessoais */}
+      {fireSettings && (
+        <FireGoalsCard
+          settings={fireSettings}
+          avgMonthlyIncome={avgMonthlyIncome}
+          avgMonthlyContrib={avgMonthlyContrib}
+          totalInvested={totalInvested}
+          currency={currency}
+          locale={locale}
+          onSave={handleGoalSave}
+        />
+      )}
+
       {/* Status + Settings lado a lado */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <FireStatusCard
           firePatrimony={firePatrimony}
-          fiNumber={fireData?.fiNumber ?? (effectiveMonthlyExpense * 12 * (100 / effectiveSWR))}
+          fiNumber={
+            fireData?.fiNumber ??
+            (targetMonthlyIncome ?? effectiveMonthlyExpense) * 12 * 25
+          }
           savingsRate={Math.max(0, savingsRate)}
           avgMonthlyIncome={effectiveMonthlyIncome}
           effectiveMonthlyExpense={effectiveMonthlyExpense}
@@ -223,13 +293,18 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
         />
         <FireSettingsCard
           monthlyExpense={effectiveMonthlyExpense}
-          swr={effectiveSWR}
+          targetMonthlyIncome={targetMonthlyIncome}
           extraSavings={extraSavings}
           avgExpenses={avgMonthlyExpenses}
+          avgExpensesByPeriod={avgExpensesByPeriod}
           isUsingAvgExpenses={isUsingAvgExpenses}
+          expensePeriod={expensePeriod}
+          retirementYears={retirementYears}
           onMonthlyExpenseChange={handleMonthlyExpenseChange}
-          onSWRChange={handleSWRChange}
+          onTargetMonthlyIncomeChange={handleTargetMonthlyIncomeChange}
           onExtraSavingsChange={setExtraSavings}
+          onPeriodChange={setExpensePeriod}
+          onRetirementYearsChange={handleRetirementYearsChange}
           currency={currency}
           locale={locale}
         />
@@ -253,6 +328,7 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
           coastFireNumber={fireData.coastFireNumber}
           firePatrimony={firePatrimony}
           fiNumber={fireData.fiNumber ?? 0}
+          retirementYears={retirementYears}
           currency={currency}
           locale={locale}
         />
@@ -270,7 +346,11 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
             </div>
             {totalGoalContrib > 0 && (
               <span className="text-xs text-axiom-primary font-medium">
-                Total aportes: {new Intl.NumberFormat(locale, { style: "currency", currency }).format(totalGoalContrib)}/mês
+                Total aportes:{" "}
+                {new Intl.NumberFormat(locale, { style: "currency", currency }).format(
+                  totalGoalContrib
+                )}
+                /mês
               </span>
             )}
           </div>
