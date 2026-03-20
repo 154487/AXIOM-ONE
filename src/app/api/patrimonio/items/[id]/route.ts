@@ -13,7 +13,7 @@ export async function PATCH(
 
   const { id } = await params;
   const body = await req.json();
-  const { name, value, category, appreciationRate, rateFrequency, loanBank, loanInstallments, loanStartDate, loanDueDay, notes } = body;
+  const { name, value, category, appreciationRate, rateFrequency, loanBank, loanInstallments, loanStartDate, loanDueDay, notes, linkedCategoryId } = body;
 
   const item = await prisma.wealthItem.findUnique({ where: { id } });
   if (!item || item.userId !== session.user.id) {
@@ -27,8 +27,13 @@ export async function PATCH(
       (typeof appreciationRate !== "number" || appreciationRate < -100 || appreciationRate > 100)) {
     return NextResponse.json({ error: "Taxa inválida. Use valores entre -100 e 100." }, { status: 400 });
   }
+  if (linkedCategoryId) {
+    const cat = await prisma.category.findFirst({ where: { id: linkedCategoryId, userId: session.user.id } });
+    if (!cat) return NextResponse.json({ error: "Categoria não encontrada" }, { status: 400 });
+  }
 
   const updated = await prisma.wealthItem.update({
+    include: { linkedCategory: true },
     where: { id },
     data: {
       ...(name && { name: name.trim() }),
@@ -47,6 +52,7 @@ export async function PATCH(
       ...(loanStartDate !== undefined && { loanStartDate: loanStartDate ? new Date(loanStartDate) : null }),
       ...(loanDueDay !== undefined && { loanDueDay: loanDueDay ?? null }),
       ...(notes !== undefined && { notes: notes?.trim() || null }),
+      ...(linkedCategoryId !== undefined && { linkedCategoryId: linkedCategoryId ?? null }),
     },
   });
 
@@ -69,6 +75,8 @@ export async function PATCH(
     loanInstallments: updated.loanInstallments,
     loanStartDate: updated.loanStartDate?.toISOString() ?? null,
     loanDueDay: updated.loanDueDay ?? null,
+    linkedCategoryId: updated.linkedCategoryId ?? null,
+    linkedCategoryName: updated.linkedCategory?.name ?? null,
     notes: updated.notes,
     createdAt: updated.createdAt.toISOString(),
   } satisfies WealthItemSerialized);
