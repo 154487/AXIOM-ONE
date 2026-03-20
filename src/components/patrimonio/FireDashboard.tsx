@@ -6,11 +6,13 @@ import { FireSettingsCard } from "./FireSettingsCard";
 import { FireProjectionChart } from "./FireProjectionChart";
 import { CoastFireCard } from "./CoastFireCard";
 import { FireGoalsCard } from "./FireGoalsCard";
+import { FirePlanCard } from "./FirePlanCard";
 import { GoalCard } from "./GoalCard";
 import type { NetworthData } from "@/components/reports/types";
 import type { WealthItemsResponse } from "@/app/api/patrimonio/items/route";
 import type { FireSettingsResponse } from "@/app/api/patrimonio/fire-settings/route";
 import type { FireResponse } from "@/app/api/reports/fire/route";
+import type { FireEssentialsResponse } from "@/app/api/reports/fire-essentials/route";
 import type { FinancialGoalSerialized } from "@/app/api/patrimonio/goals/route";
 
 interface PortfolioTotals {
@@ -40,6 +42,7 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
   const [portfolioData, setPortfolioData] = useState<PortfolioData | null>(null);
   const [fireSettings, setFireSettings] = useState<FireSettingsResponse | null>(null);
   const [goals, setGoals] = useState<FinancialGoalSerialized[]>([]);
+  const [essentialsData, setEssentialsData] = useState<FireEssentialsResponse | null>(null);
   const [cdiAnual, setCdiAnual] = useState<number | null>(null);
   const [fireData, setFireData] = useState<FireResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -59,13 +62,14 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
-    const [nwRes, itemsRes, portRes, settingsRes, goalsRes, benchRes] = await Promise.allSettled([
+    const [nwRes, itemsRes, portRes, settingsRes, goalsRes, benchRes, essentialsRes] = await Promise.allSettled([
       fetch("/api/reports/networth"),
       fetch("/api/patrimonio/items"),
       fetch("/api/investments/portfolio"),
       fetch("/api/patrimonio/fire-settings"),
       fetch("/api/patrimonio/goals"),
       fetch("/api/investments/benchmarks"),
+      fetch("/api/reports/fire-essentials"),
     ]);
 
     if (nwRes.status === "fulfilled" && nwRes.value.ok)
@@ -89,6 +93,9 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
     if (benchRes.status === "fulfilled" && benchRes.value.ok) {
       const d = await benchRes.value.json();
       if (d.selicAnual) setCdiAnual(d.selicAnual);
+    }
+    if (essentialsRes.status === "fulfilled" && essentialsRes.value.ok) {
+      setEssentialsData(await essentialsRes.value.json());
     }
 
     setLoading(false);
@@ -287,6 +294,17 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
           currency={currency}
           locale={locale}
           onSave={handleGoalSave}
+        />
+      )}
+
+      {/* Custo de vida real */}
+      {essentialsData && (
+        <FirePlanCard
+          essentialCategories={essentialsData.categories}
+          liabilityCosts={essentialsData.liabilityCosts}
+          totalEssentialMonthly={essentialsData.totalEssentialMonthly}
+          currency={currency}
+          locale={locale}
         />
       )}
 
