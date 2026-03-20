@@ -17,6 +17,8 @@ export interface WealthItemSerialized {
   loanInstallments: number | null;
   loanStartDate: string | null;
   loanDueDay: number | null;
+  linkedCategoryId: string | null;
+  linkedCategoryName: string | null;
   notes: string | null;
   createdAt: string;
 }
@@ -41,6 +43,8 @@ function serialize(item: {
   loanInstallments: number | null;
   loanStartDate: Date | null;
   loanDueDay: number | null;
+  linkedCategoryId: string | null;
+  linkedCategory?: { name: string } | null;
   notes: string | null;
   createdAt: Date;
 }): WealthItemSerialized {
@@ -64,6 +68,8 @@ function serialize(item: {
     loanInstallments: item.loanInstallments,
     loanStartDate: item.loanStartDate?.toISOString() ?? null,
     loanDueDay: item.loanDueDay ?? null,
+    linkedCategoryId: item.linkedCategoryId ?? null,
+    linkedCategoryName: item.linkedCategory?.name ?? null,
     notes: item.notes,
     createdAt: item.createdAt.toISOString(),
   };
@@ -76,6 +82,7 @@ export async function GET() {
   const rows = await prisma.wealthItem.findMany({
     where: { userId: session.user.id },
     orderBy: [{ itemType: "asc" }, { createdAt: "desc" }],
+    include: { linkedCategory: true },
   });
 
   const items = rows.map(serialize);
@@ -101,7 +108,7 @@ export async function POST(req: NextRequest) {
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { name, value, itemType, category, appreciationRate, rateFrequency, loanBank, loanInstallments, loanStartDate, loanDueDay, notes } = body;
+  const { name, value, itemType, category, appreciationRate, rateFrequency, loanBank, loanInstallments, loanStartDate, loanDueDay, notes, linkedCategoryId } = body;
 
   if (!name || typeof name !== "string" || name.trim().length === 0) {
     return NextResponse.json({ error: "Nome é obrigatório" }, { status: 400 });
@@ -119,8 +126,13 @@ export async function POST(req: NextRequest) {
       (typeof appreciationRate !== "number" || appreciationRate < -100 || appreciationRate > 100)) {
     return NextResponse.json({ error: "Taxa inválida. Use valores entre -100 e 100." }, { status: 400 });
   }
+  if (linkedCategoryId) {
+    const cat = await prisma.category.findFirst({ where: { id: linkedCategoryId, userId: session.user.id } });
+    if (!cat) return NextResponse.json({ error: "Categoria não encontrada" }, { status: 400 });
+  }
 
   const item = await prisma.wealthItem.create({
+    include: { linkedCategory: true },
     data: {
       userId: session.user.id,
       name: name.trim(),
@@ -134,6 +146,7 @@ export async function POST(req: NextRequest) {
       loanInstallments: loanInstallments ?? null,
       loanStartDate: loanStartDate ? new Date(loanStartDate) : null,
       loanDueDay: loanDueDay ?? null,
+      linkedCategoryId: linkedCategoryId ?? null,
       notes: notes?.trim() || null,
     },
   });
