@@ -28,6 +28,7 @@ model User {
   fireRetirementYears       Int?                          // horizonte de aposentadoria em anos (padrão 30)
   fireTargetMonthlyContrib  Decimal?  @db.Decimal(14, 2)  // meta de aporte mensal
   fireTargetInvestedAmount  Decimal?  @db.Decimal(14, 2)  // meta de patrimônio investido
+  fireNumberManual          Decimal?  @db.Decimal(14, 2)  // FI Number definido manualmente pelo usuário
   transactions        Transaction[]
   categories          Category[]
   currencies          UserCurrency[]
@@ -75,9 +76,11 @@ model Category {
   name         String
   color        String
   icon         String?
+  isEssential  Boolean       @default(false) // marca categoria como gasto essencial no plano FIRE
   userId       String
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
+  wealthItems  WealthItem[]  // passivos que linkam nesta categoria
   createdAt    DateTime      @default(now())
 }
 
@@ -210,6 +213,8 @@ model WealthItem {
   loanInstallments  Int?
   loanStartDate     DateTime?                          // data do 1º vencimento
   loanDueDay        Int?                               // dia do mês de vencimento (1-28)
+  linkedCategoryId  String?                             // FK opcional para Category (custo de manutenção)
+  linkedCategory    Category?      @relation(fields: [linkedCategoryId], references: [id], onDelete: SetNull)
   notes             String?
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
