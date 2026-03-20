@@ -104,7 +104,7 @@ src/
 │   │   ├── journal/               # GET ?month=&type=&tag= (max 100), POST (cria + snapshot)
 │   │   ├── journal/[id]/          # PATCH (ownership check, healthScore imutável), DELETE → 204
 │   │   ├── patrimonio/goal/       # GET → { goal }, PATCH → salva patrimonyGoal
-│   │   ├── patrimonio/fire-settings/ # GET/PATCH → fireMonthlyExpense + fireSWR do User
+│   │   ├── patrimonio/fire-settings/ # GET/PATCH → 6 campos FIRE do User (expense, swr, targetIncome, years, contrib, invested)
 │   │   ├── patrimonio/items/      # GET → WealthItemsResponse, POST → cria WealthItem
 │   │   ├── patrimonio/items/[id]/ # PATCH → atualiza (itemType imutável), DELETE → 204
 │   │   ├── patrimonio/items/[id]/installments/ # GET/PATCH parcelas do WealthItem
@@ -209,7 +209,11 @@ User
   id, name?, email (unique), password (bcrypt), createdAt, updatedAt
   notifTransactions (bool, default true), notifBudgetAlerts (bool, default true),
   notifMonthlyReport (bool, default false), patrimonyGoal (Decimal?, meta de patrimônio),
-  fireMonthlyExpense (Decimal?, gasto mensal alvo FIRE), fireSWR (Decimal?, taxa de retirada, default 4.0)
+  fireMonthlyExpense (Decimal?, gasto mensal alvo FIRE), fireSWR (Decimal?, legado),
+  fireTargetMonthlyIncome (Decimal?, renda mensal desejada na aposentadoria),
+  fireRetirementYears (Int?, horizonte em anos, padrão 30),
+  fireTargetMonthlyContrib (Decimal?, meta de aporte mensal),
+  fireTargetInvestedAmount (Decimal?, meta de patrimônio investido)
   → relations: transactions[], categories[], currencies[], notifications[]
 
 Category
@@ -372,6 +376,7 @@ A moeda padrão do usuário vem de `UserCurrency` com `isDefault: true`. O dashb
 | v1.4 | Metas Financeiras Múltiplas | ✅ concluída |
 | v1.5 | Bens & Passivos Aprimorado | ✅ concluída |
 | v1.6 | FIRE Dashboard: Independência Financeira | ✅ concluída — release v1.6.0 |
+| v1.7 | Independência Financeira Evoluída | ✅ concluída |
 
 ---
 
