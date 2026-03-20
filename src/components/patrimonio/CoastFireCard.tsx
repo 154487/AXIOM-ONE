@@ -6,6 +6,7 @@ interface CoastFireCardProps {
   coastFireNumber: number;
   firePatrimony: number;
   fiNumber: number;
+  retirementYears: number;
   currency: string;
   locale: string;
 }
@@ -14,6 +15,7 @@ export function CoastFireCard({
   coastFireNumber,
   firePatrimony,
   fiNumber,
+  retirementYears,
   currency,
   locale,
 }: CoastFireCardProps) {
@@ -21,8 +23,8 @@ export function CoastFireCard({
     coastFireNumber > 0 ? Math.min(100, (firePatrimony / coastFireNumber) * 100) : 0;
   const hasReachedCoast = firePatrimony >= coastFireNumber;
 
-  // Estimativa: quanto o patrimônio atual cresceria em 30 anos sem aportes (8% a.a.)
-  const futureValueNoContrib = firePatrimony * Math.pow(1 + 0.08, 30);
+  // Estimativa: quanto o patrimônio atual cresceria em retirementYears sem aportes (8% a.a.)
+  const futureValueNoContrib = firePatrimony * Math.pow(1 + 0.08, retirementYears);
   const faltaParaCoast = Math.max(0, coastFireNumber - firePatrimony);
 
   return (
@@ -30,7 +32,7 @@ export function CoastFireCard({
       <div>
         <h3 className="text-sm font-semibold text-white">Coast FIRE</h3>
         <p className="text-xs text-axiom-muted mt-0.5">
-          O ponto onde você pode parar de aportar e ainda chegar à independência
+          O ponto onde você pode parar de aportar e ainda chegar à independência em {retirementYears} anos
         </p>
       </div>
 
@@ -61,7 +63,7 @@ export function CoastFireCard({
             🎉 Você já pode parar de aportar!
           </p>
           <p className="text-xs text-axiom-muted mt-1">
-            Com o patrimônio atual e sem novos aportes, você chegará ao FI Number em ~30 anos.
+            Com o patrimônio atual e sem novos aportes, você chegará ao FI Number em ~{retirementYears} anos.
             Continue aportando para chegar mais rápido.
           </p>
         </div>
@@ -82,17 +84,19 @@ export function CoastFireCard({
             </div>
           </div>
           <p className="text-xs text-axiom-muted">
-            Em 30 anos sem aportes, o patrimônio atual cresceria para{" "}
+            Em {retirementYears} anos sem aportes, o patrimônio atual cresceria para{" "}
             <span className="text-white font-medium">
               {formatCurrency(futureValueNoContrib, locale, currency)}
             </span>{" "}
-            {futureValueNoContrib >= fiNumber ? "(≥ FI Number ✓)" : `(FI Number: ${formatCurrency(fiNumber, locale, currency)})`}
+            {futureValueNoContrib >= fiNumber
+              ? "(≥ FI Number ✓)"
+              : `(FI Number: ${formatCurrency(fiNumber, locale, currency)})`}
           </p>
         </div>
       )}
 
       <p className="text-[11px] text-axiom-muted/50 italic">
-        Coast FIRE = patrimônio que cresce sozinho a 8% a.a. até atingir o FI Number em 30 anos.
+        Coast FIRE = patrimônio que cresce sozinho a 8% a.a. até atingir o FI Number em {retirementYears} anos.
       </p>
     </div>
   );
