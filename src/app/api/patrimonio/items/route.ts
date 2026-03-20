@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { calcCurrentValue } from "@/lib/wealthCalc";
 
 export interface WealthItemSerialized {
   id: string;
@@ -11,6 +12,9 @@ export interface WealthItemSerialized {
   category: string;
   appreciationRate: number | null; // % a.a. (+6 = valoriza, -10 = deprecia)
   appreciationStart: string;       // ISO date — ponto de partida do cálculo
+  rateFrequency: "MONTHLY" | "ANNUAL";
+  loanBank: string | null;
+  loanInstallments: number | null;
   notes: string | null;
   createdAt: string;
 }
@@ -22,13 +26,6 @@ export interface WealthItemsResponse {
   net: number;
 }
 
-/** Calcula o valor atual com base na taxa anual composta e no tempo decorrido. */
-function calcCurrentValue(baseValue: number, rate: number | null, start: Date): number {
-  if (!rate) return baseValue;
-  const years = (Date.now() - start.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
-  return baseValue * Math.pow(1 + rate / 100, years);
-}
-
 function serialize(item: {
   id: string;
   name: string;
@@ -37,13 +34,17 @@ function serialize(item: {
   category: string;
   appreciationRate: unknown;
   appreciationStart: Date | null;
+  rateFrequency: string;
+  loanBank: string | null;
+  loanInstallments: number | null;
   notes: string | null;
   createdAt: Date;
 }): WealthItemSerialized {
   const baseValue = parseFloat(String(item.value));
   const rate = item.appreciationRate != null ? parseFloat(String(item.appreciationRate)) : null;
   const start = item.appreciationStart ?? item.createdAt;
-  const currentValue = calcCurrentValue(baseValue, rate, start);
+  const frequency = (item.rateFrequency as "MONTHLY" | "ANNUAL") ?? "ANNUAL";
+  const currentValue = calcCurrentValue(baseValue, rate, frequency, start);
 
   return {
     id: item.id,
@@ -54,6 +55,9 @@ function serialize(item: {
     category: item.category,
     appreciationRate: rate,
     appreciationStart: start.toISOString(),
+    rateFrequency: frequency,
+    loanBank: item.loanBank,
+    loanInstallments: item.loanInstallments,
     notes: item.notes,
     createdAt: item.createdAt.toISOString(),
   };
@@ -91,7 +95,7 @@ export async function POST(req: NextRequest) {
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { name, value, itemType, category, appreciationRate, notes } = body;
+  const { name, value, itemType, category, appreciationRate, rateFrequency, loanBank, loanInstallments, notes } = body;
 
   if (!name || typeof name !== "string" || name.trim().length === 0) {
     return NextResponse.json({ error: "Nome é obrigatório" }, { status: 400 });
@@ -119,6 +123,9 @@ export async function POST(req: NextRequest) {
       category: category.trim(),
       appreciationRate: appreciationRate ?? null,
       appreciationStart: new Date(),
+      rateFrequency: rateFrequency ?? "ANNUAL",
+      loanBank: loanBank ?? null,
+      loanInstallments: loanInstallments ?? null,
       notes: notes?.trim() || null,
     },
   });

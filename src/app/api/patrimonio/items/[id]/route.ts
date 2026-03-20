@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { calcCurrentValue } from "@/lib/wealthCalc";
 import type { WealthItemSerialized } from "../route";
-
-function calcCurrentValue(baseValue: number, rate: number | null, start: Date): number {
-  if (!rate) return baseValue;
-  const years = (Date.now() - start.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
-  return baseValue * Math.pow(1 + rate / 100, years);
-}
 
 export async function PATCH(
   req: NextRequest,
@@ -18,7 +13,7 @@ export async function PATCH(
 
   const { id } = await params;
   const body = await req.json();
-  const { name, value, category, appreciationRate, notes } = body;
+  const { name, value, category, appreciationRate, rateFrequency, loanBank, loanInstallments, notes } = body;
 
   const item = await prisma.wealthItem.findUnique({ where: { id } });
   if (!item || item.userId !== session.user.id) {
@@ -46,6 +41,9 @@ export async function PATCH(
       ...(category && { category: category.trim() }),
       // appreciationRate pode ser null (para remover a taxa)
       ...(appreciationRate !== undefined && { appreciationRate: appreciationRate }),
+      ...(rateFrequency !== undefined && { rateFrequency }),
+      ...(loanBank !== undefined && { loanBank: loanBank ?? null }),
+      ...(loanInstallments !== undefined && { loanInstallments: loanInstallments ?? null }),
       ...(notes !== undefined && { notes: notes?.trim() || null }),
     },
   });
@@ -53,16 +51,20 @@ export async function PATCH(
   const baseValue = parseFloat(String(updated.value));
   const rate = updated.appreciationRate != null ? parseFloat(String(updated.appreciationRate)) : null;
   const start = updated.appreciationStart ?? updated.createdAt;
+  const frequency = (updated.rateFrequency as "MONTHLY" | "ANNUAL") ?? "ANNUAL";
 
   return NextResponse.json({
     id: updated.id,
     name: updated.name,
-    value: calcCurrentValue(baseValue, rate, start),
+    value: calcCurrentValue(baseValue, rate, frequency, start),
     baseValue,
     itemType: updated.itemType as "ASSET" | "LIABILITY",
     category: updated.category,
     appreciationRate: rate,
     appreciationStart: start.toISOString(),
+    rateFrequency: frequency,
+    loanBank: updated.loanBank,
+    loanInstallments: updated.loanInstallments,
     notes: updated.notes,
     createdAt: updated.createdAt.toISOString(),
   } satisfies WealthItemSerialized);
