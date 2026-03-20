@@ -10,6 +10,7 @@ import { WealthItems } from "./WealthItems";
 import { GoalsList } from "./GoalsList";
 import type { NetworthData } from "@/components/reports/types";
 import type { WealthItemsResponse } from "@/app/api/patrimonio/items/route";
+import type { FireEssentialsResponse } from "@/app/api/reports/fire-essentials/route";
 
 type PatrimonioTab = "evolucao" | "analise" | "independencia" | "bens" | "meta";
 
@@ -56,6 +57,9 @@ export function PatrimonioShell({ initialCurrency, initialLocale }: PatrimonioSh
   const [itemsData, setItemsData] = useState<WealthItemsResponse | null>(null);
   const [itemsLoading, setItemsLoading] = useState(false);
 
+  const [essentialsData, setEssentialsData] = useState<FireEssentialsResponse | null>(null);
+  const [userCategories, setUserCategories] = useState<{ id: string; name: string; color: string }[]>([]);
+
   const fetchItems = useCallback(async () => {
     setItemsLoading(true);
     try {
@@ -73,10 +77,12 @@ export function PatrimonioShell({ initialCurrency, initialLocale }: PatrimonioSh
     setPortfolioLoading(true);
     setItemsLoading(true);
 
-    const [networthRes, portfolioRes, itemsRes] = await Promise.allSettled([
+    const [networthRes, portfolioRes, itemsRes, essentialsRes, categoriesRes] = await Promise.allSettled([
       fetch("/api/reports/networth"),
       fetch("/api/investments/portfolio"),
       fetch("/api/patrimonio/items"),
+      fetch("/api/reports/fire-essentials"),
+      fetch("/api/categories"),
     ]);
 
     if (networthRes.status === "fulfilled" && networthRes.value.ok) {
@@ -93,6 +99,15 @@ export function PatrimonioShell({ initialCurrency, initialLocale }: PatrimonioSh
       setItemsData(await itemsRes.value.json());
     }
     setItemsLoading(false);
+
+    if (essentialsRes.status === "fulfilled" && essentialsRes.value.ok) {
+      setEssentialsData(await essentialsRes.value.json());
+    }
+
+    if (categoriesRes.status === "fulfilled" && categoriesRes.value.ok) {
+      const cats = await categoriesRes.value.json();
+      setUserCategories(cats.map((c: { id: string; name: string; color: string }) => ({ id: c.id, name: c.name, color: c.color })));
+    }
   }, []);
 
   useEffect(() => {
@@ -201,6 +216,8 @@ export function PatrimonioShell({ initialCurrency, initialLocale }: PatrimonioSh
               currency={initialCurrency}
               locale={initialLocale}
               onRefresh={fetchItems}
+              liabilityCosts={essentialsData?.liabilityCosts ?? []}
+              userCategories={userCategories}
             />
           )}
         </>
