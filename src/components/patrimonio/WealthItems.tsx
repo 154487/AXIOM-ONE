@@ -97,21 +97,21 @@ export function WealthItems({
         {/* Summary bar */}
         <div className="grid grid-cols-3 gap-3">
           <div className="flex flex-col gap-0.5 p-3 rounded-lg bg-axiom-hover">
-            <span className="text-xs text-axiom-muted">Ativos</span>
-            <span className="text-sm font-bold text-axiom-income">
+            <span className="text-sm text-axiom-muted">Ativos</span>
+            <span className="text-base font-bold text-axiom-income">
               {formatCurrency(totalAssets, locale, currency)}
             </span>
           </div>
           <div className="flex flex-col gap-0.5 p-3 rounded-lg bg-axiom-hover">
-            <span className="text-xs text-axiom-muted">Passivos</span>
-            <span className="text-sm font-bold text-axiom-expense">
+            <span className="text-sm text-axiom-muted">Passivos</span>
+            <span className="text-base font-bold text-axiom-expense">
               {formatCurrency(totalLiabilities, locale, currency)}
             </span>
           </div>
           <div className="flex flex-col gap-0.5 p-3 rounded-lg bg-axiom-hover">
-            <span className="text-xs text-axiom-muted">Líquido</span>
+            <span className="text-sm text-axiom-muted">Líquido</span>
             <span
-              className={`text-sm font-bold ${net >= 0 ? "text-axiom-income" : "text-axiom-expense"}`}
+              className={`text-base font-bold ${net >= 0 ? "text-axiom-income" : "text-axiom-expense"}`}
             >
               {formatCurrency(net, locale, currency)}
             </span>
@@ -224,14 +224,14 @@ function ItemRow({
     <div className="rounded-lg hover:bg-axiom-hover transition-colors">
       <div className="flex items-center justify-between gap-3 px-3 py-2.5 group">
         <div className="flex items-center gap-2 min-w-0 flex-wrap">
-          <span className="text-sm text-white truncate">{item.name}</span>
-          <span className="shrink-0 px-1.5 py-0.5 rounded text-[10px] bg-axiom-hover text-axiom-muted border border-axiom-border">
+          <span className="text-base text-white truncate">{item.name}</span>
+          <span className="shrink-0 px-1.5 py-0.5 rounded text-xs bg-axiom-hover text-axiom-muted border border-axiom-border">
             {item.category}
           </span>
           {/* Badge de taxa de correção */}
           {item.appreciationRate ? (
             <span
-              className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium border ${
+              className={`shrink-0 px-1.5 py-0.5 rounded text-xs font-medium border ${
                 item.appreciationRate > 0
                   ? "text-axiom-income bg-axiom-income/10 border-axiom-income/20"
                   : "text-axiom-expense bg-axiom-expense/10 border-axiom-expense/20"
@@ -243,12 +243,12 @@ function ItemRow({
           ) : null}
           {/* Badge de banco */}
           {item.loanBank && getLoanBankById(item.loanBank) && (
-            <span className="shrink-0 px-1.5 py-0.5 rounded text-[10px] bg-axiom-hover text-axiom-muted border border-axiom-border">
+            <span className="shrink-0 px-1.5 py-0.5 rounded text-xs bg-axiom-hover text-axiom-muted border border-axiom-border">
               {getLoanBankById(item.loanBank)!.bankName}
             </span>
           )}
           {item.notes && (
-            <span className="text-[10px] text-axiom-muted/60 truncate hidden sm:block" title={item.notes}>
+            <span className="text-xs text-axiom-muted/60 truncate hidden sm:block" title={item.notes}>
               {item.notes}
             </span>
           )}
@@ -256,14 +256,14 @@ function ItemRow({
         <div className="flex items-center gap-2 shrink-0">
           <div className="flex flex-col items-end">
             <span
-              className={`text-sm font-semibold ${item.itemType === "ASSET" ? "text-axiom-income" : "text-axiom-expense"}`}
+              className={`text-base font-semibold ${item.itemType === "ASSET" ? "text-axiom-income" : "text-axiom-expense"}`}
             >
               {item.itemType === "LIABILITY" ? "−" : ""}
               {formatCurrency(item.value, locale, currency)}
             </span>
             {/* Diferença entre base e calculado */}
             {hasDrift && (
-              <span className={`text-[10px] ${gain >= 0 ? "text-axiom-income/70" : "text-axiom-expense/70"}`}>
+              <span className={`text-xs ${gain >= 0 ? "text-axiom-income/70" : "text-axiom-expense/70"}`}>
                 {gain >= 0 ? "+" : ""}{formatCurrency(gain, locale, currency)}
               </span>
             )}
@@ -341,7 +341,7 @@ function InstallmentTracker({
 
   if (!data) {
     return (
-      <div className="ml-3 mt-0.5 text-[10px] text-axiom-muted/50 animate-pulse">
+      <div className="ml-3 mt-0.5 text-xs text-axiom-muted/50 animate-pulse">
         Carregando parcela...
       </div>
     );
@@ -349,9 +349,29 @@ function InstallmentTracker({
 
   const { installment, paidCount } = data;
   const totalInstallments = item.loanInstallments!;
+
+  // Auto-calculate current installment number from loanStartDate when available
+  let displayInstallmentNumber = paidCount + 1;
+  if (item.loanStartDate) {
+    const start = new Date(item.loanStartDate);
+    const startYear = start.getFullYear();
+    const startMonth = start.getMonth() + 1; // 1-indexed
+    const monthsElapsed = (currentYear - startYear) * 12 + (currentMonth - startMonth);
+    displayInstallmentNumber = Math.max(1, monthsElapsed + 1);
+  }
+
+  // Due date for current month
+  let dueDateStr: string | null = null;
+  if (item.loanDueDay) {
+    const dueDate = new Date(currentYear, currentMonth - 1, item.loanDueDay);
+    dueDateStr = dueDate.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+  }
+
+  // Payoff date
   const remaining = totalInstallments - paidCount;
-  const quitacaoDate = new Date(now.getFullYear(), now.getMonth() + remaining, 1);
+  const quitacaoDate = new Date(now.getFullYear(), now.getMonth() + remaining, item.loanDueDay ?? 1);
   const quitacaoStr = quitacaoDate.toLocaleDateString("pt-BR", { month: "short", year: "numeric" });
+
   const monthName = now.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
 
   // OVERDUE: calculate fees
@@ -363,20 +383,21 @@ function InstallmentTracker({
   if (!installment || installment.status === "PENDING") {
     return (
       <div className="ml-3 mt-1 flex items-center gap-2 flex-wrap">
-        <span className="text-[10px] text-axiom-muted">
-          Parcela {paidCount + 1}/{totalInstallments} • {monthName}
+        <span className="text-xs text-axiom-muted">
+          Parcela {displayInstallmentNumber}/{totalInstallments}
+          {dueDateStr ? ` • vence ${dueDateStr}` : ` • ${monthName}`}
         </span>
         <button
           disabled={marking}
           onClick={() => markInstallment("PAID")}
-          className="text-[10px] px-2 py-0.5 rounded border border-axiom-income/30 text-axiom-income hover:bg-axiom-income/10 transition-colors disabled:opacity-50"
+          className="text-xs px-2 py-0.5 rounded border border-axiom-income/30 text-axiom-income hover:bg-axiom-income/10 transition-colors disabled:opacity-50"
         >
           ✓ Marcar paga
         </button>
         <button
           disabled={marking}
           onClick={() => markInstallment("OVERDUE")}
-          className="text-[10px] px-2 py-0.5 rounded border border-axiom-expense/30 text-axiom-expense hover:bg-axiom-expense/10 transition-colors disabled:opacity-50"
+          className="text-xs px-2 py-0.5 rounded border border-axiom-expense/30 text-axiom-expense hover:bg-axiom-expense/10 transition-colors disabled:opacity-50"
         >
           ⚠ Em atraso
         </button>
@@ -387,10 +408,10 @@ function InstallmentTracker({
   if (installment.status === "PAID") {
     return (
       <div className="ml-3 mt-1 flex items-center gap-2">
-        <span className="text-[10px] px-1.5 py-0.5 rounded bg-axiom-income/10 border border-axiom-income/20 text-axiom-income">
+        <span className="text-xs px-1.5 py-0.5 rounded bg-axiom-income/10 border border-axiom-income/20 text-axiom-income">
           ✅ Parcela {paidCount}/{totalInstallments} paga
         </span>
-        <span className="text-[10px] text-axiom-muted">Quitação: {quitacaoStr}</span>
+        <span className="text-xs text-axiom-muted">Quitação: {quitacaoStr}</span>
       </div>
     );
   }
@@ -399,16 +420,16 @@ function InstallmentTracker({
   return (
     <div className="ml-3 mt-1 flex flex-col gap-1">
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-[10px] px-1.5 py-0.5 rounded bg-axiom-expense/10 border border-axiom-expense/20 text-axiom-expense">
+        <span className="text-xs px-1.5 py-0.5 rounded bg-axiom-expense/10 border border-axiom-expense/20 text-axiom-expense">
           ⚠ Em atraso
         </span>
         {overdueInfo && (
-          <span className="text-[10px] text-axiom-expense/80">
+          <span className="text-xs text-axiom-expense/80">
             Multa {formatCurrency(overdueInfo.fine, locale, currency)} + mora {formatCurrency(overdueInfo.mora, locale, currency)}
           </span>
         )}
       </div>
-      <span className="text-[10px] text-axiom-muted/70">
+      <span className="text-xs text-axiom-muted/70">
         Risco de negativação após 30 dias • Risco de embargo após 90 dias
       </span>
     </div>
