@@ -5,6 +5,10 @@ import { prisma } from "@/lib/prisma";
 export interface FireSettingsResponse {
   monthlyExpense: number | null;
   swr: number | null;
+  targetMonthlyIncome: number | null;
+  retirementYears: number | null;
+  targetMonthlyContrib: number | null;
+  targetInvestedAmount: number | null;
 }
 
 export async function GET() {
@@ -13,12 +17,29 @@ export async function GET() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { fireMonthlyExpense: true, fireSWR: true },
+    select: {
+      fireMonthlyExpense: true,
+      fireSWR: true,
+      fireTargetMonthlyIncome: true,
+      fireRetirementYears: true,
+      fireTargetMonthlyContrib: true,
+      fireTargetInvestedAmount: true,
+    },
   });
 
   return NextResponse.json({
     monthlyExpense: user?.fireMonthlyExpense ? parseFloat(String(user.fireMonthlyExpense)) : null,
     swr: user?.fireSWR ? parseFloat(String(user.fireSWR)) : null,
+    targetMonthlyIncome: user?.fireTargetMonthlyIncome
+      ? parseFloat(String(user.fireTargetMonthlyIncome))
+      : null,
+    retirementYears: user?.fireRetirementYears ?? null,
+    targetMonthlyContrib: user?.fireTargetMonthlyContrib
+      ? parseFloat(String(user.fireTargetMonthlyContrib))
+      : null,
+    targetInvestedAmount: user?.fireTargetInvestedAmount
+      ? parseFloat(String(user.fireTargetInvestedAmount))
+      : null,
   } satisfies FireSettingsResponse);
 }
 
@@ -26,23 +47,50 @@ export async function PATCH(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { monthlyExpense, swr } = await req.json();
+  const body = await req.json();
+  const {
+    monthlyExpense,
+    swr,
+    targetMonthlyIncome,
+    retirementYears,
+    targetMonthlyContrib,
+    targetInvestedAmount,
+  } = body;
 
   if (monthlyExpense !== null && monthlyExpense !== undefined && monthlyExpense <= 0)
     return NextResponse.json({ error: "Gasto deve ser maior que zero" }, { status: 400 });
   if (swr !== null && swr !== undefined && (swr < 0.5 || swr > 20))
     return NextResponse.json({ error: "SWR deve estar entre 0.5 e 20" }, { status: 400 });
+  if (
+    targetMonthlyIncome !== null &&
+    targetMonthlyIncome !== undefined &&
+    targetMonthlyIncome <= 0
+  )
+    return NextResponse.json({ error: "Renda alvo deve ser maior que zero" }, { status: 400 });
+  if (
+    retirementYears !== null &&
+    retirementYears !== undefined &&
+    (retirementYears < 1 || retirementYears > 60)
+  )
+    return NextResponse.json({ error: "Horizonte deve estar entre 1 e 60 anos" }, { status: 400 });
 
   await prisma.user.update({
     where: { id: session.user.id },
     data: {
       ...(monthlyExpense !== undefined && { fireMonthlyExpense: monthlyExpense ?? null }),
       ...(swr !== undefined && { fireSWR: swr ?? null }),
+      ...(targetMonthlyIncome !== undefined && {
+        fireTargetMonthlyIncome: targetMonthlyIncome ?? null,
+      }),
+      ...(retirementYears !== undefined && { fireRetirementYears: retirementYears ?? null }),
+      ...(targetMonthlyContrib !== undefined && {
+        fireTargetMonthlyContrib: targetMonthlyContrib ?? null,
+      }),
+      ...(targetInvestedAmount !== undefined && {
+        fireTargetInvestedAmount: targetInvestedAmount ?? null,
+      }),
     },
   });
 
-  return NextResponse.json({
-    monthlyExpense: monthlyExpense ?? null,
-    swr: swr ?? null,
-  } satisfies FireSettingsResponse);
+  return NextResponse.json({ ok: true });
 }
