@@ -12,6 +12,7 @@ function serialize(goal: {
   savedAmount: unknown;
   contributionAmount: unknown;
   contributionFrequency: string;
+  bank: string | null;
   notes: string | null;
   createdAt: Date;
 }): FinancialGoalSerialized {
@@ -22,6 +23,7 @@ function serialize(goal: {
     savedAmount: parseFloat(String(goal.savedAmount)),
     contributionAmount: parseFloat(String(goal.contributionAmount)),
     contributionFrequency: goal.contributionFrequency as "DAILY" | "WEEKLY" | "MONTHLY",
+    bank: goal.bank,
     notes: goal.notes,
     createdAt: goal.createdAt.toISOString(),
   };
@@ -36,7 +38,7 @@ export async function PATCH(
 
   const { id } = await params;
   const body = await req.json();
-  const { name, targetAmount, savedAmount, contributionAmount, contributionFrequency, notes } = body;
+  const { name, targetAmount, savedAmount, contributionAmount, contributionFrequency, bank, notes } = body;
 
   const goal = await prisma.financialGoal.findUnique({ where: { id } });
   if (!goal || goal.userId !== session.user.id) {
@@ -64,6 +66,7 @@ export async function PATCH(
       ...(savedAmount !== undefined && { savedAmount }),
       ...(contributionAmount !== undefined && { contributionAmount }),
       ...(contributionFrequency !== undefined && { contributionFrequency }),
+      ...(bank !== undefined && { bank: bank ?? null }),
       ...(notes !== undefined && { notes: notes?.trim() || null }),
     },
   });
