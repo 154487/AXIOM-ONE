@@ -5,30 +5,47 @@ import { formatCurrency } from "@/lib/utils";
 
 interface FireSettingsCardProps {
   monthlyExpense: number;
-  swr: number;
-  extraSavings: number;        // 0-20, estado local
-  avgExpenses: number;         // médias das transações (placeholder)
-  isUsingAvgExpenses: boolean; // true quando monthlyExpense vem da média (não editado)
+  targetMonthlyIncome: number | null;
+  extraSavings: number;
+  avgExpenses: number;
+  avgExpensesByPeriod: number;
+  isUsingAvgExpenses: boolean;
+  expensePeriod: 3 | 6 | 12;
+  retirementYears: number;
   onMonthlyExpenseChange: (v: number) => void;
-  onSWRChange: (v: number) => void;
+  onTargetMonthlyIncomeChange: (v: number) => void;
+  onSWRChange?: (v: number) => void; // kept for compatibility — unused
   onExtraSavingsChange: (v: number) => void;
+  onPeriodChange: (months: 3 | 6 | 12) => void;
+  onRetirementYearsChange: (v: number) => void;
   currency: string;
   locale: string;
 }
 
+const PERIODS: { label: string; value: 3 | 6 | 12 }[] = [
+  { label: "3M", value: 3 },
+  { label: "6M", value: 6 },
+  { label: "12M", value: 12 },
+];
+
 export function FireSettingsCard({
   monthlyExpense,
-  swr,
+  targetMonthlyIncome,
   extraSavings,
+  avgExpensesByPeriod,
   isUsingAvgExpenses,
+  expensePeriod,
+  retirementYears,
   onMonthlyExpenseChange,
-  onSWRChange,
+  onTargetMonthlyIncomeChange,
   onExtraSavingsChange,
+  onPeriodChange,
+  onRetirementYearsChange,
   currency,
   locale,
 }: FireSettingsCardProps) {
   const expenseDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const swrDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const incomeDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function handleExpenseChange(raw: string) {
     const v = parseFloat(raw);
@@ -37,11 +54,11 @@ export function FireSettingsCard({
     expenseDebounce.current = setTimeout(() => onMonthlyExpenseChange(v), 400);
   }
 
-  function handleSWRChange(raw: string) {
+  function handleIncomeChange(raw: string) {
     const v = parseFloat(raw);
-    if (isNaN(v) || v < 0.5 || v > 10) return;
-    if (swrDebounce.current) clearTimeout(swrDebounce.current);
-    swrDebounce.current = setTimeout(() => onSWRChange(v), 400);
+    if (isNaN(v) || v <= 0) return;
+    if (incomeDebounce.current) clearTimeout(incomeDebounce.current);
+    incomeDebounce.current = setTimeout(() => onTargetMonthlyIncomeChange(v), 400);
   }
 
   return (
@@ -52,11 +69,29 @@ export function FireSettingsCard({
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {/* Gasto mensal alvo */}
+        {/* (B) Gasto mensal com seletor de período */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs text-axiom-muted uppercase tracking-wide">
-            Gasto mensal na aposentadoria
-          </label>
+          <div className="flex items-center justify-between">
+            <label className="text-xs text-axiom-muted uppercase tracking-wide">
+              Gasto mensal na aposentadoria
+            </label>
+            {/* Seletor de período */}
+            <div className="flex gap-0.5">
+              {PERIODS.map((p) => (
+                <button
+                  key={p.value}
+                  onClick={() => onPeriodChange(p.value)}
+                  className={`px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                    expensePeriod === p.value
+                      ? "bg-axiom-primary text-white"
+                      : "text-axiom-muted hover:text-white"
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
           <input
             type="number"
             defaultValue={monthlyExpense}
@@ -68,29 +103,58 @@ export function FireSettingsCard({
           />
           {isUsingAvgExpenses && (
             <p className="text-[11px] text-axiom-muted/60 italic">
-              Baseado na média de transações
+              Média dos últimos {expensePeriod}m:{" "}
+              <span className="text-axiom-muted not-italic">
+                {formatCurrency(avgExpensesByPeriod, locale, currency)}
+              </span>
             </p>
           )}
         </div>
 
-        {/* SWR */}
+        {/* (C) Renda mensal desejada na aposentadoria (substitui SWR) */}
         <div className="flex flex-col gap-1.5">
           <label className="text-xs text-axiom-muted uppercase tracking-wide">
-            Taxa de retirada (SWR %)
+            Renda mensal na aposentadoria
           </label>
           <input
             type="number"
-            defaultValue={swr}
-            min={0.5}
-            max={10}
-            step={0.5}
-            onChange={(e) => handleSWRChange(e.target.value)}
+            defaultValue={targetMonthlyIncome ?? ""}
+            min={100}
+            step={100}
+            onChange={(e) => handleIncomeChange(e.target.value)}
             className="bg-axiom-hover border border-axiom-border rounded-lg px-3 py-2 text-sm text-white placeholder-axiom-muted/50 focus:outline-none focus:border-axiom-primary/60 transition-colors"
+            placeholder="Ex: 8000"
           />
           <p className="text-[11px] text-axiom-muted/60">
-            4% = regra clássica · 3.5% = conservador · 5% = otimista
+            FI Number = renda × 12 × 25 (regra dos 4%)
           </p>
         </div>
+      </div>
+
+      {/* (D) Slider horizonte de aposentadoria */}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <label className="text-xs text-axiom-muted uppercase tracking-wide">
+            Horizonte de aposentadoria
+          </label>
+          <span className="text-sm font-semibold text-axiom-primary">{retirementYears} anos</span>
+        </div>
+        <input
+          type="range"
+          min={5}
+          max={50}
+          step={5}
+          value={retirementYears}
+          onChange={(e) => onRetirementYearsChange(parseInt(e.target.value))}
+          className="w-full accent-axiom-primary cursor-pointer"
+        />
+        <div className="flex justify-between text-[11px] text-axiom-muted">
+          <span>5 anos</span>
+          <span>50 anos</span>
+        </div>
+        <p className="text-[11px] text-axiom-muted/70">
+          Afeta o Coast FIRE — quanto antes quiser se aposentar, mais precisa ter hoje
+        </p>
       </div>
 
       {/* Slider de aporte extra */}
