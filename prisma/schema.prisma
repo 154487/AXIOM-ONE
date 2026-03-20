@@ -30,6 +30,7 @@ model User {
   investmentEntries   InvestmentEntry[]
   journalEntries      JournalEntry[]
   wealthItems         WealthItem[]
+  financialGoals      FinancialGoal[]
 }
 
 model Notification {
@@ -172,6 +173,12 @@ enum WealthItemType {
   LIABILITY
 }
 
+enum ContributionFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
 model WealthItem {
   id        String         @id @default(cuid())
   userId    String
@@ -183,4 +190,18 @@ model WealthItem {
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
   user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model FinancialGoal {
+  id                    String                @id @default(cuid())
+  userId                String
+  name                  String
+  targetAmount          Decimal               @db.Decimal(14, 2)
+  savedAmount           Decimal               @default(0) @db.Decimal(14, 2)
+  contributionAmount    Decimal               @db.Decimal(14, 2)
+  contributionFrequency ContributionFrequency
+  notes                 String?
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  user                  User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
