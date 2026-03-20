@@ -15,6 +15,8 @@ export interface WealthItemSerialized {
   rateFrequency: "MONTHLY" | "ANNUAL";
   loanBank: string | null;
   loanInstallments: number | null;
+  loanStartDate: string | null;
+  loanDueDay: number | null;
   notes: string | null;
   createdAt: string;
 }
@@ -37,6 +39,8 @@ function serialize(item: {
   rateFrequency: string;
   loanBank: string | null;
   loanInstallments: number | null;
+  loanStartDate: Date | null;
+  loanDueDay: number | null;
   notes: string | null;
   createdAt: Date;
 }): WealthItemSerialized {
@@ -58,6 +62,8 @@ function serialize(item: {
     rateFrequency: frequency,
     loanBank: item.loanBank,
     loanInstallments: item.loanInstallments,
+    loanStartDate: item.loanStartDate?.toISOString() ?? null,
+    loanDueDay: item.loanDueDay ?? null,
     notes: item.notes,
     createdAt: item.createdAt.toISOString(),
   };
@@ -95,7 +101,7 @@ export async function POST(req: NextRequest) {
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { name, value, itemType, category, appreciationRate, rateFrequency, loanBank, loanInstallments, notes } = body;
+  const { name, value, itemType, category, appreciationRate, rateFrequency, loanBank, loanInstallments, loanStartDate, loanDueDay, notes } = body;
 
   if (!name || typeof name !== "string" || name.trim().length === 0) {
     return NextResponse.json({ error: "Nome é obrigatório" }, { status: 400 });
@@ -126,6 +132,8 @@ export async function POST(req: NextRequest) {
       rateFrequency: rateFrequency ?? "ANNUAL",
       loanBank: loanBank ?? null,
       loanInstallments: loanInstallments ?? null,
+      loanStartDate: loanStartDate ? new Date(loanStartDate) : null,
+      loanDueDay: loanDueDay ?? null,
       notes: notes?.trim() || null,
     },
   });

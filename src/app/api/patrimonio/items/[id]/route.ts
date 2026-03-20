@@ -13,7 +13,7 @@ export async function PATCH(
 
   const { id } = await params;
   const body = await req.json();
-  const { name, value, category, appreciationRate, rateFrequency, loanBank, loanInstallments, notes } = body;
+  const { name, value, category, appreciationRate, rateFrequency, loanBank, loanInstallments, loanStartDate, loanDueDay, notes } = body;
 
   const item = await prisma.wealthItem.findUnique({ where: { id } });
   if (!item || item.userId !== session.user.id) {
@@ -44,6 +44,8 @@ export async function PATCH(
       ...(rateFrequency !== undefined && { rateFrequency }),
       ...(loanBank !== undefined && { loanBank: loanBank ?? null }),
       ...(loanInstallments !== undefined && { loanInstallments: loanInstallments ?? null }),
+      ...(loanStartDate !== undefined && { loanStartDate: loanStartDate ? new Date(loanStartDate) : null }),
+      ...(loanDueDay !== undefined && { loanDueDay: loanDueDay ?? null }),
       ...(notes !== undefined && { notes: notes?.trim() || null }),
     },
   });
@@ -65,6 +67,8 @@ export async function PATCH(
     rateFrequency: frequency,
     loanBank: updated.loanBank,
     loanInstallments: updated.loanInstallments,
+    loanStartDate: updated.loanStartDate?.toISOString() ?? null,
+    loanDueDay: updated.loanDueDay ?? null,
     notes: updated.notes,
     createdAt: updated.createdAt.toISOString(),
   } satisfies WealthItemSerialized);
