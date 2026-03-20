@@ -177,13 +177,13 @@ export function PatrimonioShell({ initialCurrency, initialLocale }: PatrimonioSh
             />
           )}
 
-          <PortfolioPerformanceChart />
-
           {loading || !data ? (
             <SkeletonCard label="Projeção FIRE" />
           ) : (
             <FireProjection networthData={data} currency={initialCurrency} />
           )}
+
+          <PortfolioPerformanceChart />
         </div>
       )}
 
