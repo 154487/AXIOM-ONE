@@ -70,6 +70,9 @@ export async function GET(req: NextRequest) {
   // Se fornecida, usada para FI Number; caso contrário, usa regra tradicional de despesas
   const targetMonthlyIncome = parseFloat(searchParams.get("targetMonthlyIncome") ?? "0");
 
+  // fiNumberManual: FI Number definido diretamente pelo usuário — sobrepõe cálculo automático
+  const fiNumberManual = parseFloat(searchParams.get("fiNumberManual") ?? "0");
+
   if (monthlyIncome <= 0 || monthlyExpenses >= monthlyIncome) {
     return NextResponse.json({
       projectable: false,
@@ -80,10 +83,9 @@ export async function GET(req: NextRequest) {
   const PMT = monthlyIncome - monthlyExpenses;
   const safeRetirementYears = retirementYears > 0 && retirementYears <= 60 ? retirementYears : 30;
 
-  // FI Number: renda mensal alvo × 12 × 25 (regra 4% = 25x a renda anual)
-  // Se não definida, usa despesas mensais × 25 × 12 (equivalente a SWR 4%)
+  // FI Number: usa valor manual se definido; senão calcula pela regra 4%
   const incomeBase = targetMonthlyIncome > 0 ? targetMonthlyIncome : monthlyExpenses;
-  const fiNumber = incomeBase * 12 * 25;
+  const fiNumber = fiNumberManual > 0 ? fiNumberManual : incomeBase * 12 * 25;
 
   // Coast FIRE: quanto precisa ter hoje para atingir FI no horizonte definido sem aportes
   const coastFireNumber = fiNumber / Math.pow(1 + ANNUAL_RATES.moderado, safeRetirementYears);
