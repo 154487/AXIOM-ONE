@@ -19,6 +19,7 @@ export function CategoriesManager({ initialCategories }: CategoriesManagerProps)
   const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [dialog, setDialog] = useState<{ mode: "create" | "edit"; category?: Category } | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   function handleSuccess(updated: Category) {
     setCategories((prev) => {
@@ -28,6 +29,24 @@ export function CategoriesManager({ initialCategories }: CategoriesManagerProps)
     });
     toast.success("Sucesso!", t("categorySaved"));
     setDialog(null);
+  }
+
+  async function handleToggleEssential(id: string, value: boolean) {
+    setTogglingId(id);
+    try {
+      const res = await fetch(`/api/categories/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isEssential: value }),
+      });
+      if (res.ok) {
+        setCategories((prev) => prev.map((c) => (c.id === id ? { ...c, isEssential: value } : c)));
+      }
+    } catch {
+      // silent
+    } finally {
+      setTogglingId(null);
+    }
   }
 
   async function handleDelete(id: string) {
@@ -81,7 +100,20 @@ export function CategoriesManager({ initialCategories }: CategoriesManagerProps)
                   <p className="text-axiom-muted text-xs">{cat.color}</p>
                 </div>
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleToggleEssential(cat.id, !cat.isEssential)}
+                  disabled={togglingId === cat.id}
+                  className={cn(
+                    "px-2 py-0.5 rounded-full text-[11px] border transition-colors",
+                    cat.isEssential
+                      ? "text-axiom-primary bg-axiom-primary/10 border-axiom-primary/30"
+                      : "text-axiom-muted border-axiom-border hover:border-axiom-primary/30 hover:text-axiom-primary/70"
+                  )}
+                  title="Marcar como gasto essencial no plano FIRE"
+                >
+                  {cat.isEssential ? "Essencial" : "Essencial?"}
+                </button>
                 <button
                   onClick={() => setDialog({ mode: "edit", category: cat })}
                   className="w-8 h-8 flex items-center justify-center rounded-lg text-axiom-muted hover:text-white hover:bg-axiom-hover transition-colors"
