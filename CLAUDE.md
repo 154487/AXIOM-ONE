@@ -104,7 +104,8 @@ src/
 │   │   ├── journal/               # GET ?month=&type=&tag= (max 100), POST (cria + snapshot)
 │   │   ├── journal/[id]/          # PATCH (ownership check, healthScore imutável), DELETE → 204
 │   │   ├── patrimonio/goal/       # GET → { goal }, PATCH → salva patrimonyGoal
-│   │   ├── patrimonio/fire-settings/ # GET/PATCH → 6 campos FIRE do User (expense, swr, targetIncome, years, contrib, invested)
+│   │   ├── patrimonio/fire-settings/ # GET/PATCH → 7 campos FIRE do User (expense, swr, targetIncome, years, contrib, invested, fiNumberManual)
+│   │   ├── reports/fire-essentials/  # GET → FireEssentialsResponse: categorias essenciais + custo de passivos linkados
 │   │   ├── patrimonio/items/      # GET → WealthItemsResponse, POST → cria WealthItem
 │   │   ├── patrimonio/items/[id]/ # PATCH → atualiza (itemType imutável), DELETE → 204
 │   │   ├── patrimonio/items/[id]/installments/ # GET/PATCH parcelas do WealthItem
@@ -170,8 +171,10 @@ src/
 │   │   ├── GoalsList.tsx          # Lista + CRUD de FinancialGoal
 │   │   ├── GoalCard.tsx           # Card meta com projeção CDI e barra de progresso
 │   │   ├── GoalDialog.tsx         # Dialog criar/editar meta
-│   │   ├── WealthItems.tsx        # Lista bens/passivos agrupada com CRUD inline
-│   │   └── WealthItemDialog.tsx   # Dialog criar/editar bem ou passivo
+│   │   ├── WealthItems.tsx        # Lista bens/passivos agrupada com CRUD inline (exibe custo mensal gerado por passivos linkados)
+│   │   ├── WealthItemDialog.tsx   # Dialog criar/editar bem ou passivo (select de linkedCategory para LIABILITY)
+│   │   ├── FirePlanCard.tsx       # Custo de vida real: barras por categoria essencial + origem de gastos por passivos + insight quitação
+│   │   └── FireGoalsCard.tsx      # Metas pessoais de IF com progresso (patrimônio, aporte, renda)
 │   ├── journal/
 │   │   ├── JournalShell.tsx       # "use client" — estado global, fetch entries, upsert/delete local
 │   │   ├── JournalList.tsx        # Filtros mês/tipo + grid de cards
@@ -213,12 +216,13 @@ User
   fireTargetMonthlyIncome (Decimal?, renda mensal desejada na aposentadoria),
   fireRetirementYears (Int?, horizonte em anos, padrão 30),
   fireTargetMonthlyContrib (Decimal?, meta de aporte mensal),
-  fireTargetInvestedAmount (Decimal?, meta de patrimônio investido)
+  fireTargetInvestedAmount (Decimal?, meta de patrimônio investido),
+  fireNumberManual (Decimal?, FI Number definido diretamente pelo usuário)
   → relations: transactions[], categories[], currencies[], notifications[]
 
 Category
-  id, name, color (#hex), icon?, userId, createdAt
-  → relations: user, transactions[]
+  id, name, color (#hex), icon?, isEssential (bool, default false), userId, createdAt
+  → relations: user, transactions[], wealthItems[]
 
 Transaction
   id, description, amount (Decimal 10,2), type (INCOME|EXPENSE),
@@ -243,7 +247,8 @@ JournalEntry
 
 WealthItem
   id, userId, name, value (Decimal 14,2), itemType (ASSET|LIABILITY),
-  category (String), notes (String?), createdAt, updatedAt
+  category (String), notes (String?), linkedCategoryId (String?, FK → Category onDelete SetNull), createdAt, updatedAt
+  → relations: user, linkedCategory?
   → relations: user
 ```
 
@@ -377,6 +382,7 @@ A moeda padrão do usuário vem de `UserCurrency` com `isDefault: true`. O dashb
 | v1.5 | Bens & Passivos Aprimorado | ✅ concluída |
 | v1.6 | FIRE Dashboard: Independência Financeira | ✅ concluída — release v1.6.0 |
 | v1.7 | Independência Financeira Evoluída | ✅ concluída |
+| v1.8 | FIRE: Plano Real de Independência | ✅ concluída — release v1.8.0 |
 
 ---
 
