@@ -11,7 +11,10 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -20,6 +23,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import type { WealthItemSerialized } from "@/app/api/patrimonio/items/route";
 import { formatCurrency } from "@/lib/utils";
+import { getLoanBankGroups, getLoanBankById } from "@/lib/loanBanks";
 
 const ASSET_CATEGORIES = [
   "Imóvel",
@@ -37,6 +41,8 @@ const LIABILITY_CATEGORIES = [
   "Cartão de Crédito",
   "Outro",
 ];
+
+const LOAN_CATEGORIES = ["Empréstimo Pessoal", "Financiamento Imobiliário", "Financiamento Veicular"];
 
 // Sugestões de taxa por categoria (% a.a.)
 const RATE_SUGGESTIONS: Record<string, { rate: number; label: string }> = {
@@ -75,6 +81,13 @@ export function WealthItemDialog({
   const [appreciationRate, setAppreciationRate] = useState(
     item?.appreciationRate?.toString() ?? ""
   );
+  const [rateFrequency, setRateFrequency] = useState<"MONTHLY" | "ANNUAL">(
+    item?.rateFrequency ?? "ANNUAL"
+  );
+  const [loanBank, setLoanBank] = useState(item?.loanBank ?? "");
+  const [loanInstallments, setLoanInstallments] = useState(
+    item?.loanInstallments?.toString() ?? ""
+  );
   const [notes, setNotes] = useState(item?.notes ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -86,6 +99,9 @@ export function WealthItemDialog({
       setItemType(item.itemType);
       setCategory(item.category);
       setAppreciationRate(item.appreciationRate?.toString() ?? "");
+      setRateFrequency(item.rateFrequency ?? "ANNUAL");
+      setLoanBank(item.loanBank ?? "");
+      setLoanInstallments(item.loanInstallments?.toString() ?? "");
       setNotes(item.notes ?? "");
     }
   }, [item]);
@@ -100,6 +116,7 @@ export function WealthItemDialog({
     // Auto-sugerir taxa se o campo estiver vazio
     if (!appreciationRate && RATE_SUGGESTIONS[cat]) {
       setAppreciationRate(RATE_SUGGESTIONS[cat].rate.toString());
+      setRateFrequency("ANNUAL");
     }
   }
 
@@ -107,12 +124,19 @@ export function WealthItemDialog({
   const suggestion = RATE_SUGGESTIONS[category];
   const parsedRate = appreciationRate !== "" ? parseFloat(appreciationRate.replace(",", ".")) : null;
 
-  // Preview: valor estimado em 1 ano com a taxa informada
+  // Preview: valor estimado com a taxa informada
   const parsedValue = parseFloat(value.replace(",", "."));
   const previewNext =
     !isNaN(parsedValue) && parsedRate !== null && parsedRate !== 0
-      ? parsedValue * Math.pow(1 + parsedRate / 100, 1)
+      ? rateFrequency === "MONTHLY"
+        ? parsedValue * Math.pow(1 + parsedRate / 100, 12)
+        : parsedValue * Math.pow(1 + parsedRate / 100, 1)
       : null;
+
+  const showLoanSection =
+    itemType === "LIABILITY" && LOAN_CATEGORIES.includes(category);
+
+  const parsedInstallments = loanInstallments !== "" ? parseInt(loanInstallments) : null;
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -154,6 +178,9 @@ export function WealthItemDialog({
           ...(mode === "create" && { itemType }),
           category,
           appreciationRate: rateToSend,
+          rateFrequency,
+          loanBank: loanBank || null,
+          loanInstallments: parsedInstallments || null,
           notes: notes.trim() || null,
         }),
       });
@@ -272,7 +299,7 @@ export function WealthItemDialog({
           {/* Taxa de valorização/depreciação */}
           <div className="space-y-1.5">
             <Label htmlFor="wealth-rate" className="text-axiom-muted text-sm">
-              Taxa de correção anual (%){" "}
+              Taxa de correção (%){" "}
               <span className="text-axiom-muted/60">(opcional)</span>
             </Label>
             <div className="flex gap-2 items-center">
@@ -289,7 +316,7 @@ export function WealthItemDialog({
               {suggestion && (
                 <button
                   type="button"
-                  onClick={() => setAppreciationRate(suggestion.rate.toString())}
+                  onClick={() => { setAppreciationRate(suggestion.rate.toString()); setRateFrequency("ANNUAL"); }}
                   className={`shrink-0 text-[10px] px-2 py-1.5 rounded-lg border transition-colors ${
                     parsedRate === suggestion.rate
                       ? "bg-axiom-primary/20 border-axiom-primary/40 text-axiom-primary"
@@ -299,13 +326,38 @@ export function WealthItemDialog({
                   {suggestion.rate > 0 ? "+" : ""}{suggestion.rate}%
                 </button>
               )}
+              {/* Frequency toggle */}
+              <div className="flex gap-1">
+                <button
+                  type="button"
+                  onClick={() => setRateFrequency("ANNUAL")}
+                  className={`text-[10px] px-2 py-1.5 rounded-lg border transition-colors ${
+                    rateFrequency === "ANNUAL"
+                      ? "bg-axiom-primary/20 border-axiom-primary/40 text-axiom-primary"
+                      : "border-axiom-border text-axiom-muted hover:text-white"
+                  }`}
+                >
+                  % a.a.
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRateFrequency("MONTHLY")}
+                  className={`text-[10px] px-2 py-1.5 rounded-lg border transition-colors ${
+                    rateFrequency === "MONTHLY"
+                      ? "bg-axiom-primary/20 border-axiom-primary/40 text-axiom-primary"
+                      : "border-axiom-border text-axiom-muted hover:text-white"
+                  }`}
+                >
+                  % a.m.
+                </button>
+              </div>
             </div>
             {suggestion && (
               <p className="text-[11px] text-axiom-muted">{suggestion.label}</p>
             )}
             {previewNext !== null && !isNaN(parsedValue) && (
               <p className="text-[11px] text-axiom-muted">
-                Em 1 ano:{" "}
+                {rateFrequency === "MONTHLY" ? "Em 12 meses" : "Em 1 ano"}:{" "}
                 <span className={parsedRate! > 0 ? "text-axiom-income" : "text-axiom-expense"}>
                   {formatCurrency(previewNext, "pt-BR", "BRL")}
                 </span>
@@ -313,6 +365,88 @@ export function WealthItemDialog({
               </p>
             )}
           </div>
+
+          {/* Seção de Empréstimo — apenas para passivos de categorias específicas */}
+          {showLoanSection && (
+            <>
+              {/* Banco */}
+              <div className="space-y-1.5">
+                <Label className="text-axiom-muted text-sm">
+                  Banco / Instituição{" "}
+                  <span className="text-axiom-muted/60">(opcional)</span>
+                </Label>
+                <Select
+                  value={loanBank}
+                  onValueChange={(v) => {
+                    setLoanBank(v ?? "");
+                    const bankInfo = getLoanBankById(v ?? "");
+                    if (bankInfo && !appreciationRate) {
+                      setAppreciationRate(bankInfo.typicalRatePct.toString());
+                      setRateFrequency(bankInfo.rateFrequency);
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-full bg-axiom-hover border-axiom-border text-white focus:border-axiom-primary">
+                    <SelectValue placeholder="Selecionar banco..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-axiom-card border-axiom-border max-h-72">
+                    {getLoanBankGroups().map((group, gi) => (
+                      <SelectGroup key={group.productType}>
+                        {gi > 0 && <SelectSeparator />}
+                        <SelectLabel className="text-axiom-muted/70 text-[10px] uppercase tracking-wider px-2 pt-1">
+                          {group.productType}
+                        </SelectLabel>
+                        {group.banks.map((b) => (
+                          <SelectItem
+                            key={b.id}
+                            value={b.id}
+                            className="text-white hover:bg-axiom-hover focus:bg-axiom-hover pl-4"
+                          >
+                            <span className="text-sm">{b.bankName}</span>
+                            {b.typicalRatePct > 0 ? (
+                              <span className="text-axiom-expense text-xs font-semibold ml-2">
+                                {b.typicalRatePct}%{b.rateFrequency === "MONTHLY" ? " a.m." : " a.a."}
+                              </span>
+                            ) : null}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Número de parcelas */}
+              <div className="space-y-1.5">
+                <Label htmlFor="wealth-installments" className="text-axiom-muted text-sm">
+                  Total de parcelas{" "}
+                  <span className="text-axiom-muted/60">(opcional)</span>
+                </Label>
+                <Input
+                  id="wealth-installments"
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={loanInstallments}
+                  onChange={(e) => setLoanInstallments(e.target.value)}
+                  className="bg-axiom-hover border-axiom-border text-white focus:border-axiom-primary"
+                  placeholder="Ex: 360"
+                />
+                {parsedInstallments && parsedInstallments > 0 && (
+                  <p className="text-[11px] text-axiom-muted">
+                    Previsão de quitação:{" "}
+                    <span className="text-white">
+                      {(() => {
+                        const now = new Date();
+                        const quitacao = new Date(now.getFullYear(), now.getMonth() + parsedInstallments, 1);
+                        return quitacao.toLocaleDateString("pt-BR", { month: "short", year: "numeric" });
+                      })()}
+                    </span>
+                  </p>
+                )}
+              </div>
+            </>
+          )}
 
           {/* Notas */}
           <div className="space-y-1.5">
