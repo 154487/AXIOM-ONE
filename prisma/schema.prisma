@@ -22,6 +22,8 @@ model User {
   notifBudgetAlerts   Boolean        @default(true)
   notifMonthlyReport  Boolean        @default(false)
   patrimonyGoal       Decimal?       // meta de patrimônio em reais — opcional
+  fireMonthlyExpense  Decimal?       @db.Decimal(14, 2)  // gasto mensal alvo na aposentadoria
+  fireSWR             Decimal?       @db.Decimal(5, 2)   // taxa de retirada segura (padrão 4.0)
   transactions        Transaction[]
   categories          Category[]
   currencies          UserCurrency[]
