@@ -58,6 +58,7 @@ interface WealthItemDialogProps {
   mode: "create" | "edit";
   defaultType?: "ASSET" | "LIABILITY";
   item?: WealthItemSerialized;
+  userCategories?: { id: string; name: string; color: string }[];
   onSuccess: (item: WealthItemSerialized) => void;
   onClose: () => void;
 }
@@ -66,6 +67,7 @@ export function WealthItemDialog({
   mode,
   defaultType = "ASSET",
   item,
+  userCategories = [],
   onSuccess,
   onClose,
 }: WealthItemDialogProps) {
@@ -93,6 +95,7 @@ export function WealthItemDialog({
   );
   const [loanDueDay, setLoanDueDay] = useState(item?.loanDueDay?.toString() ?? "");
   const [notes, setNotes] = useState(item?.notes ?? "");
+  const [linkedCategoryId, setLinkedCategoryId] = useState(item?.linkedCategoryId ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -109,6 +112,7 @@ export function WealthItemDialog({
       setLoanStartDate(item.loanStartDate ? new Date(item.loanStartDate).toISOString().slice(0, 10) : "");
       setLoanDueDay(item.loanDueDay?.toString() ?? "");
       setNotes(item.notes ?? "");
+      setLinkedCategoryId(item.linkedCategoryId ?? "");
     }
   }, [item]);
 
@@ -189,6 +193,7 @@ export function WealthItemDialog({
           loanInstallments: parsedInstallments || null,
           loanStartDate: loanStartDate || null,
           loanDueDay: loanDueDay ? parseInt(loanDueDay) : null,
+          linkedCategoryId: linkedCategoryId || null,
           notes: notes.trim() || null,
         }),
       });
@@ -486,6 +491,38 @@ export function WealthItemDialog({
                 )}
               </div>
             </>
+          )}
+
+          {/* Categoria de gastos vinculada (só LIABILITY) */}
+          {itemType === "LIABILITY" && userCategories.length > 0 && (
+            <div className="space-y-1.5">
+              <Label className="text-axiom-muted text-sm">
+                Categoria de gastos vinculada{" "}
+                <span className="text-axiom-muted/60">(opcional)</span>
+              </Label>
+              <Select value={linkedCategoryId} onValueChange={(v) => setLinkedCategoryId(v ?? "")}>
+                <SelectTrigger className="w-full bg-axiom-hover border-axiom-border text-white focus:border-axiom-primary">
+                  <SelectValue placeholder="Nenhuma" />
+                </SelectTrigger>
+                <SelectContent className="bg-axiom-card border-axiom-border">
+                  <SelectItem value="" className="text-axiom-muted hover:bg-axiom-hover focus:bg-axiom-hover">
+                    Nenhuma
+                  </SelectItem>
+                  {userCategories.map((cat) => (
+                    <SelectItem
+                      key={cat.id}
+                      value={cat.id}
+                      className="text-white hover:bg-axiom-hover focus:bg-axiom-hover"
+                    >
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-[11px] text-axiom-muted/60">
+                Mostra quanto este passivo gera de gastos mensais
+              </p>
+            </div>
           )}
 
           {/* Notas */}
