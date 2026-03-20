@@ -173,6 +173,17 @@ enum WealthItemType {
   LIABILITY
 }
 
+enum RateFrequency {
+  MONTHLY
+  ANNUAL
+}
+
+enum InstallmentStatus {
+  PENDING
+  PAID
+  OVERDUE
+}
+
 enum ContributionFrequency {
   DAILY
   WEEKLY
@@ -188,10 +199,28 @@ model WealthItem {
   category          String
   appreciationRate  Decimal?       @db.Decimal(7, 4)    // % a.a. (+6 = valoriza, -10 = deprecia)
   appreciationStart DateTime?                           // data base do cálculo (default: createdAt)
+  rateFrequency     RateFrequency  @default(ANNUAL)
+  loanBank          String?
+  loanInstallments  Int?
   notes             String?
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
   user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  installments      WealthItemInstallment[]
+}
+
+model WealthItemInstallment {
+  id           String            @id @default(cuid())
+  wealthItemId String
+  month        Int
+  year         Int
+  status       InstallmentStatus
+  paidAt       DateTime?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  item         WealthItem        @relation(fields: [wealthItemId], references: [id], onDelete: Cascade)
+
+  @@unique([wealthItemId, month, year])
 }
 
 model FinancialGoal {
