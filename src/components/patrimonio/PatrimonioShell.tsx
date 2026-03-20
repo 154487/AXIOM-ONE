@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { NetWorthChart } from "@/components/reports/patrimonio/NetWorthChart";
+import { PatrimonioEvolutionChart } from "./PatrimonioEvolutionChart";
 import { SavingsRateChart } from "@/components/reports/patrimonio/SavingsRateChart";
 import { FireProjection } from "@/components/reports/patrimonio/FireProjection";
 import { AssetBreakdown } from "./AssetBreakdown";
@@ -11,6 +11,15 @@ import { PatrimonioGoal } from "./PatrimonioGoal";
 import type { NetworthData } from "@/components/reports/types";
 import type { BenchmarkData } from "@/lib/benchmarks";
 import type { WealthItemsResponse } from "@/app/api/patrimonio/items/route";
+
+type PatrimonioTab = "evolucao" | "analise" | "bens" | "meta";
+
+const TABS: { key: PatrimonioTab; label: string }[] = [
+  { key: "evolucao", label: "Evolução" },
+  { key: "analise", label: "Análise" },
+  { key: "bens", label: "Bens & Passivos" },
+  { key: "meta", label: "Meta" },
+];
 
 interface PortfolioTotals {
   totalCurrentValue: number;
@@ -36,6 +45,8 @@ interface PatrimonioShellProps {
 }
 
 export function PatrimonioShell({ initialCurrency, initialLocale }: PatrimonioShellProps) {
+  const [activeTab, setActiveTab] = useState<PatrimonioTab>("evolucao");
+
   const [data, setData] = useState<NetworthData | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -120,14 +131,12 @@ export function PatrimonioShell({ initialCurrency, initialLocale }: PatrimonioSh
     fetchData();
   }, [fetchData]);
 
-  // avgMonthlySavings calculado a partir dos meses históricos
   const avgMonthlySavings =
     data && data.months.length > 0
       ? data.months.reduce((acc, m) => acc + (m.monthIncome - m.monthExpenses), 0) /
         data.months.length
       : 0;
 
-  // Patrimônio ajustado: transações + bens - passivos
   const adjustedNetWorth = (data?.currentNetWorth ?? 0) + (itemsData?.net ?? 0);
 
   return (
@@ -140,77 +149,122 @@ export function PatrimonioShell({ initialCurrency, initialLocale }: PatrimonioSh
         </p>
       </div>
 
-      {/* Componentes existentes */}
-      {loading || !data ? (
+      {/* Tabs */}
+      <div className="flex bg-axiom-hover rounded-lg p-1 gap-1 w-fit">
+        {TABS.map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => setActiveTab(key)}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              activeTab === key
+                ? "bg-axiom-primary text-white"
+                : "text-axiom-muted hover:text-white"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Aba: Evolução */}
+      {activeTab === "evolucao" && (
         <div className="grid grid-cols-1 gap-4">
-          <SkeletonCard label="Evolução do Patrimônio" />
-          <SkeletonCard label="Taxa de Poupança" />
-          <SkeletonCard label="Projeção de Independência Financeira" />
+          {loading || !data ? (
+            <>
+              <SkeletonCard label="Evolução do Patrimônio" />
+              <SkeletonCard label="Taxa de Poupança" />
+            </>
+          ) : (
+            <>
+              <div style={{ minHeight: 360 }}>
+                <PatrimonioEvolutionChart
+                  networthData={data}
+                  itemsNet={itemsData?.net ?? 0}
+                  currency={initialCurrency}
+                  locale={initialLocale}
+                />
+              </div>
+              <div style={{ minHeight: 280 }}>
+                <SavingsRateChart
+                  networthData={data}
+                  currency={initialCurrency}
+                  locale={initialLocale}
+                />
+              </div>
+            </>
+          )}
         </div>
-      ) : (
+      )}
+
+      {/* Aba: Análise */}
+      {activeTab === "analise" && (
         <div className="grid grid-cols-1 gap-4">
-          <div style={{ minHeight: 320 }}>
-            <NetWorthChart networthData={data} currency={initialCurrency} locale={initialLocale} />
-          </div>
-          <div style={{ minHeight: 280 }}>
-            <SavingsRateChart networthData={data} currency={initialCurrency} locale={initialLocale} />
-          </div>
-          <FireProjection networthData={data} currency={initialCurrency} />
+          {portfolioLoading ? (
+            <SkeletonCard label="Breakdown por Classe de Ativo" />
+          ) : (
+            <AssetBreakdown
+              allocationByType={portfolioData?.allocationByType ?? {}}
+              totalCurrentValue={portfolioData?.totals.totalCurrentValue ?? 0}
+              currency={initialCurrency}
+              locale={initialLocale}
+            />
+          )}
+
+          {loading || benchmarksLoading ? (
+            <SkeletonCard label="Comparação vs Benchmark" />
+          ) : data ? (
+            <BenchmarkComparison
+              networthData={data}
+              selicAnual={benchmarksData?.selicAnual ?? null}
+              ipca={benchmarksData?.ipca ?? null}
+              currency={initialCurrency}
+              locale={initialLocale}
+            />
+          ) : null}
+
+          {loading || !data ? (
+            <SkeletonCard label="Projeção FIRE" />
+          ) : (
+            <FireProjection networthData={data} currency={initialCurrency} />
+          )}
         </div>
       )}
 
-      {/* AssetBreakdown */}
-      {portfolioLoading ? (
-        <SkeletonCard label="Breakdown por Classe de Ativo" />
-      ) : (
-        <AssetBreakdown
-          allocationByType={portfolioData?.allocationByType ?? {}}
-          totalCurrentValue={portfolioData?.totals.totalCurrentValue ?? 0}
-          currency={initialCurrency}
-          locale={initialLocale}
-        />
+      {/* Aba: Bens & Passivos */}
+      {activeTab === "bens" && (
+        <>
+          {itemsLoading ? (
+            <SkeletonCard label="Bens e Passivos" />
+          ) : (
+            <WealthItems
+              items={itemsData?.items ?? []}
+              totalAssets={itemsData?.totalAssets ?? 0}
+              totalLiabilities={itemsData?.totalLiabilities ?? 0}
+              net={itemsData?.net ?? 0}
+              currency={initialCurrency}
+              locale={initialLocale}
+              onRefresh={fetchItems}
+            />
+          )}
+        </>
       )}
 
-      {/* BenchmarkComparison */}
-      {loading || benchmarksLoading ? (
-        <SkeletonCard label="Comparação vs Benchmark" />
-      ) : data ? (
-        <BenchmarkComparison
-          networthData={data}
-          selicAnual={benchmarksData?.selicAnual ?? null}
-          ipca={benchmarksData?.ipca ?? null}
-          currency={initialCurrency}
-          locale={initialLocale}
-        />
-      ) : null}
-
-      {/* Bens e Passivos */}
-      {itemsLoading ? (
-        <SkeletonCard label="Bens e Passivos" />
-      ) : (
-        <WealthItems
-          items={itemsData?.items ?? []}
-          totalAssets={itemsData?.totalAssets ?? 0}
-          totalLiabilities={itemsData?.totalLiabilities ?? 0}
-          net={itemsData?.net ?? 0}
-          currency={initialCurrency}
-          locale={initialLocale}
-          onRefresh={fetchItems}
-        />
-      )}
-
-      {/* Meta de Patrimônio — usa adjustedNetWorth */}
-      {goalLoading ? (
-        <SkeletonCard label="Meta de Patrimônio" />
-      ) : (
-        <PatrimonioGoal
-          currentNetWorth={adjustedNetWorth}
-          goal={goalData?.goal ?? null}
-          avgMonthlySavings={avgMonthlySavings}
-          currency={initialCurrency}
-          locale={initialLocale}
-          onGoalSaved={fetchGoal}
-        />
+      {/* Aba: Meta */}
+      {activeTab === "meta" && (
+        <>
+          {goalLoading ? (
+            <SkeletonCard label="Meta de Patrimônio" />
+          ) : (
+            <PatrimonioGoal
+              currentNetWorth={adjustedNetWorth}
+              goal={goalData?.goal ?? null}
+              avgMonthlySavings={avgMonthlySavings}
+              currency={initialCurrency}
+              locale={initialLocale}
+              onGoalSaved={fetchGoal}
+            />
+          )}
+        </>
       )}
     </div>
   );
