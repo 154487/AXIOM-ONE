@@ -6,8 +6,6 @@ const ANNUAL_RATES = {
   agressivo: 0.10,
 } as const;
 
-const COAST_YEARS = 30; // proxy para anos até aposentadoria
-
 export interface FireScenario {
   rate: number;
   projectedMonths: number | null;
@@ -66,8 +64,11 @@ export async function GET(req: NextRequest) {
   const patrimony = parseFloat(searchParams.get("patrimony") ?? "0");
   const monthlyIncome = parseFloat(searchParams.get("monthlyIncome") ?? "0");
   const monthlyExpenses = parseFloat(searchParams.get("monthlyExpenses") ?? "0");
-  const swr = parseFloat(searchParams.get("swr") ?? "4");
-  // Legacy param kept for backward compat (ignored — all scenarios returned now)
+  const retirementYears = parseInt(searchParams.get("retirementYears") ?? "30", 10);
+
+  // targetMonthlyIncome: renda mensal desejada na aposentadoria
+  // Se fornecida, usada para FI Number; caso contrário, usa regra tradicional de despesas
+  const targetMonthlyIncome = parseFloat(searchParams.get("targetMonthlyIncome") ?? "0");
 
   if (monthlyIncome <= 0 || monthlyExpenses >= monthlyIncome) {
     return NextResponse.json({
@@ -77,13 +78,15 @@ export async function GET(req: NextRequest) {
   }
 
   const PMT = monthlyIncome - monthlyExpenses;
-  const safeSWR = swr > 0 ? swr : 4;
+  const safeRetirementYears = retirementYears > 0 && retirementYears <= 60 ? retirementYears : 30;
 
-  // FI Number usando SWR editável: gastos anuais / (swr/100)
-  const fiNumber = monthlyExpenses * 12 * (100 / safeSWR);
+  // FI Number: renda mensal alvo × 12 × 25 (regra 4% = 25x a renda anual)
+  // Se não definida, usa despesas mensais × 25 × 12 (equivalente a SWR 4%)
+  const incomeBase = targetMonthlyIncome > 0 ? targetMonthlyIncome : monthlyExpenses;
+  const fiNumber = incomeBase * 12 * 25;
 
-  // Coast FIRE: quanto precisa ter hoje para atingir FI em COAST_YEARS sem aportes
-  const coastFireNumber = fiNumber / Math.pow(1 + ANNUAL_RATES.moderado, COAST_YEARS);
+  // Coast FIRE: quanto precisa ter hoje para atingir FI no horizonte definido sem aportes
+  const coastFireNumber = fiNumber / Math.pow(1 + ANNUAL_RATES.moderado, safeRetirementYears);
 
   const currentYear = new Date().getFullYear();
 
