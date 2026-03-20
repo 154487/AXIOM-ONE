@@ -88,6 +88,10 @@ export function WealthItemDialog({
   const [loanInstallments, setLoanInstallments] = useState(
     item?.loanInstallments?.toString() ?? ""
   );
+  const [loanStartDate, setLoanStartDate] = useState(
+    item?.loanStartDate ? new Date(item.loanStartDate).toISOString().slice(0, 10) : ""
+  );
+  const [loanDueDay, setLoanDueDay] = useState(item?.loanDueDay?.toString() ?? "");
   const [notes, setNotes] = useState(item?.notes ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -102,6 +106,8 @@ export function WealthItemDialog({
       setRateFrequency(item.rateFrequency ?? "ANNUAL");
       setLoanBank(item.loanBank ?? "");
       setLoanInstallments(item.loanInstallments?.toString() ?? "");
+      setLoanStartDate(item.loanStartDate ? new Date(item.loanStartDate).toISOString().slice(0, 10) : "");
+      setLoanDueDay(item.loanDueDay?.toString() ?? "");
       setNotes(item.notes ?? "");
     }
   }, [item]);
@@ -181,6 +187,8 @@ export function WealthItemDialog({
           rateFrequency,
           loanBank: loanBank || null,
           loanInstallments: parsedInstallments || null,
+          loanStartDate: loanStartDate || null,
+          loanDueDay: loanDueDay ? parseInt(loanDueDay) : null,
           notes: notes.trim() || null,
         }),
       });
@@ -416,29 +424,61 @@ export function WealthItemDialog({
                 </Select>
               </div>
 
-              {/* Número de parcelas */}
+              {/* Linha: total de parcelas + dia de vencimento */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="wealth-installments" className="text-axiom-muted text-sm">
+                    Total de parcelas
+                  </Label>
+                  <Input
+                    id="wealth-installments"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={loanInstallments}
+                    onChange={(e) => setLoanInstallments(e.target.value)}
+                    className="bg-axiom-hover border-axiom-border text-white focus:border-axiom-primary"
+                    placeholder="Ex: 360"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="wealth-dueday" className="text-axiom-muted text-sm">
+                    Dia de vencimento
+                  </Label>
+                  <Input
+                    id="wealth-dueday"
+                    type="number"
+                    min="1"
+                    max="28"
+                    step="1"
+                    value={loanDueDay}
+                    onChange={(e) => setLoanDueDay(e.target.value)}
+                    className="bg-axiom-hover border-axiom-border text-white focus:border-axiom-primary"
+                    placeholder="Ex: 10"
+                  />
+                </div>
+              </div>
+
+              {/* Data de início */}
               <div className="space-y-1.5">
-                <Label htmlFor="wealth-installments" className="text-axiom-muted text-sm">
-                  Total de parcelas{" "}
+                <Label htmlFor="wealth-startdate" className="text-axiom-muted text-sm">
+                  Data do 1º vencimento{" "}
                   <span className="text-axiom-muted/60">(opcional)</span>
                 </Label>
                 <Input
-                  id="wealth-installments"
-                  type="number"
-                  min="1"
-                  step="1"
-                  value={loanInstallments}
-                  onChange={(e) => setLoanInstallments(e.target.value)}
+                  id="wealth-startdate"
+                  type="date"
+                  value={loanStartDate}
+                  onChange={(e) => setLoanStartDate(e.target.value)}
                   className="bg-axiom-hover border-axiom-border text-white focus:border-axiom-primary"
-                  placeholder="Ex: 360"
                 />
-                {parsedInstallments && parsedInstallments > 0 && (
-                  <p className="text-[11px] text-axiom-muted">
+                {parsedInstallments && parsedInstallments > 0 && loanStartDate && (
+                  <p className="text-xs text-axiom-muted">
                     Previsão de quitação:{" "}
                     <span className="text-white">
                       {(() => {
-                        const now = new Date();
-                        const quitacao = new Date(now.getFullYear(), now.getMonth() + parsedInstallments, 1);
+                        const start = new Date(loanStartDate);
+                        const quitacao = new Date(start.getFullYear(), start.getMonth() + parsedInstallments, start.getDate());
                         return quitacao.toLocaleDateString("pt-BR", { month: "short", year: "numeric" });
                       })()}
                     </span>
