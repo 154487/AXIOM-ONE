@@ -51,6 +51,7 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
   const [targetMonthlyIncome, setTargetMonthlyIncome] = useState<number | null>(null);
   const [retirementYears, setRetirementYears] = useState(30);
   const [expensePeriod, setExpensePeriod] = useState<3 | 6 | 12>(12);
+  const [fiNumberManual, setFiNumberManual] = useState<number | null>(null);
 
   // Debounce refs
   const fireDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -79,6 +80,7 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
       if (s.monthlyExpense !== null) setFireMonthlyExpense(s.monthlyExpense);
       if (s.targetMonthlyIncome !== null) setTargetMonthlyIncome(s.targetMonthlyIncome);
       if (s.retirementYears !== null) setRetirementYears(s.retirementYears);
+      if (s.fiNumberManual !== null) setFiNumberManual(s.fiNumberManual);
     }
     if (goalsRes.status === "fulfilled" && goalsRes.value.ok) {
       const d = await goalsRes.value.json();
@@ -150,7 +152,8 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
       income: number,
       expenses: number,
       targetIncome: number | null,
-      years: number
+      years: number,
+      fiNumManual: number | null
     ) => {
       if (income <= 0) return;
       if (fireDebounce.current) clearTimeout(fireDebounce.current);
@@ -164,6 +167,9 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
             retirementYears: String(years),
             ...(targetIncome && targetIncome > 0
               ? { targetMonthlyIncome: String(targetIncome) }
+              : {}),
+            ...(fiNumManual && fiNumManual > 0
+              ? { fiNumberManual: String(fiNumManual) }
               : {}),
           });
           const res = await fetch(`/api/reports/fire?${params}`);
@@ -185,7 +191,8 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
         effectiveMonthlyIncome,
         effectiveMonthlyExpense,
         targetMonthlyIncome,
-        retirementYears
+        retirementYears,
+        fiNumberManual
       );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -196,6 +203,7 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
     effectiveMonthlyExpense,
     targetMonthlyIncome,
     retirementYears,
+    fiNumberManual,
   ]);
 
   // PATCH fire-settings com debounce
@@ -223,6 +231,11 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
   function handleRetirementYearsChange(v: number) {
     setRetirementYears(v);
     patchFireSettings({ retirementYears: v });
+  }
+
+  function handleFiNumberChange(v: number | null) {
+    setFiNumberManual(v);
+    patchFireSettings({ fiNumberManual: v });
   }
 
   function handleGoalSave(field: keyof FireSettingsResponse, value: number | null) {
@@ -290,6 +303,8 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
           effectiveMonthlyExpense={effectiveMonthlyExpense}
           currency={currency}
           locale={locale}
+          fiNumberManual={fiNumberManual}
+          onFiNumberChange={handleFiNumberChange}
         />
         <FireSettingsCard
           monthlyExpense={effectiveMonthlyExpense}
