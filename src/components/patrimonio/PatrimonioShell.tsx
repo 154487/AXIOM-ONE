@@ -5,11 +5,10 @@ import { PatrimonioEvolutionChart } from "./PatrimonioEvolutionChart";
 import { SavingsRateChart } from "@/components/reports/patrimonio/SavingsRateChart";
 import { FireProjection } from "@/components/reports/patrimonio/FireProjection";
 import { AssetBreakdown } from "./AssetBreakdown";
-import { BenchmarkComparison } from "./BenchmarkComparison";
+import { PortfolioPerformanceChart } from "./PortfolioPerformanceChart";
 import { WealthItems } from "./WealthItems";
 import { GoalsList } from "./GoalsList";
 import type { NetworthData } from "@/components/reports/types";
-import type { BenchmarkData } from "@/lib/benchmarks";
 import type { WealthItemsResponse } from "@/app/api/patrimonio/items/route";
 
 type PatrimonioTab = "evolucao" | "analise" | "bens" | "meta";
@@ -53,9 +52,6 @@ export function PatrimonioShell({ initialCurrency, initialLocale }: PatrimonioSh
   const [portfolioData, setPortfolioData] = useState<PortfolioForPatrimonio | null>(null);
   const [portfolioLoading, setPortfolioLoading] = useState(false);
 
-  const [benchmarksData, setBenchmarksData] = useState<BenchmarkData | null>(null);
-  const [benchmarksLoading, setBenchmarksLoading] = useState(false);
-
   const [itemsData, setItemsData] = useState<WealthItemsResponse | null>(null);
   const [itemsLoading, setItemsLoading] = useState(false);
 
@@ -74,13 +70,11 @@ export function PatrimonioShell({ initialCurrency, initialLocale }: PatrimonioSh
   const fetchData = useCallback(async () => {
     setLoading(true);
     setPortfolioLoading(true);
-    setBenchmarksLoading(true);
     setItemsLoading(true);
 
-    const [networthRes, portfolioRes, benchmarksRes, itemsRes] = await Promise.allSettled([
+    const [networthRes, portfolioRes, itemsRes] = await Promise.allSettled([
       fetch("/api/reports/networth"),
       fetch("/api/investments/portfolio"),
-      fetch("/api/investments/benchmarks"),
       fetch("/api/patrimonio/items"),
     ]);
 
@@ -93,11 +87,6 @@ export function PatrimonioShell({ initialCurrency, initialLocale }: PatrimonioSh
       setPortfolioData(await portfolioRes.value.json());
     }
     setPortfolioLoading(false);
-
-    if (benchmarksRes.status === "fulfilled" && benchmarksRes.value.ok) {
-      setBenchmarksData(await benchmarksRes.value.json());
-    }
-    setBenchmarksLoading(false);
 
     if (itemsRes.status === "fulfilled" && itemsRes.value.ok) {
       setItemsData(await itemsRes.value.json());
@@ -188,17 +177,7 @@ export function PatrimonioShell({ initialCurrency, initialLocale }: PatrimonioSh
             />
           )}
 
-          {loading || benchmarksLoading ? (
-            <SkeletonCard label="Comparação vs Benchmark" />
-          ) : data ? (
-            <BenchmarkComparison
-              networthData={data}
-              selicAnual={benchmarksData?.selicAnual ?? null}
-              ipca={benchmarksData?.ipca ?? null}
-              currency={initialCurrency}
-              locale={initialLocale}
-            />
-          ) : null}
+          <PortfolioPerformanceChart />
 
           {loading || !data ? (
             <SkeletonCard label="Projeção FIRE" />
