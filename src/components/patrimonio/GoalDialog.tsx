@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import type { FinancialGoalSerialized } from "@/app/api/patrimonio/goals/route";
+import { BRAZILIAN_BANKS } from "@/lib/brazilianBanks";
 
 interface GoalDialogProps {
   mode: "create" | "edit";
@@ -37,6 +38,7 @@ export function GoalDialog({ mode, goal, onSuccess, onClose }: GoalDialogProps) 
   const [frequency, setFrequency] = useState<"DAILY" | "WEEKLY" | "MONTHLY">(
     goal?.contributionFrequency ?? "MONTHLY"
   );
+  const [bank, setBank] = useState<string>(goal?.bank ?? "");
   const [notes, setNotes] = useState(goal?.notes ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,6 +50,7 @@ export function GoalDialog({ mode, goal, onSuccess, onClose }: GoalDialogProps) 
       setSavedAmount(goal.savedAmount.toString());
       setContributionAmount(goal.contributionAmount.toString());
       setFrequency(goal.contributionFrequency);
+      setBank(goal.bank ?? "");
       setNotes(goal.notes ?? "");
     }
   }, [goal]);
@@ -92,6 +95,7 @@ export function GoalDialog({ mode, goal, onSuccess, onClose }: GoalDialogProps) 
           savedAmount: parsedSaved,
           contributionAmount: parsedContrib,
           contributionFrequency: frequency,
+          bank: bank || null,
           notes: notes.trim() || null,
         }),
       });
@@ -204,6 +208,38 @@ export function GoalDialog({ mode, goal, onSuccess, onClose }: GoalDialogProps) 
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          {/* Banco */}
+          <div className="space-y-1.5">
+            <Label className="text-axiom-muted text-sm">
+              Banco / Onde está guardado{" "}
+              <span className="text-axiom-muted/60">(opcional)</span>
+            </Label>
+            <Select value={bank} onValueChange={(v) => setBank(v ?? "")}>
+              <SelectTrigger className="bg-axiom-hover border-axiom-border text-white focus:border-axiom-primary">
+                <SelectValue placeholder="Selecionar banco..." />
+              </SelectTrigger>
+              <SelectContent className="bg-axiom-card border-axiom-border max-h-60">
+                {BRAZILIAN_BANKS.map((b) => (
+                  <SelectItem
+                    key={b.id}
+                    value={b.id}
+                    className="text-white hover:bg-axiom-hover focus:bg-axiom-hover"
+                  >
+                    <span>{b.name}</span>
+                    {b.product && (
+                      <span className="text-axiom-muted ml-1 text-xs">— {b.product}</span>
+                    )}
+                    {b.cdiPct > 0 && (
+                      <span className="text-axiom-primary ml-1 text-xs font-medium">
+                        {b.cdiPct}% CDI
+                      </span>
+                    )}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Notas */}

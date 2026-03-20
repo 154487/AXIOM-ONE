@@ -21,6 +21,7 @@ interface GoalsListProps {
 
 export function GoalsList({ currency, locale }: GoalsListProps) {
   const [goals, setGoals] = useState<FinancialGoalSerialized[]>([]);
+  const [cdiAnual, setCdiAnual] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [dialogMode, setDialogMode] = useState<"create" | "edit" | null>(null);
   const [editingGoal, setEditingGoal] = useState<FinancialGoalSerialized | null>(null);
@@ -42,6 +43,11 @@ export function GoalsList({ currency, locale }: GoalsListProps) {
 
   useEffect(() => {
     fetchGoals();
+    // Busca CDI (≈ SELIC) para projeção com juros compostos
+    fetch("/api/investments/benchmarks")
+      .then((r) => r.json())
+      .then((d) => { if (d.selicAnual) setCdiAnual(d.selicAnual); })
+      .catch(() => {});
   }, [fetchGoals]);
 
   function handleSuccess(goal: FinancialGoalSerialized) {
@@ -120,6 +126,7 @@ export function GoalsList({ currency, locale }: GoalsListProps) {
                 goal={goal}
                 currency={currency}
                 locale={locale}
+                cdiAnual={cdiAnual}
                 onEdit={() => openEdit(goal)}
                 onDelete={async () => {
                   if (deletingId) return;

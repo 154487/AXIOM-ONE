@@ -9,6 +9,7 @@ export interface FinancialGoalSerialized {
   savedAmount: number;
   contributionAmount: number;
   contributionFrequency: "DAILY" | "WEEKLY" | "MONTHLY";
+  bank: string | null;
   notes: string | null;
   createdAt: string;
 }
@@ -20,6 +21,7 @@ function serialize(goal: {
   savedAmount: unknown;
   contributionAmount: unknown;
   contributionFrequency: string;
+  bank: string | null;
   notes: string | null;
   createdAt: Date;
 }): FinancialGoalSerialized {
@@ -30,6 +32,7 @@ function serialize(goal: {
     savedAmount: parseFloat(String(goal.savedAmount)),
     contributionAmount: parseFloat(String(goal.contributionAmount)),
     contributionFrequency: goal.contributionFrequency as "DAILY" | "WEEKLY" | "MONTHLY",
+    bank: goal.bank,
     notes: goal.notes,
     createdAt: goal.createdAt.toISOString(),
   };
@@ -54,7 +57,7 @@ export async function POST(req: NextRequest) {
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { name, targetAmount, savedAmount, contributionAmount, contributionFrequency, notes } = body;
+  const { name, targetAmount, savedAmount, contributionAmount, contributionFrequency, bank, notes } = body;
 
   if (!name || typeof name !== "string" || name.trim().length === 0) {
     return NextResponse.json({ error: "Nome é obrigatório" }, { status: 400 });
@@ -80,6 +83,7 @@ export async function POST(req: NextRequest) {
       savedAmount: savedAmount ?? 0,
       contributionAmount,
       contributionFrequency,
+      bank: bank ?? null,
       notes: notes?.trim() || null,
     },
   });

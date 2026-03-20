@@ -200,6 +200,7 @@ model FinancialGoal {
   savedAmount           Decimal               @default(0) @db.Decimal(14, 2)
   contributionAmount    Decimal               @db.Decimal(14, 2)
   contributionFrequency ContributionFrequency
+  bank                  String?               // ID do banco (ex: "nubank", "mercadopago")
   notes                 String?
   createdAt             DateTime              @default(now())
   updatedAt             DateTime              @updatedAt

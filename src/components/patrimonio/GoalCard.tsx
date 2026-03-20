@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import { getBankById, effectiveAnnualYield, monthsToReachGoal } from "@/lib/brazilianBanks";
 import type { FinancialGoalSerialized } from "@/app/api/patrimonio/goals/route";
 
 const FREQUENCY_LABELS: Record<string, string> = {
@@ -15,34 +16,49 @@ interface GoalCardProps {
   goal: FinancialGoalSerialized;
   currency: string;
   locale: string;
+  cdiAnual: number | null; // taxa CDI/SELIC atual em % ao ano (ex: 13.65)
   onEdit: () => void;
   onDelete: () => Promise<void>;
 }
 
-export function GoalCard({ goal, currency, locale, onEdit, onDelete }: GoalCardProps) {
+export function GoalCard({ goal, currency, locale, cdiAnual, onEdit, onDelete }: GoalCardProps) {
   const [deleting, setDeleting] = useState(false);
 
-  const { name, targetAmount, savedAmount, contributionAmount, contributionFrequency } = goal;
+  const { name, targetAmount, savedAmount, contributionAmount, contributionFrequency, bank } = goal;
 
-  const progressPct = Math.min(100, (savedAmount / targetAmount) * 100);
-  const achieved = savedAmount >= targetAmount;
+  const bankInfo = bank ? getBankById(bank) : null;
 
-  // Date projection
-  const monthlyEquivalent =
+  // Rendimento efetivo anual (ex: 0.1365 para 13.65% a.a.)
+  const annualYield =
+    bankInfo && bankInfo.cdiPct > 0 && cdiAnual !== null
+      ? effectiveAnnualYield(bankInfo.cdiPct, cdiAnual)
+      : 0;
+
+  // Yield display string (ex: "13,65% a.a.")
+  const yieldDisplayPct = cdiAnual !== null && bankInfo && bankInfo.cdiPct > 0
+    ? ((bankInfo.cdiPct / 100) * cdiAnual).toFixed(2)
+    : null;
+
+  // Aporte normalizado para mensal
+  const monthlyContrib =
     contributionFrequency === "DAILY"
       ? contributionAmount * 30
       : contributionFrequency === "WEEKLY"
       ? contributionAmount * 4.33
       : contributionAmount;
 
-  const remaining = targetAmount - savedAmount;
-  const monthsToGoal =
-    remaining > 0 && monthlyEquivalent > 0 ? Math.ceil(remaining / monthlyEquivalent) : null;
+  const progressPct = Math.min(100, targetAmount > 0 ? (savedAmount / targetAmount) * 100 : 0);
+  const achieved = savedAmount >= targetAmount;
+
+  // Projeção com juros compostos (se houver rendimento) ou linear
+  const months = achieved
+    ? 0
+    : monthsToReachGoal(savedAmount, targetAmount, monthlyContrib, annualYield);
 
   let projectionLabel: string | null = null;
-  if (monthsToGoal !== null) {
+  if (!achieved && months !== null) {
     const d = new Date();
-    d.setMonth(d.getMonth() + monthsToGoal);
+    d.setMonth(d.getMonth() + months);
     projectionLabel = d.toLocaleDateString(locale, { month: "long", year: "numeric" });
   }
 
@@ -64,6 +80,22 @@ export function GoalCard({ goal, currency, locale, onEdit, onDelete }: GoalCardP
           {FREQUENCY_LABELS[contributionFrequency]}
         </span>
       </div>
+
+      {/* Banco + rendimento */}
+      {bankInfo && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs text-axiom-muted">
+            {bankInfo.name}
+            {bankInfo.product ? ` · ${bankInfo.product}` : ""}
+          </span>
+          {bankInfo.cdiPct > 0 && (
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-axiom-primary/15 border border-axiom-primary/30 text-axiom-primary">
+              {bankInfo.cdiPct}% CDI
+              {yieldDisplayPct ? ` ≈ ${yieldDisplayPct}% a.a.` : ""}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Valores */}
       <div className="grid grid-cols-2 gap-3">
@@ -98,14 +130,25 @@ export function GoalCard({ goal, currency, locale, onEdit, onDelete }: GoalCardP
           <span className="text-xs font-semibold text-axiom-income">Meta atingida! 🎯</span>
         </div>
       ) : projectionLabel ? (
-        <p className="text-xs text-axiom-muted">
-          Previsão:{" "}
-          <span className="text-white">{projectionLabel}</span>
-          {" — aportando "}
-          {formatCurrency(contributionAmount, locale, currency)}/
-          {FREQUENCY_LABELS[contributionFrequency].toLowerCase()}
+        <div className="flex flex-col gap-0.5">
+          <p className="text-xs text-axiom-muted">
+            Previsão:{" "}
+            <span className="text-white font-medium">{projectionLabel}</span>
+            {" — aportando "}
+            {formatCurrency(contributionAmount, locale, currency)}/
+            {FREQUENCY_LABELS[contributionFrequency].toLowerCase()}
+          </p>
+          {annualYield > 0 && (
+            <p className="text-[10px] text-axiom-income/80">
+              ✦ Inclui rendimento de {((bankInfo?.cdiPct ?? 0) / 100 * (cdiAnual ?? 0)).toFixed(2)}% a.a.
+            </p>
+          )}
+        </div>
+      ) : (
+        <p className="text-xs text-axiom-muted italic">
+          Defina um aporte para ver a projeção
         </p>
-      ) : null}
+      )}
 
       {/* Ações hover */}
       <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
