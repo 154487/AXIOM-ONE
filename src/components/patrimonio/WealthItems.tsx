@@ -1,10 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TrendingUp, TrendingDown, Pencil, Trash2, Plus } from "lucide-react";
 import { WealthItemDialog } from "./WealthItemDialog";
 import { formatCurrency } from "@/lib/utils";
 import type { WealthItemSerialized } from "@/app/api/patrimonio/items/route";
+import type { InstallmentSerialized, InstallmentStatusResponse } from "@/app/api/patrimonio/items/[id]/installments/route";
+import { getLoanBankById } from "@/lib/loanBanks";
+import { calcLateFees, overdueMonths } from "@/lib/wealthCalc";
 
 interface WealthItemsProps {
   items: WealthItemSerialized[];
@@ -214,66 +217,200 @@ function ItemRow({
 }) {
   const hasDrift = item.appreciationRate && item.value !== item.baseValue;
   const gain = item.value - item.baseValue;
+  const rateLabel = item.rateFrequency === "MONTHLY" ? "%/m" : "%/a";
+  const rateTitleLabel = item.rateFrequency === "MONTHLY" ? "% a.m." : "% a.a.";
 
   return (
-    <div className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg hover:bg-axiom-hover group transition-colors">
-      <div className="flex items-center gap-2 min-w-0 flex-wrap">
-        <span className="text-sm text-white truncate">{item.name}</span>
-        <span className="shrink-0 px-1.5 py-0.5 rounded text-[10px] bg-axiom-hover text-axiom-muted border border-axiom-border">
-          {item.category}
-        </span>
-        {/* Badge de taxa de correção */}
-        {item.appreciationRate ? (
-          <span
-            className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium border ${
-              item.appreciationRate > 0
-                ? "text-axiom-income bg-axiom-income/10 border-axiom-income/20"
-                : "text-axiom-expense bg-axiom-expense/10 border-axiom-expense/20"
-            }`}
-            title={`Taxa de correção: ${item.appreciationRate > 0 ? "+" : ""}${item.appreciationRate}% a.a.`}
-          >
-            {item.appreciationRate > 0 ? "↑" : "↓"} {Math.abs(item.appreciationRate)}%/a
+    <div className="rounded-lg hover:bg-axiom-hover transition-colors">
+      <div className="flex items-center justify-between gap-3 px-3 py-2.5 group">
+        <div className="flex items-center gap-2 min-w-0 flex-wrap">
+          <span className="text-sm text-white truncate">{item.name}</span>
+          <span className="shrink-0 px-1.5 py-0.5 rounded text-[10px] bg-axiom-hover text-axiom-muted border border-axiom-border">
+            {item.category}
           </span>
-        ) : null}
-        {item.notes && (
-          <span className="text-[10px] text-axiom-muted/60 truncate hidden sm:block" title={item.notes}>
-            {item.notes}
-          </span>
-        )}
-      </div>
-      <div className="flex items-center gap-2 shrink-0">
-        <div className="flex flex-col items-end">
-          <span
-            className={`text-sm font-semibold ${item.itemType === "ASSET" ? "text-axiom-income" : "text-axiom-expense"}`}
-          >
-            {item.itemType === "LIABILITY" ? "−" : ""}
-            {formatCurrency(item.value, locale, currency)}
-          </span>
-          {/* Diferença entre base e calculado */}
-          {hasDrift && (
-            <span className={`text-[10px] ${gain >= 0 ? "text-axiom-income/70" : "text-axiom-expense/70"}`}>
-              {gain >= 0 ? "+" : ""}{formatCurrency(gain, locale, currency)}
+          {/* Badge de taxa de correção */}
+          {item.appreciationRate ? (
+            <span
+              className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium border ${
+                item.appreciationRate > 0
+                  ? "text-axiom-income bg-axiom-income/10 border-axiom-income/20"
+                  : "text-axiom-expense bg-axiom-expense/10 border-axiom-expense/20"
+              }`}
+              title={`Taxa de correção: ${item.appreciationRate > 0 ? "+" : ""}${item.appreciationRate}${rateTitleLabel}`}
+            >
+              {item.appreciationRate > 0 ? "↑" : "↓"} {Math.abs(item.appreciationRate)}{rateLabel}
+            </span>
+          ) : null}
+          {/* Badge de banco */}
+          {item.loanBank && getLoanBankById(item.loanBank) && (
+            <span className="shrink-0 px-1.5 py-0.5 rounded text-[10px] bg-axiom-hover text-axiom-muted border border-axiom-border">
+              {getLoanBankById(item.loanBank)!.bankName}
+            </span>
+          )}
+          {item.notes && (
+            <span className="text-[10px] text-axiom-muted/60 truncate hidden sm:block" title={item.notes}>
+              {item.notes}
             </span>
           )}
         </div>
-        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button
-            onClick={onEdit}
-            className="p-1 rounded text-axiom-muted hover:text-white transition-colors"
-            title="Editar"
-          >
-            <Pencil size={12} />
-          </button>
-          <button
-            onClick={onDelete}
-            disabled={deleting}
-            className="p-1 rounded text-axiom-muted hover:text-axiom-expense transition-colors disabled:opacity-50"
-            title="Remover"
-          >
-            <Trash2 size={12} />
-          </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="flex flex-col items-end">
+            <span
+              className={`text-sm font-semibold ${item.itemType === "ASSET" ? "text-axiom-income" : "text-axiom-expense"}`}
+            >
+              {item.itemType === "LIABILITY" ? "−" : ""}
+              {formatCurrency(item.value, locale, currency)}
+            </span>
+            {/* Diferença entre base e calculado */}
+            {hasDrift && (
+              <span className={`text-[10px] ${gain >= 0 ? "text-axiom-income/70" : "text-axiom-expense/70"}`}>
+                {gain >= 0 ? "+" : ""}{formatCurrency(gain, locale, currency)}
+              </span>
+            )}
+          </div>
+          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              onClick={onEdit}
+              className="p-1 rounded text-axiom-muted hover:text-white transition-colors"
+              title="Editar"
+            >
+              <Pencil size={12} />
+            </button>
+            <button
+              onClick={onDelete}
+              disabled={deleting}
+              className="p-1 rounded text-axiom-muted hover:text-axiom-expense transition-colors disabled:opacity-50"
+              title="Remover"
+            >
+              <Trash2 size={12} />
+            </button>
+          </div>
         </div>
       </div>
+      {item.loanInstallments != null && (
+        <div className="px-3 pb-2">
+          <InstallmentTracker item={item} locale={locale} currency={currency} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function InstallmentTracker({
+  item,
+  locale,
+  currency,
+}: {
+  item: WealthItemSerialized;
+  locale: string;
+  currency: string;
+}) {
+  const now = new Date();
+  const currentMonth = now.getMonth() + 1;
+  const currentYear = now.getFullYear();
+
+  const [data, setData] = useState<InstallmentStatusResponse | null>(null);
+  const [marking, setMarking] = useState(false);
+
+  useEffect(() => {
+    fetch(`/api/patrimonio/items/${item.id}/installments?month=${currentMonth}&year=${currentYear}`)
+      .then((r) => r.json())
+      .then((d: InstallmentStatusResponse) => setData(d));
+  }, [item.id, currentMonth, currentYear]);
+
+  async function markInstallment(status: "PAID" | "OVERDUE") {
+    setMarking(true);
+    try {
+      const res = await fetch(`/api/patrimonio/items/${item.id}/installments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ month: currentMonth, year: currentYear, status }),
+      });
+      const installment: InstallmentSerialized = await res.json();
+      setData((prev) => {
+        const newPaidCount =
+          status === "PAID"
+            ? (prev?.paidCount ?? 0) + (prev?.installment?.status !== "PAID" ? 1 : 0)
+            : (prev?.paidCount ?? 0) - (prev?.installment?.status === "PAID" ? 1 : 0);
+        return { installment, paidCount: Math.max(0, newPaidCount) };
+      });
+    } finally {
+      setMarking(false);
+    }
+  }
+
+  if (!data) {
+    return (
+      <div className="ml-3 mt-0.5 text-[10px] text-axiom-muted/50 animate-pulse">
+        Carregando parcela...
+      </div>
+    );
+  }
+
+  const { installment, paidCount } = data;
+  const totalInstallments = item.loanInstallments!;
+  const remaining = totalInstallments - paidCount;
+  const quitacaoDate = new Date(now.getFullYear(), now.getMonth() + remaining, 1);
+  const quitacaoStr = quitacaoDate.toLocaleDateString("pt-BR", { month: "short", year: "numeric" });
+  const monthName = now.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+
+  // OVERDUE: calculate fees
+  const overdueInfo =
+    installment?.status === "OVERDUE" && item.value
+      ? calcLateFees(item.value / totalInstallments, overdueMonths(installment.month, installment.year))
+      : null;
+
+  if (!installment || installment.status === "PENDING") {
+    return (
+      <div className="ml-3 mt-1 flex items-center gap-2 flex-wrap">
+        <span className="text-[10px] text-axiom-muted">
+          Parcela {paidCount + 1}/{totalInstallments} • {monthName}
+        </span>
+        <button
+          disabled={marking}
+          onClick={() => markInstallment("PAID")}
+          className="text-[10px] px-2 py-0.5 rounded border border-axiom-income/30 text-axiom-income hover:bg-axiom-income/10 transition-colors disabled:opacity-50"
+        >
+          ✓ Marcar paga
+        </button>
+        <button
+          disabled={marking}
+          onClick={() => markInstallment("OVERDUE")}
+          className="text-[10px] px-2 py-0.5 rounded border border-axiom-expense/30 text-axiom-expense hover:bg-axiom-expense/10 transition-colors disabled:opacity-50"
+        >
+          ⚠ Em atraso
+        </button>
+      </div>
+    );
+  }
+
+  if (installment.status === "PAID") {
+    return (
+      <div className="ml-3 mt-1 flex items-center gap-2">
+        <span className="text-[10px] px-1.5 py-0.5 rounded bg-axiom-income/10 border border-axiom-income/20 text-axiom-income">
+          ✅ Parcela {paidCount}/{totalInstallments} paga
+        </span>
+        <span className="text-[10px] text-axiom-muted">Quitação: {quitacaoStr}</span>
+      </div>
+    );
+  }
+
+  // OVERDUE
+  return (
+    <div className="ml-3 mt-1 flex flex-col gap-1">
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-[10px] px-1.5 py-0.5 rounded bg-axiom-expense/10 border border-axiom-expense/20 text-axiom-expense">
+          ⚠ Em atraso
+        </span>
+        {overdueInfo && (
+          <span className="text-[10px] text-axiom-expense/80">
+            Multa {formatCurrency(overdueInfo.fine, locale, currency)} + mora {formatCurrency(overdueInfo.mora, locale, currency)}
+          </span>
+        )}
+      </div>
+      <span className="text-[10px] text-axiom-muted/70">
+        Risco de negativação após 30 dias • Risco de embargo após 90 dias
+      </span>
     </div>
   );
 }
