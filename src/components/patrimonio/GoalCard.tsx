@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
-import { getBankById, effectiveAnnualYield, monthsToReachGoal } from "@/lib/brazilianBanks";
+import { getBankProductById, effectiveAnnualYield, monthsToReachGoal } from "@/lib/brazilianBanks";
 import type { FinancialGoalSerialized } from "@/app/api/patrimonio/goals/route";
 
 const FREQUENCY_LABELS: Record<string, string> = {
@@ -26,7 +26,7 @@ export function GoalCard({ goal, currency, locale, cdiAnual, onEdit, onDelete }:
 
   const { name, targetAmount, savedAmount, contributionAmount, contributionFrequency, bank } = goal;
 
-  const bankInfo = bank ? getBankById(bank) : null;
+  const bankInfo = bank ? getBankProductById(bank) : null;
 
   // Rendimento efetivo anual (ex: 0.1365 para 13.65% a.a.)
   const annualYield =
@@ -85,13 +85,17 @@ export function GoalCard({ goal, currency, locale, cdiAnual, onEdit, onDelete }:
       {bankInfo && (
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs text-axiom-muted">
-            {bankInfo.name}
-            {bankInfo.product ? ` · ${bankInfo.product}` : ""}
+            {bankInfo.bankName}
+            {bankInfo.productName ? ` · ${bankInfo.productName}` : ""}
           </span>
-          {bankInfo.cdiPct > 0 && (
+          {bankInfo.cdiPct > 0 ? (
             <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-axiom-primary/15 border border-axiom-primary/30 text-axiom-primary">
               {bankInfo.cdiPct}% CDI
               {yieldDisplayPct ? ` ≈ ${yieldDisplayPct}% a.a.` : ""}
+            </span>
+          ) : (
+            <span className="px-2 py-0.5 rounded-full text-[10px] bg-axiom-hover border border-axiom-border text-axiom-muted/60">
+              sem rendimento
             </span>
           )}
         </div>
@@ -140,7 +144,7 @@ export function GoalCard({ goal, currency, locale, cdiAnual, onEdit, onDelete }:
           </p>
           {annualYield > 0 && (
             <p className="text-[10px] text-axiom-income/80">
-              ✦ Inclui rendimento de {((bankInfo?.cdiPct ?? 0) / 100 * (cdiAnual ?? 0)).toFixed(2)}% a.a.
+              ✦ Inclui rendimento composto de {yieldDisplayPct}% a.a.
             </p>
           )}
         </div>
