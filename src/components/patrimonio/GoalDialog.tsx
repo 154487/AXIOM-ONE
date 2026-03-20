@@ -11,7 +11,10 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -19,7 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import type { FinancialGoalSerialized } from "@/app/api/patrimonio/goals/route";
-import { BRAZILIAN_BANKS } from "@/lib/brazilianBanks";
+import { getBankGroups } from "@/lib/brazilianBanks";
 
 interface GoalDialogProps {
   mode: "create" | "edit";
@@ -217,26 +220,33 @@ export function GoalDialog({ mode, goal, onSuccess, onClose }: GoalDialogProps) 
               <span className="text-axiom-muted/60">(opcional)</span>
             </Label>
             <Select value={bank} onValueChange={(v) => setBank(v ?? "")}>
-              <SelectTrigger className="bg-axiom-hover border-axiom-border text-white focus:border-axiom-primary">
-                <SelectValue placeholder="Selecionar banco..." />
+              <SelectTrigger className="w-full bg-axiom-hover border-axiom-border text-white focus:border-axiom-primary">
+                <SelectValue placeholder="Selecionar banco e produto..." />
               </SelectTrigger>
-              <SelectContent className="bg-axiom-card border-axiom-border max-h-60">
-                {BRAZILIAN_BANKS.map((b) => (
-                  <SelectItem
-                    key={b.id}
-                    value={b.id}
-                    className="text-white hover:bg-axiom-hover focus:bg-axiom-hover"
-                  >
-                    <span>{b.name}</span>
-                    {b.product && (
-                      <span className="text-axiom-muted ml-1 text-xs">— {b.product}</span>
-                    )}
-                    {b.cdiPct > 0 && (
-                      <span className="text-axiom-primary ml-1 text-xs font-medium">
-                        {b.cdiPct}% CDI
-                      </span>
-                    )}
-                  </SelectItem>
+              <SelectContent className="bg-axiom-card border-axiom-border max-h-72">
+                {getBankGroups().map((group, gi) => (
+                  <SelectGroup key={group.bankName}>
+                    {gi > 0 && <SelectSeparator />}
+                    <SelectLabel className="text-axiom-muted/70 text-[10px] uppercase tracking-wider px-2 pt-1">
+                      {group.bankName}
+                    </SelectLabel>
+                    {group.products.map((p) => (
+                      <SelectItem
+                        key={p.id}
+                        value={p.id}
+                        className="text-white hover:bg-axiom-hover focus:bg-axiom-hover pl-4"
+                      >
+                        <span className="text-sm">{p.productName}</span>
+                        {p.cdiPct > 0 ? (
+                          <span className="text-axiom-primary text-xs font-semibold ml-2">
+                            {p.cdiPct}% CDI
+                          </span>
+                        ) : (
+                          <span className="text-axiom-muted/50 text-xs ml-2">sem rendimento</span>
+                        )}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
                 ))}
               </SelectContent>
             </Select>
