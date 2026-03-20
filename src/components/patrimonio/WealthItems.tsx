@@ -212,13 +212,29 @@ function ItemRow({
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const hasDrift = item.appreciationRate && item.value !== item.baseValue;
+  const gain = item.value - item.baseValue;
+
   return (
     <div className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg hover:bg-axiom-hover group transition-colors">
-      <div className="flex items-center gap-2 min-w-0">
+      <div className="flex items-center gap-2 min-w-0 flex-wrap">
         <span className="text-sm text-white truncate">{item.name}</span>
         <span className="shrink-0 px-1.5 py-0.5 rounded text-[10px] bg-axiom-hover text-axiom-muted border border-axiom-border">
           {item.category}
         </span>
+        {/* Badge de taxa de correção */}
+        {item.appreciationRate ? (
+          <span
+            className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium border ${
+              item.appreciationRate > 0
+                ? "text-axiom-income bg-axiom-income/10 border-axiom-income/20"
+                : "text-axiom-expense bg-axiom-expense/10 border-axiom-expense/20"
+            }`}
+            title={`Taxa de correção: ${item.appreciationRate > 0 ? "+" : ""}${item.appreciationRate}% a.a.`}
+          >
+            {item.appreciationRate > 0 ? "↑" : "↓"} {Math.abs(item.appreciationRate)}%/a
+          </span>
+        ) : null}
         {item.notes && (
           <span className="text-[10px] text-axiom-muted/60 truncate hidden sm:block" title={item.notes}>
             {item.notes}
@@ -226,12 +242,20 @@ function ItemRow({
         )}
       </div>
       <div className="flex items-center gap-2 shrink-0">
-        <span
-          className={`text-sm font-semibold ${item.itemType === "ASSET" ? "text-axiom-income" : "text-axiom-expense"}`}
-        >
-          {item.itemType === "LIABILITY" ? "−" : ""}
-          {formatCurrency(item.value, locale, currency)}
-        </span>
+        <div className="flex flex-col items-end">
+          <span
+            className={`text-sm font-semibold ${item.itemType === "ASSET" ? "text-axiom-income" : "text-axiom-expense"}`}
+          >
+            {item.itemType === "LIABILITY" ? "−" : ""}
+            {formatCurrency(item.value, locale, currency)}
+          </span>
+          {/* Diferença entre base e calculado */}
+          {hasDrift && (
+            <span className={`text-[10px] ${gain >= 0 ? "text-axiom-income/70" : "text-axiom-expense/70"}`}>
+              {gain >= 0 ? "+" : ""}{formatCurrency(gain, locale, currency)}
+            </span>
+          )}
+        </div>
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             onClick={onEdit}

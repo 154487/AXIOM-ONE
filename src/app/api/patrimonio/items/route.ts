@@ -5,9 +5,12 @@ import { prisma } from "@/lib/prisma";
 export interface WealthItemSerialized {
   id: string;
   name: string;
-  value: number;
+  value: number;             // valor atual calculado (base * (1+rate)^anos)
+  baseValue: number;         // valor original (para o formulário de edição)
   itemType: "ASSET" | "LIABILITY";
   category: string;
+  appreciationRate: number | null; // % a.a. (+6 = valoriza, -10 = deprecia)
+  appreciationStart: string;       // ISO date — ponto de partida do cálculo
   notes: string | null;
   createdAt: string;
 }
@@ -19,21 +22,38 @@ export interface WealthItemsResponse {
   net: number;
 }
 
+/** Calcula o valor atual com base na taxa anual composta e no tempo decorrido. */
+function calcCurrentValue(baseValue: number, rate: number | null, start: Date): number {
+  if (!rate) return baseValue;
+  const years = (Date.now() - start.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
+  return baseValue * Math.pow(1 + rate / 100, years);
+}
+
 function serialize(item: {
   id: string;
   name: string;
   value: unknown;
   itemType: string;
   category: string;
+  appreciationRate: unknown;
+  appreciationStart: Date | null;
   notes: string | null;
   createdAt: Date;
 }): WealthItemSerialized {
+  const baseValue = parseFloat(String(item.value));
+  const rate = item.appreciationRate != null ? parseFloat(String(item.appreciationRate)) : null;
+  const start = item.appreciationStart ?? item.createdAt;
+  const currentValue = calcCurrentValue(baseValue, rate, start);
+
   return {
     id: item.id,
     name: item.name,
-    value: parseFloat(String(item.value)),
+    value: currentValue,
+    baseValue,
     itemType: item.itemType as "ASSET" | "LIABILITY",
     category: item.category,
+    appreciationRate: rate,
+    appreciationStart: start.toISOString(),
     notes: item.notes,
     createdAt: item.createdAt.toISOString(),
   };
@@ -71,7 +91,7 @@ export async function POST(req: NextRequest) {
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { name, value, itemType, category, notes } = body;
+  const { name, value, itemType, category, appreciationRate, notes } = body;
 
   if (!name || typeof name !== "string" || name.trim().length === 0) {
     return NextResponse.json({ error: "Nome é obrigatório" }, { status: 400 });
@@ -85,6 +105,10 @@ export async function POST(req: NextRequest) {
   if (!category || typeof category !== "string" || category.trim().length === 0) {
     return NextResponse.json({ error: "Categoria é obrigatória" }, { status: 400 });
   }
+  if (appreciationRate !== undefined && appreciationRate !== null &&
+      (typeof appreciationRate !== "number" || appreciationRate < -100 || appreciationRate > 100)) {
+    return NextResponse.json({ error: "Taxa inválida. Use valores entre -100 e 100." }, { status: 400 });
+  }
 
   const item = await prisma.wealthItem.create({
     data: {
@@ -93,6 +117,8 @@ export async function POST(req: NextRequest) {
       value,
       itemType,
       category: category.trim(),
+      appreciationRate: appreciationRate ?? null,
+      appreciationStart: new Date(),
       notes: notes?.trim() || null,
     },
   });
