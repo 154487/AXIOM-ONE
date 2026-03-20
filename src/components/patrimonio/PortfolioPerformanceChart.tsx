@@ -153,7 +153,7 @@ export function PortfolioPerformanceChart() {
         grid: { color: "#1E2D42" },
       },
       x: {
-        ticks: { color: "#AAB2BD", maxTicksLimit: 10, font: { size: 11 } },
+        ticks: { color: "#AAB2BD", maxTicksLimit: 7, font: { size: 11 } },
         grid: { color: "#1E2D42" },
       },
     },
@@ -182,8 +182,8 @@ export function PortfolioPerformanceChart() {
   const lastPoint = points[points.length - 1];
 
   return (
-    <div className="bg-axiom-card border border-axiom-border rounded-xl p-6 flex flex-col gap-5">
-      {/* Header */}
+    <div className="bg-axiom-card border border-axiom-border rounded-xl p-6 flex flex-col gap-4">
+      {/* Header + period selector */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h3 className="text-sm font-semibold text-white">Performance vs Benchmarks</h3>
@@ -191,7 +191,6 @@ export function PortfolioPerformanceChart() {
             Retorno acumulado da sua carteira vs CDI, IPCA e IBOV
           </p>
         </div>
-        {/* Period selector */}
         <div className="flex gap-1 bg-axiom-hover rounded-lg p-1">
           {PERIODS.map(({ key, label }) => (
             <button
@@ -209,14 +208,10 @@ export function PortfolioPerformanceChart() {
         </div>
       </div>
 
-      {/* Return badges */}
+      {/* Return badges inline */}
       {!loading && lastPoint && (
         <div className="flex flex-wrap gap-2">
-          <ReturnBadge
-            label="Sua Carteira"
-            value={lastPoint.portfolio}
-            color="text-axiom-primary"
-          />
+          <ReturnBadge label="Sua Carteira" value={lastPoint.portfolio} color="text-axiom-primary" />
           {lastPoint.ibov !== null && (
             <ReturnBadge label="IBOV" value={lastPoint.ibov} color="text-blue-400" />
           )}
@@ -231,21 +226,18 @@ export function PortfolioPerformanceChart() {
 
       {/* Chart */}
       {loading || !mounted ? (
-        <div className="animate-pulse bg-axiom-hover rounded-lg" style={{ minHeight: 260 }} />
+        <div className="animate-pulse bg-axiom-hover rounded-lg" style={{ minHeight: 180 }} />
       ) : (
-        <div style={{ minHeight: 260 }}>
+        <div style={{ minHeight: 180 }}>
           <Line data={{ labels, datasets }} options={options} />
         </div>
       )}
 
-      {/* Footnotes */}
-      <div className="flex flex-col gap-1">
-        <p className="text-xs text-axiom-muted/60 italic">
-          CDI e IPCA com dados históricos reais do Banco Central (BCB SGS).
-          {!perfData?.hasIbov &&
-            " IBOV indisponível — configure BRAPI_TOKEN para comparar com o Ibovespa."}
+      {!perfData?.hasIbov && !loading && (
+        <p className="text-xs text-axiom-muted/50 italic">
+          IBOV indisponível — configure BRAPI_TOKEN para comparar com o Ibovespa.
         </p>
-      </div>
+      )}
     </div>
   );
 }
