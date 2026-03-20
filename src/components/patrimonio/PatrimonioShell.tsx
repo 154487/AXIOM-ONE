@@ -7,7 +7,7 @@ import { FireProjection } from "@/components/reports/patrimonio/FireProjection";
 import { AssetBreakdown } from "./AssetBreakdown";
 import { BenchmarkComparison } from "./BenchmarkComparison";
 import { WealthItems } from "./WealthItems";
-import { PatrimonioGoal } from "./PatrimonioGoal";
+import { GoalsList } from "./GoalsList";
 import type { NetworthData } from "@/components/reports/types";
 import type { BenchmarkData } from "@/lib/benchmarks";
 import type { WealthItemsResponse } from "@/app/api/patrimonio/items/route";
@@ -56,23 +56,8 @@ export function PatrimonioShell({ initialCurrency, initialLocale }: PatrimonioSh
   const [benchmarksData, setBenchmarksData] = useState<BenchmarkData | null>(null);
   const [benchmarksLoading, setBenchmarksLoading] = useState(false);
 
-  const [goalData, setGoalData] = useState<{ goal: number | null } | null>(null);
-  const [goalLoading, setGoalLoading] = useState(false);
-
   const [itemsData, setItemsData] = useState<WealthItemsResponse | null>(null);
   const [itemsLoading, setItemsLoading] = useState(false);
-
-  const fetchGoal = useCallback(async () => {
-    setGoalLoading(true);
-    try {
-      const res = await fetch("/api/patrimonio/goal");
-      if (res.ok) setGoalData(await res.json());
-    } catch {
-      // silent
-    } finally {
-      setGoalLoading(false);
-    }
-  }, []);
 
   const fetchItems = useCallback(async () => {
     setItemsLoading(true);
@@ -90,14 +75,12 @@ export function PatrimonioShell({ initialCurrency, initialLocale }: PatrimonioSh
     setLoading(true);
     setPortfolioLoading(true);
     setBenchmarksLoading(true);
-    setGoalLoading(true);
     setItemsLoading(true);
 
-    const [networthRes, portfolioRes, benchmarksRes, goalRes, itemsRes] = await Promise.allSettled([
+    const [networthRes, portfolioRes, benchmarksRes, itemsRes] = await Promise.allSettled([
       fetch("/api/reports/networth"),
       fetch("/api/investments/portfolio"),
       fetch("/api/investments/benchmarks"),
-      fetch("/api/patrimonio/goal"),
       fetch("/api/patrimonio/items"),
     ]);
 
@@ -115,11 +98,6 @@ export function PatrimonioShell({ initialCurrency, initialLocale }: PatrimonioSh
       setBenchmarksData(await benchmarksRes.value.json());
     }
     setBenchmarksLoading(false);
-
-    if (goalRes.status === "fulfilled" && goalRes.value.ok) {
-      setGoalData(await goalRes.value.json());
-    }
-    setGoalLoading(false);
 
     if (itemsRes.status === "fulfilled" && itemsRes.value.ok) {
       setItemsData(await itemsRes.value.json());
@@ -251,20 +229,7 @@ export function PatrimonioShell({ initialCurrency, initialLocale }: PatrimonioSh
 
       {/* Aba: Meta */}
       {activeTab === "meta" && (
-        <>
-          {goalLoading ? (
-            <SkeletonCard label="Meta de Patrimônio" />
-          ) : (
-            <PatrimonioGoal
-              currentNetWorth={adjustedNetWorth}
-              goal={goalData?.goal ?? null}
-              avgMonthlySavings={avgMonthlySavings}
-              currency={initialCurrency}
-              locale={initialLocale}
-              onGoalSaved={fetchGoal}
-            />
-          )}
-        </>
+        <GoalsList currency={initialCurrency} locale={initialLocale} />
       )}
     </div>
   );
