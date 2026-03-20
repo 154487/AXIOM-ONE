@@ -104,8 +104,13 @@ src/
 │   │   ├── journal/               # GET ?month=&type=&tag= (max 100), POST (cria + snapshot)
 │   │   ├── journal/[id]/          # PATCH (ownership check, healthScore imutável), DELETE → 204
 │   │   ├── patrimonio/goal/       # GET → { goal }, PATCH → salva patrimonyGoal
+│   │   ├── patrimonio/fire-settings/ # GET/PATCH → fireMonthlyExpense + fireSWR do User
 │   │   ├── patrimonio/items/      # GET → WealthItemsResponse, POST → cria WealthItem
-│   │   └── patrimonio/items/[id]/ # PATCH → atualiza (itemType imutável), DELETE → 204
+│   │   ├── patrimonio/items/[id]/ # PATCH → atualiza (itemType imutável), DELETE → 204
+│   │   ├── patrimonio/items/[id]/installments/ # GET/PATCH parcelas do WealthItem
+│   │   ├── patrimonio/goals/      # GET list, POST create FinancialGoal
+│   │   ├── patrimonio/goals/[id]/ # PATCH update, DELETE
+│   │   └── patrimonio/performance/ # GET ?period=1y|2y|5y|all → retorno % vs CDI/IPCA/IBOV
 │   ├── layout.tsx                 # Root layout (lê AXIOM_THEME cookie → class "dark")
 │   ├── globals.css                # Tailwind v4 + tokens Axiom + dark/light via CSS vars
 │   └── page.tsx                   # Redirect: autenticado → /dashboard, anon → /login
@@ -151,13 +156,20 @@ src/
 │   │   │   └── SeasonalAnalysis.tsx   # Grid 12 meses com heatmap de variação
 │   │   └── patrimonio/
 │   │       ├── NetWorthChart.tsx    # Line com área preenchida (cor por saldo positivo/negativo)
-│   │       ├── SavingsRateChart.tsx # Bar por mês + linha meta 20% (dataset line borderDash)
-│   │       └── FireProjection.tsx   # FIRE: slider poupança + 3 cenários + Line chart
+│   │       └── SavingsRateChart.tsx # Bar por mês + linha meta 20% (dataset line borderDash)
 │   ├── patrimonio/
-│   │   ├── PatrimonioShell.tsx    # "use client" — 5 fetches paralelos, adjustedNetWorth
+│   │   ├── PatrimonioShell.tsx    # "use client" — abas: Evolução|Análise|Independência|Bens|Meta
 │   │   ├── AssetBreakdown.tsx     # Doughnut + tabela por classe de ativo
-│   │   ├── BenchmarkComparison.tsx # Line vs CDI/IPCA (dashed)
 │   │   ├── PatrimonioGoal.tsx     # Meta patrimônio: barra progresso + projeção
+│   │   ├── PortfolioPerformanceChart.tsx # Retorno acumulado % vs CDI/IPCA/IBOV, period selector
+│   │   ├── FireDashboard.tsx      # Container aba Independência — 6 fetches paralelos
+│   │   ├── FireStatusCard.tsx     # Patrimônio, FI Number, % caminho, savings rate
+│   │   ├── FireSettingsCard.tsx   # Gasto alvo, SWR, slider aporte extra (debounce 400ms)
+│   │   ├── FireProjectionChart.tsx # 3 cenários simultâneos + FI Number tracejado
+│   │   ├── CoastFireCard.tsx      # Coast FIRE number, barra, mensagem conquista
+│   │   ├── GoalsList.tsx          # Lista + CRUD de FinancialGoal
+│   │   ├── GoalCard.tsx           # Card meta com projeção CDI e barra de progresso
+│   │   ├── GoalDialog.tsx         # Dialog criar/editar meta
 │   │   ├── WealthItems.tsx        # Lista bens/passivos agrupada com CRUD inline
 │   │   └── WealthItemDialog.tsx   # Dialog criar/editar bem ou passivo
 │   ├── journal/
@@ -196,7 +208,8 @@ src/
 User
   id, name?, email (unique), password (bcrypt), createdAt, updatedAt
   notifTransactions (bool, default true), notifBudgetAlerts (bool, default true),
-  notifMonthlyReport (bool, default false), patrimonyGoal (Decimal?, meta de patrimônio)
+  notifMonthlyReport (bool, default false), patrimonyGoal (Decimal?, meta de patrimônio),
+  fireMonthlyExpense (Decimal?, gasto mensal alvo FIRE), fireSWR (Decimal?, taxa de retirada, default 4.0)
   → relations: transactions[], categories[], currencies[], notifications[]
 
 Category
@@ -355,6 +368,10 @@ A moeda padrão do usuário vem de `UserCurrency` com `isDefault: true`. O dashb
 | v1.0 | Intelligence Layer | ✅ concluída — release v1.0.0 |
 | v1.1 | Patrimônio Evoluído | ✅ concluída — release v1.1.0 |
 | v1.2 | Bens e Passivos | ✅ concluída — release v1.2.0 |
+| v1.3 | Patrimônio Redesign | ✅ concluída |
+| v1.4 | Metas Financeiras Múltiplas | ✅ concluída |
+| v1.5 | Bens & Passivos Aprimorado | ✅ concluída |
+| v1.6 | FIRE Dashboard: Independência Financeira | ✅ concluída — release v1.6.0 |
 
 ---
 
