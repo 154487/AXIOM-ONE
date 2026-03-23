@@ -6,6 +6,7 @@ import { formatCurrency } from "@/lib/utils";
 interface FireSettingsCardProps {
   monthlyExpense: number;
   targetMonthlyIncome: number | null;
+  targetMonthlyContrib: number | null;
   extraSavings: number;
   avgExpenses: number;
   avgExpensesByPeriod: number;
@@ -14,6 +15,7 @@ interface FireSettingsCardProps {
   retirementYears: number;
   onMonthlyExpenseChange: (v: number) => void;
   onTargetMonthlyIncomeChange: (v: number) => void;
+  onTargetMonthlyContribChange: (v: number) => void;
   onSWRChange?: (v: number) => void; // kept for compatibility — unused
   onExtraSavingsChange: (v: number) => void;
   onPeriodChange: (months: 3 | 6 | 12) => void;
@@ -31,6 +33,7 @@ const PERIODS: { label: string; value: 3 | 6 | 12 }[] = [
 export function FireSettingsCard({
   monthlyExpense,
   targetMonthlyIncome,
+  targetMonthlyContrib,
   extraSavings,
   avgExpensesByPeriod,
   isUsingAvgExpenses,
@@ -38,6 +41,7 @@ export function FireSettingsCard({
   retirementYears,
   onMonthlyExpenseChange,
   onTargetMonthlyIncomeChange,
+  onTargetMonthlyContribChange,
   onExtraSavingsChange,
   onPeriodChange,
   onRetirementYearsChange,
@@ -46,6 +50,7 @@ export function FireSettingsCard({
 }: FireSettingsCardProps) {
   const expenseDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const incomeDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const contribDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function handleExpenseChange(raw: string) {
     const v = parseFloat(raw);
@@ -59,6 +64,13 @@ export function FireSettingsCard({
     if (isNaN(v) || v <= 0) return;
     if (incomeDebounce.current) clearTimeout(incomeDebounce.current);
     incomeDebounce.current = setTimeout(() => onTargetMonthlyIncomeChange(v), 400);
+  }
+
+  function handleContribChange(raw: string) {
+    const v = parseFloat(raw);
+    if (isNaN(v) || v <= 0) return;
+    if (contribDebounce.current) clearTimeout(contribDebounce.current);
+    contribDebounce.current = setTimeout(() => onTargetMonthlyContribChange(v), 400);
   }
 
   return (
@@ -129,6 +141,25 @@ export function FireSettingsCard({
             FI Number = renda × 12 × 25 (regra dos 4%)
           </p>
         </div>
+      </div>
+
+      {/* (C2) Aporte mensal para projeção */}
+      <div className="flex flex-col gap-1.5 sm:col-span-2">
+        <label className="text-xs text-axiom-muted uppercase tracking-wide">
+          Aporte mensal investido
+        </label>
+        <input
+          type="number"
+          defaultValue={targetMonthlyContrib ?? ""}
+          min={0}
+          step={100}
+          onChange={(e) => handleContribChange(e.target.value)}
+          className="bg-axiom-hover border border-axiom-border rounded-lg px-3 py-2 text-sm text-white placeholder-axiom-muted/50 focus:outline-none focus:border-axiom-primary/60 transition-colors"
+          placeholder="Ex: 2000"
+        />
+        <p className="text-[11px] text-axiom-muted/60">
+          Usado na Previsão de IF — quanto você investe por mês de fato
+        </p>
       </div>
 
       {/* (D) Slider horizonte de aposentadoria */}

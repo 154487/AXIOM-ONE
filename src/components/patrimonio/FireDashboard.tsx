@@ -242,6 +242,11 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
     patchFireSettings({ retirementYears: v });
   }
 
+  function handleTargetMonthlyContribChange(v: number) {
+    setFireSettings((prev) => (prev ? { ...prev, targetMonthlyContrib: v } : prev));
+    patchFireSettings({ targetMonthlyContrib: v });
+  }
+
   function handleFiNumberChange(v: number | null) {
     setFiNumberManual(v);
     patchFireSettings({ fiNumberManual: v });
@@ -326,10 +331,12 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
           fiNumberManual={fiNumberManual}
           onFiNumberChange={handleFiNumberChange}
           cdiAnual={cdiAnual}
+          targetMonthlyContrib={fireSettings?.targetMonthlyContrib ?? null}
         />
         <FireSettingsCard
           monthlyExpense={effectiveMonthlyExpense}
           targetMonthlyIncome={targetMonthlyIncome}
+          targetMonthlyContrib={fireSettings?.targetMonthlyContrib ?? null}
           extraSavings={extraSavings}
           avgExpenses={avgMonthlyExpenses}
           avgExpensesByPeriod={avgExpensesByPeriod}
@@ -338,6 +345,7 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
           retirementYears={retirementYears}
           onMonthlyExpenseChange={handleMonthlyExpenseChange}
           onTargetMonthlyIncomeChange={handleTargetMonthlyIncomeChange}
+          onTargetMonthlyContribChange={handleTargetMonthlyContribChange}
           onExtraSavingsChange={setExtraSavings}
           onPeriodChange={setExpensePeriod}
           onRetirementYearsChange={handleRetirementYearsChange}
