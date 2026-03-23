@@ -16,6 +16,7 @@ import {
   Settings2,
   ChevronLeft,
   ChevronRight,
+  Bird,
 } from "lucide-react";
 
 export function Sidebar() {
@@ -30,6 +31,7 @@ export function Sidebar() {
     { href: "/import", label: t("import"), icon: FileUp },
     { href: "/investments", label: t("investments"), icon: TrendingUp },
     { href: "/patrimonio", label: t("patrimonio"), icon: Landmark },
+    { href: "/independencia", label: t("independencia"), icon: Bird },
     { href: "/journal", label: t("journal"), icon: BookOpen },
     { href: "/settings", label: t("settings"), icon: Settings2 },
   ];
