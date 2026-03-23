@@ -4,7 +4,6 @@ import { useState, useRef } from "react";
 import { Pencil, X } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
-// Label do FI Number traduzido por locale
 const FI_NUMBER_LABELS: Record<string, string> = {
   "pt-BR": "Número IF",
   en: "FI Number",
@@ -19,18 +18,28 @@ function getFiLabel(locale: string) {
   return FI_NUMBER_LABELS[locale] ?? FI_NUMBER_LABELS["en"];
 }
 
-// Valor futuro de aportes mensais com juros compostos
-function futureValue(monthly: number, annualRate: number, years: number) {
-  if (monthly <= 0 || annualRate <= 0) return 0;
+// Simula mês a mês até atingir o FI Number. Retorna meses ou null (>50 anos).
+function monthsToFI(
+  currentPatrimony: number,
+  fiTarget: number,
+  monthlyContrib: number,
+  annualRate: number
+): number | null {
+  if (currentPatrimony >= fiTarget) return 0;
+  if (monthlyContrib <= 0 && annualRate <= 0) return null;
   const r = (1 + annualRate) ** (1 / 12) - 1;
-  const n = years * 12;
-  return monthly * (((1 + r) ** n - 1) / r);
+  let p = currentPatrimony;
+  for (let m = 1; m <= 600; m++) {
+    p = p * (1 + r) + monthlyContrib;
+    if (p >= fiTarget) return m;
+  }
+  return null;
 }
 
 interface FireStatusCardProps {
   firePatrimony: number;
   fiNumber: number;
-  savingsRate: number; // % (ex: 32.5)
+  savingsRate: number;
   avgMonthlyIncome: number;
   effectiveMonthlyExpense: number;
   currency: string;
@@ -58,14 +67,14 @@ export function FireStatusCard({
 
   const progress = fiNumber > 0 ? Math.min(100, (firePatrimony / fiNumber) * 100) : 0;
   const faltaParaFI = Math.max(0, fiNumber - firePatrimony);
-  const monthlysurplus = Math.max(0, avgMonthlyIncome - effectiveMonthlyExpense);
+  const monthlySurplus = Math.max(0, avgMonthlyIncome - effectiveMonthlyExpense);
 
   const badgeColor =
     progress >= 50
       ? "bg-axiom-income/20 text-axiom-income border-axiom-income/30"
       : progress >= 25
       ? "bg-axiom-primary/20 text-axiom-primary border-axiom-primary/30"
-      : "bg-axiom-expense/20 text-axiom-expense border-axiom-expense/30";
+      : "bg-axiom-expense/20 text-axiom-expense border-axiom-border/30";
 
   function startEditing() {
     setInputVal(fiNumberManual ? String(fiNumberManual) : "");
@@ -75,9 +84,7 @@ export function FireStatusCard({
 
   function commitEdit() {
     const parsed = parseFloat(inputVal.replace(/[^\d.,]/g, "").replace(",", "."));
-    if (!isNaN(parsed) && parsed > 0) {
-      onFiNumberChange(parsed);
-    }
+    if (!isNaN(parsed) && parsed > 0) onFiNumberChange(parsed);
     setEditing(false);
   }
 
@@ -86,16 +93,20 @@ export function FireStatusCard({
     if (e.key === "Escape") setEditing(false);
   }
 
-  // Cenários de rendimento: Poupança / CDI / Renda Variável
-  const scenarios = [
-    { label: "Poupança", rate: 0.06, color: "text-axiom-muted" },
-    {
-      label: `CDI ${cdiAnual ? (cdiAnual * 100).toFixed(1) : "~11"}%`,
-      rate: cdiAnual ?? 0.11,
-      color: "text-axiom-income",
-    },
-    { label: "Renda variável ~12%", rate: 0.12, color: "text-axiom-primary" },
-  ];
+  // — Renda passiva atual (4% SWR) —
+  const SWR = 0.04;
+  const rendaPassiva = firePatrimony * SWR / 12;
+  const rendaPassivaProgress =
+    effectiveMonthlyExpense > 0
+      ? Math.min(100, (rendaPassiva / effectiveMonthlyExpense) * 100)
+      : 0;
+
+  // — Previsão de IF —
+  const returnRate = cdiAnual ?? 0.10;
+  const months = monthsToFI(firePatrimony, fiNumber, monthlySurplus, returnRate);
+  const currentYear = new Date().getFullYear();
+  const yearsToFI = months !== null ? Math.ceil(months / 12) : null;
+  const targetYear = yearsToFI !== null ? currentYear + yearsToFI : null;
 
   return (
     <div className="bg-axiom-card border border-axiom-border rounded-xl p-6 flex flex-col gap-5">
@@ -112,7 +123,7 @@ export function FireStatusCard({
             {progress.toFixed(1)}%
           </span>
         </div>
-        <div className="h-3 bg-axiom-hover rounded-full overflow-hidden">
+        <div className="h-2 bg-axiom-hover rounded-full overflow-hidden">
           <div
             className="h-full rounded-full bg-axiom-primary transition-all duration-700"
             style={{ width: `${progress}%` }}
@@ -124,7 +135,7 @@ export function FireStatusCard({
         </div>
       </div>
 
-      {/* Grid 2×2 de KPIs */}
+      {/* Grid 2×2 KPIs */}
       <div className="grid grid-cols-2 gap-3">
         <KPIBox
           label="Patrimônio Total"
@@ -175,7 +186,7 @@ export function FireStatusCard({
         <KPIBox
           label="Taxa de Poupança"
           value={`${savingsRate.toFixed(1)}%`}
-          sub={`${formatCurrency(monthlysurplus, locale, currency)}/mês`}
+          sub={`${formatCurrency(monthlySurplus, locale, currency)}/mês`}
           highlight={savingsRate >= 20}
         />
         <KPIBox
@@ -185,34 +196,71 @@ export function FireStatusCard({
         />
       </div>
 
-      {/* Cenários de rendimento */}
-      {monthlysurplus > 0 && (
-        <div className="flex flex-col gap-2 pt-1 border-t border-axiom-border">
-          <div className="flex items-baseline justify-between">
-            <p className="text-[11px] text-axiom-muted uppercase tracking-wide">
-              Se investir o aporte mensal
-            </p>
-            <p className="text-[11px] text-axiom-muted/60">10 anos · 20 anos</p>
+      {/* Renda Passiva + Previsão de IF */}
+      <div className="flex flex-col gap-4 pt-1 border-t border-axiom-border">
+
+        {/* Renda Passiva Hoje */}
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] text-axiom-muted uppercase tracking-wide">Renda Passiva Hoje</p>
+            <span className="text-[10px] text-axiom-muted/60 bg-axiom-hover px-1.5 py-0.5 rounded">
+              SWR 4%
+            </span>
           </div>
-          {scenarios.map(({ label, rate, color }) => (
-            <div key={label} className="flex items-center gap-2">
-              <span className={`text-[11px] w-36 shrink-0 ${color}`}>{label}</span>
-              <div className="flex-1 flex items-center justify-end gap-3">
-                <span className="text-[11px] text-white/80 tabular-nums">
-                  {formatCurrency(futureValue(monthlysurplus, rate, 10), locale, currency)}
-                </span>
-                <span className="text-[11px] text-axiom-muted/40">·</span>
-                <span className="text-[11px] font-medium text-white tabular-nums">
-                  {formatCurrency(futureValue(monthlysurplus, rate, 20), locale, currency)}
-                </span>
-              </div>
-            </div>
-          ))}
-          <p className="text-[10px] text-axiom-muted/40 mt-0.5">
-            Juros compostos mensais, sem contar patrimônio atual
+          <p className="text-xl font-bold text-white leading-none">
+            {formatCurrency(rendaPassiva, locale, currency)}
+            <span className="text-sm font-normal text-axiom-muted ml-1">/mês</span>
           </p>
+          <div className="flex flex-col gap-1">
+            <div className="h-1.5 bg-axiom-hover rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full bg-axiom-income transition-all duration-700"
+                style={{ width: `${rendaPassivaProgress}%` }}
+              />
+            </div>
+            <div className="flex justify-between text-[10px] text-axiom-muted/70">
+              <span>{rendaPassivaProgress.toFixed(1)}% do objetivo coberto</span>
+              <span>meta {formatCurrency(effectiveMonthlyExpense, locale, currency)}/mês</span>
+            </div>
+          </div>
         </div>
-      )}
+
+        {/* Previsão de IF */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex flex-col gap-0.5">
+            <p className="text-[11px] text-axiom-muted uppercase tracking-wide">Previsão de IF</p>
+            {yearsToFI === 0 ? (
+              <p className="text-base font-bold text-axiom-income">Já atingido 🎉</p>
+            ) : targetYear !== null ? (
+              <p className="text-xl font-bold text-white leading-none">
+                ~{targetYear}
+              </p>
+            ) : (
+              <p className="text-base font-bold text-axiom-muted">Indefinido</p>
+            )}
+            {yearsToFI !== null && yearsToFI > 0 && (
+              <p className="text-[11px] text-axiom-muted/70">
+                daqui {yearsToFI} {yearsToFI === 1 ? "ano" : "anos"}
+              </p>
+            )}
+            {yearsToFI === null && (
+              <p className="text-[11px] text-axiom-muted/70">
+                aumente o aporte ou ajuste o Número IF
+              </p>
+            )}
+          </div>
+          <div className="text-right shrink-0">
+            <p className="text-[10px] text-axiom-muted/60">retorno estimado</p>
+            <p className="text-[11px] text-axiom-muted">
+              {(returnRate * 100).toFixed(1)}% a.a.
+            </p>
+            <p className="text-[10px] text-axiom-muted/50">
+              {cdiAnual ? "CDI atual" : "estimado"}
+            </p>
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 }
