@@ -6,7 +6,7 @@ interface FireMetricsCardProps {
   firePatrimony: number;
   fiNumber: number;
   effectiveMonthlyExpense: number; // alvo configurado — usado no FI Ratio e Runway
-  avgMonthlyExpense: number;        // média real das transações — base dos níveis FIRE
+  avgMonthlyExpense: number;       // base dos níveis FIRE (transações se ≥3M, senão alvo)
   currency: string;
   locale: string;
 }
@@ -152,7 +152,11 @@ export function FireMetricsCard({
           );
         })}
         <p className="text-[10px] text-axiom-muted/40 mt-1">
-          Baseado no seu gasto médio real de {fmt(base)}/mês · regra dos 4% (× 300)
+          Base: {fmt(base)}/mês
+          {avgMonthlyExpense === effectiveMonthlyExpense
+            ? " (configure mais meses para usar dados reais)"
+            : " · média das suas transações"}
+          {" · "}regra dos 4%
         </p>
       </div>
     </div>
