@@ -184,10 +184,10 @@ export function FireStatusCard({
         </div>
 
         <KPIBox
-          label="Taxa de Poupança"
-          value={`${savingsRate.toFixed(1)}%`}
-          sub={`${formatCurrency(monthlySurplus, locale, currency)}/mês`}
-          highlight={savingsRate >= 20}
+          label="Renda Passiva Hoje"
+          value={`${formatCurrency(rendaPassiva, locale, currency)}/mês`}
+          sub={`${rendaPassivaProgress.toFixed(1)}% do objetivo · SWR 4%`}
+          highlight={rendaPassivaProgress >= 50}
         />
         <KPIBox
           label="Falta para IF"
@@ -196,36 +196,9 @@ export function FireStatusCard({
         />
       </div>
 
-      {/* Renda Passiva + Previsão de IF */}
+      {/* Previsão de IF */}
       <div className="flex flex-col gap-4 pt-1 border-t border-axiom-border">
 
-        {/* Renda Passiva Hoje */}
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <p className="text-[11px] text-axiom-muted uppercase tracking-wide">Renda Passiva Hoje</p>
-            <span className="text-[10px] text-axiom-muted/60 bg-axiom-hover px-1.5 py-0.5 rounded">
-              SWR 4%
-            </span>
-          </div>
-          <p className="text-xl font-bold text-white leading-none">
-            {formatCurrency(rendaPassiva, locale, currency)}
-            <span className="text-sm font-normal text-axiom-muted ml-1">/mês</span>
-          </p>
-          <div className="flex flex-col gap-1">
-            <div className="h-1.5 bg-axiom-hover rounded-full overflow-hidden">
-              <div
-                className="h-full rounded-full bg-axiom-income transition-all duration-700"
-                style={{ width: `${rendaPassivaProgress}%` }}
-              />
-            </div>
-            <div className="flex justify-between text-[10px] text-axiom-muted/70">
-              <span>{rendaPassivaProgress.toFixed(1)}% do objetivo coberto</span>
-              <span>meta {formatCurrency(effectiveMonthlyExpense, locale, currency)}/mês</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Previsão de IF */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex flex-col gap-0.5">
             <p className="text-[11px] text-axiom-muted uppercase tracking-wide">Previsão de IF</p>
