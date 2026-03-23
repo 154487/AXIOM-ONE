@@ -5,7 +5,8 @@ import { formatCurrency } from "@/lib/utils";
 interface FireMetricsCardProps {
   firePatrimony: number;
   fiNumber: number;
-  effectiveMonthlyExpense: number;
+  effectiveMonthlyExpense: number; // alvo configurado — usado no FI Ratio e Runway
+  avgMonthlyExpense: number;        // média real das transações — base dos níveis FIRE
   currency: string;
   locale: string;
 }
@@ -14,6 +15,7 @@ export function FireMetricsCard({
   firePatrimony,
   fiNumber,
   effectiveMonthlyExpense,
+  avgMonthlyExpense,
   currency,
   locale,
 }: FireMetricsCardProps) {
@@ -34,28 +36,30 @@ export function FireMetricsCard({
   const runwayTargetYear = new Date().getFullYear() + Math.floor(runwayYears);
 
   // — Lean / Regular / Fat FIRE —
+  // Base: média real das transações (o que o usuário gasta de fato)
+  const base = avgMonthlyExpense > 0 ? avgMonthlyExpense : effectiveMonthlyExpense;
   const levels = [
     {
       label: "Lean FIRE",
-      description: "vida enxuta (50% do gasto atual)",
-      expense: effectiveMonthlyExpense * 0.5,
-      fiNum: effectiveMonthlyExpense * 0.5 * 12 * 25,
+      description: "vida enxuta (50% do gasto real)",
+      expense: base * 0.5,
+      fiNum: base * 0.5 * 12 * 25,
       color: "bg-blue-400",
       textColor: "text-blue-400",
     },
     {
       label: "Regular FIRE",
-      description: "seu estilo de vida atual",
-      expense: effectiveMonthlyExpense,
-      fiNum: fiNumber,
+      description: "seu gasto médio atual",
+      expense: base,
+      fiNum: base * 12 * 25,
       color: "bg-axiom-primary",
       textColor: "text-axiom-primary",
     },
     {
       label: "Fat FIRE",
-      description: "vida confortável (2× o gasto atual)",
-      expense: effectiveMonthlyExpense * 2,
-      fiNum: effectiveMonthlyExpense * 2 * 12 * 25,
+      description: "vida confortável (2× o gasto real)",
+      expense: base * 2,
+      fiNum: base * 2 * 12 * 25,
       color: "bg-axiom-income",
       textColor: "text-axiom-income",
     },
@@ -148,7 +152,7 @@ export function FireMetricsCard({
           );
         })}
         <p className="text-[10px] text-axiom-muted/40 mt-1">
-          Lean = {fmt(levels[0].expense)}/mês · Regular = {fmt(levels[1].expense)}/mês · Fat = {fmt(levels[2].expense)}/mês
+          Baseado no seu gasto médio real de {fmt(base)}/mês · regra dos 4% (× 300)
         </p>
       </div>
     </div>

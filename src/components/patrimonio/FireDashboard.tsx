@@ -357,6 +357,7 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
         firePatrimony={firePatrimony}
         fiNumber={fireData?.fiNumber ?? effectiveMonthlyExpense * 12 * 25}
         effectiveMonthlyExpense={effectiveMonthlyExpense}
+        avgMonthlyExpense={avgMonthlyExpenses}
         currency={currency}
         locale={locale}
       />
