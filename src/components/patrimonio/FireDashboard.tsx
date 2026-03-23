@@ -335,16 +335,13 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
         />
         <FireSettingsCard
           monthlyExpense={effectiveMonthlyExpense}
-          targetMonthlyIncome={targetMonthlyIncome}
           targetMonthlyContrib={fireSettings?.targetMonthlyContrib ?? null}
           extraSavings={extraSavings}
-          avgExpenses={avgMonthlyExpenses}
           avgExpensesByPeriod={avgExpensesByPeriod}
           isUsingAvgExpenses={isUsingAvgExpenses}
           expensePeriod={expensePeriod}
-          retirementYears={retirementYears}
+          fiNumber={fireData?.fiNumber ?? (effectiveMonthlyExpense) * 12 * 25}
           onMonthlyExpenseChange={handleMonthlyExpenseChange}
-          onTargetMonthlyIncomeChange={handleTargetMonthlyIncomeChange}
           onTargetMonthlyContribChange={handleTargetMonthlyContribChange}
           onExtraSavingsChange={setExtraSavings}
           onPeriodChange={setExpensePeriod}
@@ -373,6 +370,7 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
           firePatrimony={firePatrimony}
           fiNumber={fireData.fiNumber ?? 0}
           retirementYears={retirementYears}
+          onRetirementYearsChange={handleRetirementYearsChange}
           currency={currency}
           locale={locale}
         />
