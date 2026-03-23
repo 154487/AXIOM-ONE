@@ -144,9 +144,9 @@ export function FireStatusCard({
       {/* Grid 2×2 KPIs */}
       <div className="grid grid-cols-2 gap-3">
         <KPIBox
-          label="Patrimônio Total"
+          label="Patrimônio Investido"
           value={formatCurrency(firePatrimony, locale, currency)}
-          sub="bens, passivos e investimentos"
+          sub="carteira de investimentos"
         />
 
         {/* FI Number editável */}

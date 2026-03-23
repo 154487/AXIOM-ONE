@@ -136,14 +136,9 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
         allMonths.length
       : 0;
 
-  // Patrimônio = só o que está cadastrado em Bens & Passivos + Investimentos
-  // O saldo corrente de conta (networthData.currentNetWorth) não é incluído
-  // pois o excedente mensal não representa necessariamente patrimônio investido
-  const firePatrimony = Math.max(
-    0,
-    (itemsData?.net ?? 0) +
-      (portfolioData?.totals.totalCurrentValue ?? 0)
-  );
+  // Para FIRE, só o portfólio investido conta — bens físicos (imóvel, carro)
+  // não geram renda passiva e não contribuem para atingir o FI Number
+  const firePatrimony = portfolioData?.totals.totalCurrentValue ?? 0;
 
   const totalInvested = portfolioData?.totals.totalCurrentValue ?? 0;
 
