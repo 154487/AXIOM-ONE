@@ -70,22 +70,25 @@ export function FireSettingsCard({
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between">
           <label className="text-xs text-axiom-muted uppercase tracking-wide">
-            Gasto mensal na independência
+            Quanto você precisa por mês na IF?
           </label>
-          <div className="flex gap-0.5">
-            {PERIODS.map((p) => (
-              <button
-                key={p.value}
-                onClick={() => onPeriodChange(p.value)}
-                className={`px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors ${
-                  expensePeriod === p.value
-                    ? "bg-axiom-primary text-white"
-                    : "text-axiom-muted hover:text-white"
-                }`}
-              >
-                {p.label}
-              </button>
-            ))}
+          <div className="flex items-center gap-1">
+            <span className="text-[10px] text-axiom-muted/50">auto</span>
+            <div className="flex gap-0.5">
+              {PERIODS.map((p) => (
+                <button
+                  key={p.value}
+                  onClick={() => onPeriodChange(p.value)}
+                  className={`px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                    expensePeriod === p.value
+                      ? "bg-axiom-primary text-white"
+                      : "text-axiom-muted hover:text-white"
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
         <input
@@ -97,19 +100,19 @@ export function FireSettingsCard({
           className="bg-axiom-hover border border-axiom-border rounded-lg px-3 py-2 text-sm text-white placeholder-axiom-muted/50 focus:outline-none focus:border-axiom-primary/60 transition-colors"
           placeholder="Ex: 5000"
         />
-        <div className="flex items-center justify-between text-[11px]">
-          {isUsingAvgExpenses ? (
-            <span className="text-axiom-muted/60 italic">
-              Média {expensePeriod}M:{" "}
-              <span className="text-axiom-muted not-italic">
-                {formatCurrency(avgExpensesByPeriod, locale, currency)}
+        <div className="flex flex-col gap-0.5 text-[11px]">
+          {isUsingAvgExpenses && (
+            <span className="text-axiom-muted/60">
+              Média das suas despesas ({expensePeriod}M):{" "}
+              <span className="text-axiom-muted">
+                {formatCurrency(avgExpensesByPeriod, locale, currency)}/mês
               </span>
             </span>
-          ) : (
-            <span />
           )}
           <span className="text-axiom-muted/60">
-            Número IF → {formatCurrency(fiNumber, locale, currency)}
+            Isso gera um{" "}
+            <span className="text-axiom-primary">Número IF de {formatCurrency(fiNumber, locale, currency)}</span>
+            {" "}(regra dos 4%)
           </span>
         </div>
       </div>
