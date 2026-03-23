@@ -104,7 +104,8 @@ export function FireStatusCard({
       : 0;
 
   // — Previsão de IF —
-  const returnRate = cdiAnual ?? 0.10;
+  // cdiAnual vem como percentual (ex: 14.65 = 14.65% a.a.) — converter para decimal
+  const returnRate = (cdiAnual != null) ? cdiAnual / 100 : 0.10;
   const monthlyContribForProjection = targetMonthlyContrib ?? 0;
   const months = targetMonthlyContrib !== null
     ? monthsToFI(firePatrimony, fiNumber, monthlyContribForProjection, returnRate)
