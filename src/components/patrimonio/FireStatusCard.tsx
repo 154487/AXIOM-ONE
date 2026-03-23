@@ -47,6 +47,7 @@ interface FireStatusCardProps {
   fiNumberManual: number | null;
   onFiNumberChange: (v: number | null) => void;
   cdiAnual?: number | null;
+  targetMonthlyContrib: number | null;
 }
 
 export function FireStatusCard({
@@ -60,6 +61,7 @@ export function FireStatusCard({
   fiNumberManual,
   onFiNumberChange,
   cdiAnual,
+  targetMonthlyContrib,
 }: FireStatusCardProps) {
   const [editing, setEditing] = useState(false);
   const [inputVal, setInputVal] = useState("");
@@ -103,7 +105,10 @@ export function FireStatusCard({
 
   // — Previsão de IF —
   const returnRate = cdiAnual ?? 0.10;
-  const months = monthsToFI(firePatrimony, fiNumber, monthlySurplus, returnRate);
+  const monthlyContribForProjection = targetMonthlyContrib ?? 0;
+  const months = targetMonthlyContrib !== null
+    ? monthsToFI(firePatrimony, fiNumber, monthlyContribForProjection, returnRate)
+    : null; // não projeta sem aporte definido manualmente
   const currentYear = new Date().getFullYear();
   const yearsToFI = months !== null ? Math.ceil(months / 12) : null;
   const targetYear = yearsToFI !== null ? currentYear + yearsToFI : null;
@@ -202,35 +207,41 @@ export function FireStatusCard({
         <div className="flex items-start justify-between gap-3">
           <div className="flex flex-col gap-0.5">
             <p className="text-[11px] text-axiom-muted uppercase tracking-wide">Previsão de IF</p>
-            {yearsToFI === 0 ? (
+            {targetMonthlyContrib === null ? (
+              <>
+                <p className="text-sm font-medium text-axiom-muted">—</p>
+                <p className="text-[11px] text-axiom-muted/60">
+                  Defina seu aporte mensal em{" "}
+                  <span className="text-axiom-primary">Configurações do Plano</span>
+                </p>
+              </>
+            ) : yearsToFI === 0 ? (
               <p className="text-base font-bold text-axiom-income">Já atingido 🎉</p>
             ) : targetYear !== null ? (
-              <p className="text-xl font-bold text-white leading-none">
-                ~{targetYear}
-              </p>
+              <>
+                <p className="text-xl font-bold text-white leading-none">~{targetYear}</p>
+                <p className="text-[11px] text-axiom-muted/70">
+                  daqui {yearsToFI} {yearsToFI === 1 ? "ano" : "anos"}
+                </p>
+              </>
             ) : (
-              <p className="text-base font-bold text-axiom-muted">Indefinido</p>
-            )}
-            {yearsToFI !== null && yearsToFI > 0 && (
-              <p className="text-[11px] text-axiom-muted/70">
-                daqui {yearsToFI} {yearsToFI === 1 ? "ano" : "anos"}
-              </p>
-            )}
-            {yearsToFI === null && (
-              <p className="text-[11px] text-axiom-muted/70">
-                aumente o aporte ou ajuste o Número IF
-              </p>
+              <>
+                <p className="text-base font-bold text-axiom-muted">50+ anos</p>
+                <p className="text-[11px] text-axiom-muted/70">aumente o aporte ou revise o Número IF</p>
+              </>
             )}
           </div>
-          <div className="text-right shrink-0">
-            <p className="text-[10px] text-axiom-muted/60">retorno estimado</p>
-            <p className="text-[11px] text-axiom-muted">
-              {(returnRate * 100).toFixed(1)}% a.a.
-            </p>
-            <p className="text-[10px] text-axiom-muted/50">
-              {cdiAnual ? "CDI atual" : "estimado"}
-            </p>
-          </div>
+          {targetMonthlyContrib !== null && (
+            <div className="text-right shrink-0">
+              <p className="text-[10px] text-axiom-muted/60">aporte · retorno</p>
+              <p className="text-[11px] text-axiom-muted">
+                {formatCurrency(targetMonthlyContrib, locale, currency)}/mês
+              </p>
+              <p className="text-[10px] text-axiom-muted/50">
+                {(returnRate * 100).toFixed(1)}% a.a. {cdiAnual ? "(CDI)" : "(est.)"}
+              </p>
+            </div>
+          )}
         </div>
 
       </div>
