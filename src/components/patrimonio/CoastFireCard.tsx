@@ -7,6 +7,7 @@ interface CoastFireCardProps {
   firePatrimony: number;
   fiNumber: number;
   retirementYears: number;
+  onRetirementYearsChange: (v: number) => void;
   currency: string;
   locale: string;
 }
@@ -16,6 +17,7 @@ export function CoastFireCard({
   firePatrimony,
   fiNumber,
   retirementYears,
+  onRetirementYearsChange,
   currency,
   locale,
 }: CoastFireCardProps) {
@@ -94,6 +96,29 @@ export function CoastFireCard({
           </p>
         </div>
       )}
+
+      {/* Slider de horizonte — aqui faz sentido contextual */}
+      <div className="flex flex-col gap-2 pt-2 border-t border-axiom-border">
+        <div className="flex items-center justify-between">
+          <label className="text-[11px] text-axiom-muted uppercase tracking-wide">
+            Em quantos anos quer se aposentar?
+          </label>
+          <span className="text-sm font-semibold text-axiom-primary">{retirementYears} anos</span>
+        </div>
+        <input
+          type="range"
+          min={5}
+          max={50}
+          step={5}
+          value={retirementYears}
+          onChange={(e) => onRetirementYearsChange(parseInt(e.target.value))}
+          className="w-full accent-axiom-primary cursor-pointer"
+        />
+        <div className="flex justify-between text-[11px] text-axiom-muted/50">
+          <span>5 anos</span>
+          <span>50 anos</span>
+        </div>
+      </div>
 
       <p className="text-[11px] text-axiom-muted/50 italic">
         Coast FIRE = patrimônio que cresce sozinho a 8% a.a. até atingir o FI Number em {retirementYears} anos.
