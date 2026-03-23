@@ -7,6 +7,7 @@ import { FireProjectionChart } from "./FireProjectionChart";
 import { CoastFireCard } from "./CoastFireCard";
 import { FireGoalsCard } from "./FireGoalsCard";
 import { FirePlanCard } from "./FirePlanCard";
+import { FireMetricsCard } from "./FireMetricsCard";
 import { GoalCard } from "./GoalCard";
 import type { NetworthData } from "@/components/reports/types";
 import type { WealthItemsResponse } from "@/app/api/patrimonio/items/route";
@@ -350,6 +351,15 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
           locale={locale}
         />
       </div>
+
+      {/* Métricas complementares */}
+      <FireMetricsCard
+        firePatrimony={firePatrimony}
+        fiNumber={fireData?.fiNumber ?? effectiveMonthlyExpense * 12 * 25}
+        effectiveMonthlyExpense={effectiveMonthlyExpense}
+        currency={currency}
+        locale={locale}
+      />
 
       {/* Gráfico de projeção */}
       {fireLoading || !fireData?.scenarios ? (
