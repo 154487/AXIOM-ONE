@@ -30,7 +30,7 @@ export function FirePlanCard({
         <p className="text-xs text-axiom-muted mt-2">
           Marque categorias como{" "}
           <span className="text-axiom-primary font-medium">Essencial</span> em{" "}
-          <strong className="text-white">Configurações &gt; Categorias</strong> para ver o breakdown
+          <strong className="text-white">Transações &gt; Categorias</strong> para ver o breakdown
           do seu custo de vida real.
         </p>
       </div>
