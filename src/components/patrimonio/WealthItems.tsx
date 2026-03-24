@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { TrendingUp, TrendingDown, Pencil, Trash2, Plus } from "lucide-react";
 import { WealthItemDialog } from "./WealthItemDialog";
 import { formatCurrency } from "@/lib/utils";
-import type { WealthItemSerialized } from "@/app/api/patrimonio/items/route";
+import type { WealthItemSerialized } from "@/types/fire";
 import type { InstallmentSerialized, InstallmentStatusResponse } from "@/app/api/patrimonio/items/[id]/installments/route";
 import { getLoanBankById } from "@/lib/loanBanks";
 import { calcLateFees, overdueMonths } from "@/lib/wealthCalc";
@@ -17,6 +17,8 @@ interface WealthItemsProps {
   currency: string;
   locale: string;
   onRefresh: () => void;
+  liabilityCosts?: { wealthItemId: string; monthlyAvg: number; categoryName: string }[];
+  userCategories?: { id: string; name: string; color: string }[];
 }
 
 export function WealthItems({
@@ -27,6 +29,8 @@ export function WealthItems({
   currency,
   locale,
   onRefresh,
+  liabilityCosts = [],
+  userCategories = [],
 }: WealthItemsProps) {
   const [dialogMode, setDialogMode] = useState<"create" | "edit" | null>(null);
   const [editingItem, setEditingItem] = useState<WealthItemSerialized | null>(null);
@@ -170,17 +174,21 @@ export function WealthItems({
               <span className="text-xs font-semibold uppercase tracking-wide">Passivos</span>
             </div>
             <div className="flex flex-col gap-1">
-              {liabilities.map((item) => (
-                <ItemRow
-                  key={item.id}
-                  item={item}
-                  locale={locale}
-                  currency={currency}
-                  deleting={deletingId === item.id}
-                  onEdit={() => openEdit(item)}
-                  onDelete={() => handleDelete(item.id)}
-                />
-              ))}
+              {liabilities.map((item) => {
+                const cost = liabilityCosts.find((c) => c.wealthItemId === item.id);
+                return (
+                  <ItemRow
+                    key={item.id}
+                    item={item}
+                    locale={locale}
+                    currency={currency}
+                    deleting={deletingId === item.id}
+                    onEdit={() => openEdit(item)}
+                    onDelete={() => handleDelete(item.id)}
+                    monthlyCost={cost}
+                  />
+                );
+              })}
             </div>
           </div>
         )}
@@ -192,6 +200,7 @@ export function WealthItems({
           mode={dialogMode}
           defaultType={defaultType}
           item={editingItem ?? undefined}
+          userCategories={userCategories}
           onSuccess={handleSuccess}
           onClose={closeDialog}
         />
@@ -207,6 +216,7 @@ function ItemRow({
   deleting,
   onEdit,
   onDelete,
+  monthlyCost,
 }: {
   item: WealthItemSerialized;
   locale: string;
@@ -214,6 +224,7 @@ function ItemRow({
   deleting: boolean;
   onEdit: () => void;
   onDelete: () => void;
+  monthlyCost?: { monthlyAvg: number; categoryName: string };
 }) {
   const hasDrift = item.appreciationRate && item.value !== item.baseValue;
   const gain = item.value - item.baseValue;
@@ -228,6 +239,11 @@ function ItemRow({
           <span className="shrink-0 px-1.5 py-0.5 rounded text-xs bg-axiom-hover text-axiom-muted border border-axiom-border">
             {item.category}
           </span>
+          {monthlyCost && monthlyCost.monthlyAvg > 0 && (
+            <span className="shrink-0 px-1.5 py-0.5 rounded text-xs bg-axiom-expense/10 border border-axiom-expense/20 text-axiom-expense">
+              ~{formatCurrency(monthlyCost.monthlyAvg, locale, currency)}/mês
+            </span>
+          )}
           {/* Badge de taxa de correção */}
           {item.appreciationRate ? (
             <span

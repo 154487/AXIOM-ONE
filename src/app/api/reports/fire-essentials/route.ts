@@ -2,23 +2,8 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-export interface FireEssentialsResponse {
-  categories: {
-    id: string;
-    name: string;
-    color: string;
-    monthlyAvg: number;
-  }[];
-  totalEssentialMonthly: number;
-  liabilityCosts: {
-    wealthItemId: string;
-    wealthItemName: string;
-    categoryId: string;
-    categoryName: string;
-    categoryColor: string;
-    monthlyAvg: number;
-  }[];
-}
+import type { FireEssentialsResponse } from "@/types/fire";
+export type { FireEssentialsResponse };
 
 export async function GET() {
   const session = await auth();

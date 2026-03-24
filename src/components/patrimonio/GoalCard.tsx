@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { getBankProductById, effectiveAnnualYield, monthsToReachGoal } from "@/lib/brazilianBanks";
-import type { FinancialGoalSerialized } from "@/app/api/patrimonio/goals/route";
+import type { FinancialGoalSerialized } from "@/types/fire";
 
 const FREQUENCY_LABELS: Record<string, string> = {
   DAILY: "Diário",

@@ -2,15 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-export interface FireSettingsResponse {
-  monthlyExpense: number | null;
-  swr: number | null;
-  targetMonthlyIncome: number | null;
-  retirementYears: number | null;
-  targetMonthlyContrib: number | null;
-  targetInvestedAmount: number | null;
-  fiNumberManual: number | null;
-}
+import type { FireSettingsResponse } from "@/types/fire";
+export type { FireSettingsResponse };
 
 export async function GET() {
   const session = await auth();

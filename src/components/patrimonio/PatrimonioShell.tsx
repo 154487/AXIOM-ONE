@@ -8,8 +8,8 @@ import { PortfolioPerformanceChart } from "./PortfolioPerformanceChart";
 import { WealthItems } from "./WealthItems";
 import { GoalsList } from "./GoalsList";
 import type { NetworthData } from "@/components/reports/types";
-import type { WealthItemsResponse } from "@/app/api/patrimonio/items/route";
-import type { FireEssentialsResponse } from "@/app/api/reports/fire-essentials/route";
+import type { WealthItemsResponse } from "@/types/fire";
+import type { FireEssentialsResponse } from "@/types/fire";
 
 type PatrimonioTab = "evolucao" | "analise" | "bens" | "meta";
 

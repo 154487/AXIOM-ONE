@@ -2,17 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-export interface FinancialGoalSerialized {
-  id: string;
-  name: string;
-  targetAmount: number;
-  savedAmount: number;
-  contributionAmount: number;
-  contributionFrequency: "DAILY" | "WEEKLY" | "MONTHLY";
-  bank: string | null;
-  notes: string | null;
-  createdAt: string;
-}
+import type { FinancialGoalSerialized } from "@/types/fire";
+export type { FinancialGoalSerialized };
 
 function serialize(goal: {
   id: string;

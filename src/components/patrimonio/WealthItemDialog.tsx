@@ -21,7 +21,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import type { WealthItemSerialized } from "@/app/api/patrimonio/items/route";
+import type { WealthItemSerialized } from "@/types/fire";
 import { formatCurrency } from "@/lib/utils";
 import { getLoanBankGroups, getLoanBankById } from "@/lib/loanBanks";
 

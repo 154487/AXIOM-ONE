@@ -6,29 +6,8 @@ const DEFAULT_RATES = {
   agressivo: 0.10,
 } as const;
 
-export interface FireScenario {
-  rate: number;
-  projectedMonths: number | null;
-  projectedYear: number | null;
-  projectionSeries: { month: number; value: number }[];
-}
-
-export interface FireResponse {
-  projectable: boolean;
-  reason?: string;
-  fiNumber?: number;
-  coastFireNumber?: number;
-  scenarios?: {
-    conservador: FireScenario;
-    moderado: FireScenario;
-    agressivo: FireScenario;
-  };
-  fiLine?: { month: number; value: number }[];
-  // Legacy fields (alias de moderado) — backward compat
-  projectedMonths?: number | null;
-  projectedYear?: number | null;
-  projectionSeries?: { month: number; value: number }[];
-}
+import type { FireScenario, FireResponse } from "@/types/fire";
+export type { FireScenario, FireResponse };
 
 function runScenario(
   patrimony: number,
