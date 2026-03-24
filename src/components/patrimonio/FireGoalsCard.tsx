@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { formatCurrency } from "@/lib/utils";
-import type { FireSettingsResponse } from "@/app/api/patrimonio/fire-settings/route";
+import type { FireSettingsResponse } from "@/types/fire";
 
 interface FireGoalsCardProps {
   settings: FireSettingsResponse;

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { GoalCard } from "./GoalCard";
 import { GoalDialog } from "./GoalDialog";
-import type { FinancialGoalSerialized } from "@/app/api/patrimonio/goals/route";
+import type { FinancialGoalSerialized } from "@/types/fire";
 
 function SkeletonCard({ label }: { label: string }) {
   return (

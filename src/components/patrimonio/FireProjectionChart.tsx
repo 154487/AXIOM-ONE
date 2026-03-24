@@ -13,7 +13,7 @@ import {
 } from "chart.js";
 import { Line } from "react-chartjs-2";
 import { formatCurrency } from "@/lib/utils";
-import type { FireScenario } from "@/app/api/reports/fire/route";
+import type { FireScenario } from "@/types/fire";
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend, Filler);
 

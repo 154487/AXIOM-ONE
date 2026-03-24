@@ -10,11 +10,13 @@ import { FirePlanCard } from "./FirePlanCard";
 import { FireMetricsCard } from "./FireMetricsCard";
 import { GoalCard } from "./GoalCard";
 import type { NetworthData } from "@/components/reports/types";
-import type { WealthItemsResponse } from "@/app/api/patrimonio/items/route";
-import type { FireSettingsResponse } from "@/app/api/patrimonio/fire-settings/route";
-import type { FireResponse } from "@/app/api/reports/fire/route";
-import type { FireEssentialsResponse } from "@/app/api/reports/fire-essentials/route";
-import type { FinancialGoalSerialized } from "@/app/api/patrimonio/goals/route";
+import type {
+  WealthItemsResponse,
+  FireSettingsResponse,
+  FireResponse,
+  FireEssentialsResponse,
+  FinancialGoalSerialized,
+} from "@/types/fire";
 
 interface PortfolioTotals {
   totalCurrentValue: number;

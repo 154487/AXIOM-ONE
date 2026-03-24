@@ -21,7 +21,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import type { FinancialGoalSerialized } from "@/app/api/patrimonio/goals/route";
+import type { FinancialGoalSerialized } from "@/types/fire";
 import { getBankGroups } from "@/lib/brazilianBanks";
 
 interface GoalDialogProps {

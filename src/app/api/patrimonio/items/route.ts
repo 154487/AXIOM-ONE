@@ -3,32 +3,8 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { calcCurrentValue } from "@/lib/wealthCalc";
 
-export interface WealthItemSerialized {
-  id: string;
-  name: string;
-  value: number;             // valor atual calculado (base * (1+rate)^anos)
-  baseValue: number;         // valor original (para o formulário de edição)
-  itemType: "ASSET" | "LIABILITY";
-  category: string;
-  appreciationRate: number | null; // % a.a. (+6 = valoriza, -10 = deprecia)
-  appreciationStart: string;       // ISO date — ponto de partida do cálculo
-  rateFrequency: "MONTHLY" | "ANNUAL";
-  loanBank: string | null;
-  loanInstallments: number | null;
-  loanStartDate: string | null;
-  loanDueDay: number | null;
-  linkedCategoryId: string | null;
-  linkedCategoryName: string | null;
-  notes: string | null;
-  createdAt: string;
-}
-
-export interface WealthItemsResponse {
-  items: WealthItemSerialized[];
-  totalAssets: number;
-  totalLiabilities: number;
-  net: number;
-}
+import type { WealthItemSerialized, WealthItemsResponse } from "@/types/fire";
+export type { WealthItemSerialized, WealthItemsResponse };
 
 function serialize(item: {
   id: string;
