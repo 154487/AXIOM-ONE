@@ -16,6 +16,7 @@
       "/transactions": "Transactions",
       "/reports": "Financial Reports",
       "/import": "Import OFX File",
+      "/independencia": "Financial Independence",
       "/settings": "Settings"
     },
     "subtitle": "Welcome back to AXIOM ONE"

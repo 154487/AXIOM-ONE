@@ -16,6 +16,7 @@
       "/transactions": "交易记录",
       "/reports": "财务报告",
       "/import": "导入 OFX 文件",
+      "/independencia": "财务独立",
       "/settings": "设置"
     },
     "subtitle": "欢迎回到 AXIOM ONE"

@@ -5,13 +5,13 @@ import { Pencil, X } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
 const FI_NUMBER_LABELS: Record<string, string> = {
-  "pt-BR": "Número IF",
-  en: "FI Number",
-  es: "Número IF",
-  fr: "Numéro IF",
-  ar: "رقم الاستقلال",
-  zh: "财务独立数",
-  hi: "FI संख्या",
+  "pt-BR": "Meta Investida",
+  en: "Investment Goal",
+  es: "Meta Invertida",
+  fr: "Objectif Investi",
+  ar: "هدف الاستثمار",
+  zh: "投资目标",
+  hi: "निवेश लक्ष्य",
 };
 
 function getFiLabel(locale: string) {
@@ -47,6 +47,7 @@ interface FireStatusCardProps {
   fiNumberManual: number | null;
   onFiNumberChange: (v: number | null) => void;
   cdiAnual?: number | null;
+  ipcaAnual?: number | null;
   targetMonthlyContrib: number | null;
 }
 
@@ -61,6 +62,7 @@ export function FireStatusCard({
   fiNumberManual,
   onFiNumberChange,
   cdiAnual,
+  ipcaAnual,
   targetMonthlyContrib,
 }: FireStatusCardProps) {
   const [editing, setEditing] = useState(false);
@@ -185,7 +187,7 @@ export function FireStatusCard({
             </div>
           )}
           <p className="text-[11px] text-axiom-muted/70">
-            {fiNumberManual ? "definido por você" : "calculado (regra 4%)"}
+            {fiNumberManual ? "sua meta de patrimônio" : "sugestão pela regra dos 4% · clique para definir"}
           </p>
         </div>
 
