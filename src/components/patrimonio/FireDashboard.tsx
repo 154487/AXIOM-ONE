@@ -45,6 +45,7 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
   const [goals, setGoals] = useState<FinancialGoalSerialized[]>([]);
   const [essentialsData, setEssentialsData] = useState<FireEssentialsResponse | null>(null);
   const [cdiAnual, setCdiAnual] = useState<number | null>(null);
+  const [ipcaAnual, setIpcaAnual] = useState<number | null>(null);
   const [fireData, setFireData] = useState<FireResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [fireLoading, setFireLoading] = useState(false);
@@ -56,6 +57,7 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
   const [retirementYears, setRetirementYears] = useState(30);
   const [expensePeriod, setExpensePeriod] = useState<3 | 6 | 12>(12);
   const [fiNumberManual, setFiNumberManual] = useState<number | null>(null);
+  const [expectedReturn, setExpectedReturn] = useState<number>(8);
 
   // Debounce refs
   const fireDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -86,6 +88,8 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
       if (s.targetMonthlyIncome !== null) setTargetMonthlyIncome(s.targetMonthlyIncome);
       if (s.retirementYears !== null) setRetirementYears(s.retirementYears);
       if (s.fiNumberManual !== null) setFiNumberManual(s.fiNumberManual);
+      else if (s.targetInvestedAmount !== null) setFiNumberManual(s.targetInvestedAmount);
+      if (s.swr !== null && s.swr > 0) setExpectedReturn(s.swr);
     }
     if (goalsRes.status === "fulfilled" && goalsRes.value.ok) {
       const d = await goalsRes.value.json();
@@ -93,7 +97,12 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
     }
     if (benchRes.status === "fulfilled" && benchRes.value.ok) {
       const d = await benchRes.value.json();
-      if (d.selicAnual) setCdiAnual(d.selicAnual);
+      if (d.selicAnual) {
+        setCdiAnual(d.selicAnual);
+        // usar CDI como padrão inicial se não tiver taxa salva
+        setExpectedReturn((prev) => (prev === 8 ? Math.round(d.selicAnual) : prev));
+      }
+      if (d.ipca) setIpcaAnual(d.ipca * 12); // ipca vem mensal → anualizar
     }
     if (essentialsRes.status === "fulfilled" && essentialsRes.value.ok) {
       setEssentialsData(await essentialsRes.value.json());
@@ -158,7 +167,10 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
       expenses: number,
       targetIncome: number | null,
       years: number,
-      fiNumManual: number | null
+      fiNumManual: number | null,
+      monthlyContrib: number | null,
+      cdiAnual: number | null,
+      expectedReturn: number
     ) => {
       if (income <= 0) return;
       if (fireDebounce.current) clearTimeout(fireDebounce.current);
@@ -176,6 +188,13 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
             ...(fiNumManual && fiNumManual > 0
               ? { fiNumberManual: String(fiNumManual) }
               : {}),
+            ...(monthlyContrib && monthlyContrib > 0
+              ? { targetMonthlyContrib: String(monthlyContrib) }
+              : {}),
+            ...(cdiAnual != null && cdiAnual > 0
+              ? { cdiAnual: String(cdiAnual) }
+              : {}),
+            expectedReturn: String(expectedReturn),
           });
           const res = await fetch(`/api/reports/fire?${params}`);
           if (res.ok) setFireData(await res.json());
@@ -189,6 +208,8 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
     []
   );
 
+  const targetMonthlyContrib = fireSettings?.targetMonthlyContrib ?? null;
+
   useEffect(() => {
     if (!loading && avgMonthlyIncome > 0) {
       fetchFire(
@@ -197,7 +218,10 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
         effectiveMonthlyExpense,
         targetMonthlyIncome,
         retirementYears,
-        fiNumberManual
+        fiNumberManual,
+        targetMonthlyContrib,
+        cdiAnual,
+        expectedReturn
       );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -209,6 +233,9 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
     targetMonthlyIncome,
     retirementYears,
     fiNumberManual,
+    targetMonthlyContrib,
+    cdiAnual,
+    expectedReturn,
   ]);
 
   // PATCH fire-settings com debounce
@@ -238,6 +265,11 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
     patchFireSettings({ retirementYears: v });
   }
 
+  function handleExpectedReturnChange(v: number) {
+    setExpectedReturn(v);
+    patchFireSettings({ swr: v }); // reutilizando campo legado para persistir
+  }
+
   function handleTargetMonthlyContribChange(v: number) {
     setFireSettings((prev) => (prev ? { ...prev, targetMonthlyContrib: v } : prev));
     patchFireSettings({ targetMonthlyContrib: v });
@@ -245,14 +277,22 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
 
   function handleFiNumberChange(v: number | null) {
     setFiNumberManual(v);
-    patchFireSettings({ fiNumberManual: v });
+    setFireSettings((prev) => (prev ? { ...prev, targetInvestedAmount: v } : prev));
+    patchFireSettings({ fiNumberManual: v, targetInvestedAmount: v });
   }
 
   function handleGoalSave(field: keyof FireSettingsResponse, value: number | null) {
     setFireSettings((prev) => (prev ? { ...prev, [field]: value } : prev));
-    patchFireSettings({ [field]: value });
+    // targetInvestedAmount e fiNumberManual são a mesma coisa — salvar ambos juntos
+    if (field === "targetInvestedAmount") {
+      setFiNumberManual(value);
+      patchFireSettings({ targetInvestedAmount: value, fiNumberManual: value });
+    } else {
+      patchFireSettings({ [field]: value });
+    }
     // Se alterou targetMonthlyIncome, propagar para o estado local
     if (field === "targetMonthlyIncome") setTargetMonthlyIncome(value);
+    if (field === "targetInvestedAmount") setFiNumberManual(value);
   }
 
   // Aportes mensais das metas
@@ -327,21 +367,17 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
           fiNumberManual={fiNumberManual}
           onFiNumberChange={handleFiNumberChange}
           cdiAnual={cdiAnual}
+          ipcaAnual={ipcaAnual}
           targetMonthlyContrib={fireSettings?.targetMonthlyContrib ?? null}
         />
         <FireSettingsCard
-          monthlyExpense={effectiveMonthlyExpense}
           targetMonthlyContrib={fireSettings?.targetMonthlyContrib ?? null}
           extraSavings={extraSavings}
-          avgExpensesByPeriod={avgExpensesByPeriod}
-          isUsingAvgExpenses={isUsingAvgExpenses}
-          expensePeriod={expensePeriod}
-          fiNumber={fireData?.fiNumber ?? (effectiveMonthlyExpense) * 12 * 25}
-          onMonthlyExpenseChange={handleMonthlyExpenseChange}
+          expectedReturn={expectedReturn}
+          cdiAnual={cdiAnual}
           onTargetMonthlyContribChange={handleTargetMonthlyContribChange}
           onExtraSavingsChange={setExtraSavings}
-          onPeriodChange={setExpensePeriod}
-          onRetirementYearsChange={handleRetirementYearsChange}
+          onExpectedReturnChange={handleExpectedReturnChange}
           currency={currency}
           locale={locale}
         />
@@ -376,7 +412,9 @@ export function FireDashboard({ currency, locale }: FireDashboardProps) {
           firePatrimony={firePatrimony}
           fiNumber={fireData.fiNumber ?? 0}
           retirementYears={retirementYears}
-          onRetirementYearsChange={handleRetirementYearsChange}
+          cdiAnual={expectedReturn}
+          targetMonthlyContrib={fireSettings?.targetMonthlyContrib ?? null}
+          ipcaAnual={ipcaAnual}
           currency={currency}
           locale={locale}
         />
