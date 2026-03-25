@@ -19,6 +19,8 @@ export interface AssetPosition {
   pnlPct: number;
   totalDividends: number;
   priceSource: "live" | "manual";
+  dailyChangeAmount: number;   // absolute R$ change for this position today
+  dailyChangePct: number;      // % price change today
 }
 
 export async function GET() {
@@ -32,7 +34,7 @@ export async function GET() {
 
   // Fetch live quotes for all tickers (sequencial — tickers derivados do findMany)
   const tickers = assets.filter((a) => a.ticker).map((a) => a.ticker!);
-  const liveQuotes = await fetchQuotes(tickers);
+  const liveQuoteMap = await fetchQuotes(tickers);
 
   const positions: AssetPosition[] = assets.map((asset) => {
     let totalQty = 0;
@@ -68,15 +70,17 @@ export async function GET() {
     if (totalQty < 0.000001) totalQty = 0;
 
     const avgCost = totalQty > 0 ? totalCost / totalQty : 0;
-    const livePrice = asset.ticker ? liveQuotes[asset.ticker] : undefined;
+    const liveQuote = asset.ticker ? liveQuoteMap[asset.ticker] : undefined;
     const currentPrice =
-      livePrice ??
+      liveQuote?.price ??
       (asset.currentPrice ? parseFloat(String(asset.currentPrice)) : avgCost);
-    const priceSource: "live" | "manual" = livePrice !== undefined ? "live" : "manual";
+    const priceSource: "live" | "manual" = liveQuote !== undefined ? "live" : "manual";
     const totalInvested = totalQty * avgCost;
     const currentValue = totalQty * currentPrice;
     const pnl = currentValue - totalInvested;
     const pnlPct = totalInvested > 0 ? (pnl / totalInvested) * 100 : 0;
+    const dailyChangePct = liveQuote?.dailyChangePct ?? 0;
+    const dailyChangeAmount = liveQuote ? totalQty * liveQuote.dailyChange : 0;
 
     return {
       id: asset.id,
@@ -93,6 +97,8 @@ export async function GET() {
       pnlPct,
       totalDividends,
       priceSource,
+      dailyChangeAmount,
+      dailyChangePct,
     };
   });
 
