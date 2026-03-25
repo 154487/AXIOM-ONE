@@ -143,6 +143,8 @@ model Asset {
   type         AssetType
   currency     String            @default("BRL")
   currentPrice Decimal?          @db.Decimal(14, 6)
+  indexer      String?           // "CDI" | "SELIC" | "PREFIXADO" | "POUPANCA"
+  rate         Decimal?          @db.Decimal(8, 4)  // % a.a. (ex: 100.0 = 100% CDI)
   createdAt    DateTime          @default(now())
   user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   entries      InvestmentEntry[]
