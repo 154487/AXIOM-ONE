@@ -18,6 +18,16 @@ const ASSET_TYPES_GROUPED: AssetType[] = [
   "STOCK", "FII", "ETF", "BDR", "STOCK_INT", "CRYPTO", "OTHER",
 ];
 
+const FIXED_INCOME_ASSET_TYPES = new Set<AssetType>([
+  "CDB", "RDB", "LCI", "LCA", "TESOURO", "POUPANCA", "FIXED_INCOME",
+]);
+
+interface CryptoSuggestion {
+  id: string;
+  name: string;
+  symbol: string;
+}
+
 const TYPE_BADGE: Partial<Record<AssetType, string>> = {
   STOCK: "Ação", FII: "FII", ETF: "ETF", BDR: "BDR",
   CRYPTO: "Crypto", FIXED_INCOME: "RF", STOCK_INT: "Int'l",
@@ -93,6 +103,18 @@ export function EntryDialog({ open, onClose, entry, assets, onSave, onNewAsset }
   const [saving, setSaving] = useState(false);
   const [creatingTicker, setCreatingTicker] = useState(false);
 
+  // Renda fixa fields
+  const [indexer, setIndexer] = useState("CDI");
+  const [rate, setRate] = useState("");
+
+  // Crypto search fields
+  const [cryptoSearch, setCryptoSearch] = useState("");
+  const [cryptoResults, setCryptoResults] = useState<CryptoSuggestion[]>([]);
+  const [cryptoSearching, setCryptoSearching] = useState(false);
+  const [showCryptoDropdown, setShowCryptoDropdown] = useState(false);
+  const [selectedCryptoId, setSelectedCryptoId] = useState<string | null>(null);
+  const cryptoRef = useRef<HTMLDivElement>(null);
+
   const isSplit = type === "SPLIT";
   const total = !isSplit && quantity && price ? (Number(quantity) * Number(price)).toFixed(2) : null;
 
@@ -113,6 +135,9 @@ export function EntryDialog({ open, onClose, entry, assets, onSave, onNewAsset }
       }
       if (tickerRef.current && !tickerRef.current.contains(e.target as Node)) {
         setShowTickerSuggestions(false);
+      }
+      if (cryptoRef.current && !cryptoRef.current.contains(e.target as Node)) {
+        setShowCryptoDropdown(false);
       }
     }
     document.addEventListener("mousedown", handleClick);
@@ -145,6 +170,12 @@ export function EntryDialog({ open, onClose, entry, assets, onSave, onNewAsset }
       }
       setNotes(entry?.notes ?? "");
       setError("");
+      setIndexer("CDI");
+      setRate("");
+      setCryptoSearch("");
+      setCryptoResults([]);
+      setShowCryptoDropdown(false);
+      setSelectedCryptoId(null);
     }
   }, [open, entry, assets]);
 
@@ -169,6 +200,26 @@ export function EntryDialog({ open, onClose, entry, assets, onSave, onNewAsset }
     const timer = setTimeout(() => fetchTickerSuggestions(tickerSearch), 300);
     return () => clearTimeout(timer);
   }, [tickerSearch, assetMode, fetchTickerSuggestions]);
+
+  // Crypto search debounce
+  useEffect(() => {
+    if (assetMode !== "new" || newAssetType !== "CRYPTO") return;
+    if (cryptoSearch.length < 2) { setCryptoResults([]); setShowCryptoDropdown(false); return; }
+    const timer = setTimeout(async () => {
+      setCryptoSearching(true);
+      try {
+        const res = await fetch(`/api/investments/crypto-search?q=${encodeURIComponent(cryptoSearch)}`);
+        if (res.ok) {
+          const data = await res.json();
+          setCryptoResults(data);
+          setShowCryptoDropdown(true);
+        }
+      } finally {
+        setCryptoSearching(false);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [cryptoSearch, assetMode, newAssetType]);
 
   function selectExistingAsset(a: AssetRaw) {
     setAssetId(a.id);
@@ -242,8 +293,27 @@ export function EntryDialog({ open, onClose, entry, assets, onSave, onNewAsset }
         price: isSplit ? 0 : Number(price),
         notes: notes || null,
       };
+      // Resolve indexer/rate/ticker for new assets
+      const resolvedIndexer = newAssetType === "POUPANCA"
+        ? "POUPANCA"
+        : FIXED_INCOME_ASSET_TYPES.has(newAssetType) ? indexer : undefined;
+      const resolvedRate = newAssetType === "POUPANCA" || !FIXED_INCOME_ASSET_TYPES.has(newAssetType)
+        ? undefined
+        : rate ? parseFloat(rate) : undefined;
+      const resolvedTicker = newAssetType === "CRYPTO" && selectedCryptoId ? selectedCryptoId : undefined;
+
       const body = assetMode === "new"
-        ? { ...base, assetId: null, newAsset: { name: newAssetName.trim(), type: newAssetType } }
+        ? {
+            ...base,
+            assetId: null,
+            newAsset: {
+              name: newAssetName.trim(),
+              type: newAssetType,
+              indexer: resolvedIndexer,
+              rate: resolvedRate,
+              ticker: resolvedTicker,
+            },
+          }
         : { ...base, assetId };
 
       const url = entry?.id ? `/api/investments/entries/${entry.id}` : "/api/investments/entries";
@@ -268,7 +338,7 @@ export function EntryDialog({ open, onClose, entry, assets, onSave, onNewAsset }
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="bg-axiom-card border-axiom-border text-white max-w-md">
+      <DialogContent className="bg-axiom-card border-axiom-border text-white max-w-2xl">
         <DialogHeader>
           <DialogTitle>{entry?.id ? t("dialog.editEntry") : t("dialog.newEntry")}</DialogTitle>
         </DialogHeader>
@@ -389,6 +459,87 @@ export function EntryDialog({ open, onClose, entry, assets, onSave, onNewAsset }
                         {s.price != null && (
                           <span className="text-axiom-muted text-xs">R$ {s.price.toFixed(2)}</span>
                         )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Campos dinâmicos — Renda Fixa */}
+            {assetMode === "new" && FIXED_INCOME_ASSET_TYPES.has(newAssetType) && newAssetType !== "POUPANCA" && (
+              <div className="grid grid-cols-2 gap-3 mt-1">
+                <div className="flex flex-col gap-1">
+                  <Label className="text-axiom-muted text-xs">Indexador</Label>
+                  <Select value={indexer} onValueChange={(v) => v && setIndexer(v)}>
+                    <SelectTrigger className="bg-axiom-bg border-axiom-border text-white text-sm">
+                      <SelectValue>{indexer}</SelectValue>
+                    </SelectTrigger>
+                    <SelectContent className="bg-axiom-card border-axiom-border">
+                      {["CDI", "SELIC", "PREFIXADO"].map((idx) => (
+                        <SelectItem key={idx} value={idx} className="text-white hover:bg-axiom-hover text-sm">
+                          {idx}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <Label className="text-axiom-muted text-xs">Taxa (% a.a.)</Label>
+                  <Input
+                    value={rate}
+                    onChange={(e) => setRate(e.target.value)}
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="100 para 100% CDI"
+                    className="bg-axiom-bg border-axiom-border text-white"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Badge informativo — Poupança */}
+            {assetMode === "new" && newAssetType === "POUPANCA" && (
+              <p className="text-xs text-axiom-muted bg-axiom-bg border border-axiom-border rounded-lg px-3 py-2 mt-1">
+                Taxa automática pela SELIC
+              </p>
+            )}
+
+            {/* Campos dinâmicos — Crypto */}
+            {assetMode === "new" && newAssetType === "CRYPTO" && (
+              <div className="flex flex-col gap-1 mt-1" ref={cryptoRef}>
+                <Label className="text-axiom-muted text-xs">Símbolo da cripto</Label>
+                <div className="relative">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-axiom-muted" />
+                  <Input
+                    value={cryptoSearch}
+                    onChange={(e) => { setCryptoSearch(e.target.value); setSelectedCryptoId(null); }}
+                    placeholder="Ex: BTC, ETH, SOL..."
+                    className="bg-axiom-bg border-axiom-border text-white pl-8 pr-8"
+                  />
+                  {cryptoSearching && (
+                    <Loader2 size={14} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-axiom-muted" />
+                  )}
+                  {selectedCryptoId && !cryptoSearching && (
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-axiom-income text-xs">✓</span>
+                  )}
+                </div>
+                {showCryptoDropdown && cryptoResults.length > 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-axiom-card border border-axiom-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                    {cryptoResults.map((c) => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedCryptoId(c.id);
+                          setCryptoSearch(`${c.symbol} — ${c.name}`);
+                          setShowCryptoDropdown(false);
+                        }}
+                        className="w-full text-left px-3 py-2 text-sm text-white hover:bg-axiom-hover flex justify-between items-center"
+                      >
+                        <span className="font-medium">{c.symbol}</span>
+                        <span className="text-axiom-muted text-xs truncate ml-2">{c.name}</span>
                       </button>
                     ))}
                   </div>
