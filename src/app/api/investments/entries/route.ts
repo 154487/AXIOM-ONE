@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { EntryType } from "@/generated/prisma/client";
+import { AssetType, EntryType } from "@/generated/prisma/client";
 
 const VALID_ENTRY_TYPES = Object.values(EntryType);
+const VALID_ASSET_TYPES = Object.values(AssetType);
 
 function serializeEntry(entry: {
   id: string;
@@ -62,9 +63,15 @@ export async function POST(req: NextRequest) {
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { assetId, type, date, quantity, price, notes } = body;
+  const { assetId, newAsset, type, date, quantity, price, notes } = body;
 
-  if (!assetId) return NextResponse.json({ error: "Ativo obrigatório" }, { status: 400 });
+  // Validate asset: either existing assetId OR newAsset with name+type
+  if (!assetId && !newAsset?.name) {
+    return NextResponse.json({ error: "Ativo obrigatório" }, { status: 400 });
+  }
+  if (!assetId && newAsset && (!newAsset.type || !VALID_ASSET_TYPES.includes(newAsset.type))) {
+    return NextResponse.json({ error: "Classe do ativo obrigatória" }, { status: 400 });
+  }
   if (!type || !VALID_ENTRY_TYPES.includes(type)) {
     return NextResponse.json({ error: "Tipo inválido" }, { status: 400 });
   }
@@ -76,10 +83,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Preço deve ser maior que zero" }, { status: 400 });
   }
 
-  // Verify asset ownership
-  const asset = await prisma.asset.findUnique({ where: { id: assetId } });
-  if (!asset || asset.userId !== session.user.id) {
-    return NextResponse.json({ error: "Ativo não encontrado" }, { status: 403 });
+  // Resolve assetId: existing or create inline
+  let resolvedAssetId = assetId as string;
+
+  if (!assetId && newAsset) {
+    const created = await prisma.asset.create({
+      data: {
+        userId: session.user.id,
+        name: String(newAsset.name).trim(),
+        type: newAsset.type as AssetType,
+        ticker: null,
+        currentPrice: price ? Number(price) : null,
+      },
+    });
+    resolvedAssetId = created.id;
+  } else {
+    const asset = await prisma.asset.findUnique({ where: { id: assetId } });
+    if (!asset || asset.userId !== session.user.id) {
+      return NextResponse.json({ error: "Ativo não encontrado" }, { status: 403 });
+    }
   }
 
   const qty = Number(quantity);
@@ -88,7 +110,7 @@ export async function POST(req: NextRequest) {
   // Validate SALE doesn't exceed position
   if (type === "SALE") {
     const existingEntries = await prisma.investmentEntry.findMany({
-      where: { assetId, userId: session.user.id },
+      where: { assetId: resolvedAssetId, userId: session.user.id },
     });
     let currentQty = 0;
     for (const e of existingEntries) {
@@ -107,7 +129,7 @@ export async function POST(req: NextRequest) {
 
   const entry = await prisma.investmentEntry.create({
     data: {
-      assetId,
+      assetId: resolvedAssetId,
       userId: session.user.id,
       type,
       date: new Date(date),
