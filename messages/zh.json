@@ -277,7 +277,13 @@
       "CRYPTO": "加密货币",
       "FIXED_INCOME": "固定收益",
       "STOCK_INT": "国际股票",
-      "OTHER": "其他"
+      "OTHER": "其他",
+      "CDB": "CDB",
+      "RDB": "RDB",
+      "LCI": "LCI",
+      "LCA": "LCA",
+      "TESOURO": "国库直购",
+      "POUPANCA": "储蓄"
     },
     "entryTypes": {
       "PURCHASE": "买入",
@@ -308,6 +314,8 @@
       "currentPrice": "当前价格（可选）",
       "currency": "货币"
     },
+    "tickerSearchToggle": "按代码搜索",
+    "cancelTickerSearch": "取消搜索",
     "empty": "暂无资产",
     "emptyEntries": "暂无交易记录",
     "deleteConfirm": "确定删除？此操作不可撤销。",

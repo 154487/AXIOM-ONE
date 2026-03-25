@@ -277,7 +277,13 @@
       "CRYPTO": "क्रिप्टो",
       "FIXED_INCOME": "निश्चित आय",
       "STOCK_INT": "अंतर्राष्ट्रीय शेयर",
-      "OTHER": "अन्य"
+      "OTHER": "अन्य",
+      "CDB": "CDB",
+      "RDB": "RDB",
+      "LCI": "LCI",
+      "LCA": "LCA",
+      "TESOURO": "ट्रेजरी डायरेक्ट",
+      "POUPANCA": "बचत"
     },
     "entryTypes": {
       "PURCHASE": "खरीद",
@@ -308,6 +314,8 @@
       "currentPrice": "वर्तमान मूल्य (वैकल्पिक)",
       "currency": "मुद्रा"
     },
+    "tickerSearchToggle": "टिकर से खोजें",
+    "cancelTickerSearch": "खोज रद्द करें",
     "empty": "कोई संपत्ति दर्ज नहीं",
     "emptyEntries": "कोई लेनदेन दर्ज नहीं",
     "deleteConfirm": "क्या आप सुनिश्चित हैं? यह क्रिया पूर्ववत नहीं की जा सकती।",

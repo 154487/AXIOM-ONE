@@ -277,7 +277,13 @@
       "CRYPTO": "عملات مشفرة",
       "FIXED_INCOME": "دخل ثابت",
       "STOCK_INT": "أسهم دولية",
-      "OTHER": "أخرى"
+      "OTHER": "أخرى",
+      "CDB": "CDB",
+      "RDB": "RDB",
+      "LCI": "LCI",
+      "LCA": "LCA",
+      "TESOURO": "الخزينة المباشرة",
+      "POUPANCA": "مدخرات"
     },
     "entryTypes": {
       "PURCHASE": "شراء",
@@ -308,6 +314,8 @@
       "currentPrice": "السعر الحالي (اختياري)",
       "currency": "العملة"
     },
+    "tickerSearchToggle": "البحث بالرمز",
+    "cancelTickerSearch": "إلغاء البحث",
     "empty": "لا توجد أصول مسجلة",
     "emptyEntries": "لا توجد عمليات مسجلة",
     "deleteConfirm": "هل أنت متأكد؟ لا يمكن التراجع عن هذا الإجراء.",
