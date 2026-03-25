@@ -9,6 +9,10 @@ import { formatCurrency } from "@/lib/utils";
 import type { AssetPosition } from "@/app/api/investments/portfolio/route";
 import type { AssetType } from "@/generated/prisma/client";
 
+const FIXED_INCOME_TYPES = new Set<AssetType>([
+  "CDB", "RDB", "LCI", "LCA", "TESOURO", "POUPANCA", "FIXED_INCOME",
+]);
+
 const TYPE_COLORS: Partial<Record<AssetType, string>> = {
   STOCK: "#FF6B35",
   FII: "#F7931E",
@@ -182,6 +186,9 @@ export function AssetList({ positions, loading, currency, locale, onRefresh }: A
             {/* Assets Table */}
             {!isCollapsed && (
               <div className="border-t border-axiom-border">
+                {(() => {
+                  const isFixedIncomeGroup = FIXED_INCOME_TYPES.has(type);
+                  return (
                 <Table>
                   <TableHeader>
                     <TableRow className="border-axiom-border hover:bg-transparent">
@@ -190,6 +197,9 @@ export function AssetList({ positions, loading, currency, locale, onRefresh }: A
                       <TableHead className="text-axiom-muted text-xs text-right">{t("table.currentPrice")}</TableHead>
                       <TableHead className="text-axiom-muted text-xs text-right">{t("table.quantity")}</TableHead>
                       <TableHead className="text-axiom-muted text-xs text-right">Patr. Atual</TableHead>
+                      {isFixedIncomeGroup && (
+                        <TableHead className="text-axiom-muted text-xs text-right">Rend. Est./mês</TableHead>
+                      )}
                       <TableHead className="text-axiom-muted text-xs text-right">Var. Hoje</TableHead>
                       <TableHead className="text-axiom-muted text-xs text-right">Var. Total</TableHead>
                       <TableHead className="text-axiom-muted text-xs text-right">% Cart.</TableHead>
@@ -255,6 +265,19 @@ export function AssetList({ positions, loading, currency, locale, onRefresh }: A
                             {formatCurrency(pos.currentValue, locale, currency)}
                           </TableCell>
 
+                          {/* Rend. Est./mês — renda fixa apenas */}
+                          {isFixedIncomeGroup && (
+                            <TableCell className="text-right py-2.5">
+                              {pos.monthlyYield != null && pos.monthlyYield > 0 ? (
+                                <span className="text-axiom-income text-xs">
+                                  {formatCurrency(pos.monthlyYield, locale, currency)}
+                                </span>
+                              ) : (
+                                <span className="text-axiom-muted text-xs">—</span>
+                              )}
+                            </TableCell>
+                          )}
+
                           {/* Var. Hoje */}
                           <TableCell className="text-right text-sm py-2.5">
                             {hasDaily ? (
@@ -299,6 +322,8 @@ export function AssetList({ positions, loading, currency, locale, onRefresh }: A
                     })}
                   </TableBody>
                 </Table>
+                  );
+                })()}
               </div>
             )}
           </div>
