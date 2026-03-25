@@ -8,6 +8,7 @@ import { AssetList } from "./portfolio/AssetList";
 import { EntryList } from "./entries/EntryList";
 import { BenchmarkBar } from "./benchmarks/BenchmarkBar";
 import { IntelligenceTab } from "./intelligence/IntelligenceTab";
+import { ProventosTab } from "./proventos/ProventosTab";
 import type { AssetPosition } from "@/app/api/investments/portfolio/route";
 import type { AssetType } from "@/generated/prisma/client";
 import type { BenchmarkData } from "@/lib/benchmarks";
@@ -40,7 +41,7 @@ interface InvestmentsShellProps {
 
 export function InvestmentsShell({ initialCurrency, initialLocale }: InvestmentsShellProps) {
   const t = useTranslations("Investments");
-  const [activeTab, setActiveTab] = useState<"portfolio" | "entries" | "intelligence">("entries");
+  const [activeTab, setActiveTab] = useState<"portfolio" | "entries" | "proventos" | "intelligence">("entries");
   const [portfolioKey, setPortfolioKey] = useState(0);
   const [portfolioData, setPortfolioData] = useState<PortfolioData | null>(null);
   const [portfolioLoading, setPortfolioLoading] = useState(false);
@@ -50,7 +51,7 @@ export function InvestmentsShell({ initialCurrency, initialLocale }: Investments
 
   const triggerPortfolioRefresh = useCallback(() => setPortfolioKey((k) => k + 1), []);
 
-  function handleTabChange(tab: "entries" | "portfolio" | "intelligence") {
+  function handleTabChange(tab: "entries" | "portfolio" | "proventos" | "intelligence") {
     setActiveTab(tab);
     // Ao entrar na aba Carteira, recarregar para incluir ativos criados inline
     if (tab === "portfolio") triggerPortfolioRefresh();
@@ -93,7 +94,7 @@ export function InvestmentsShell({ initialCurrency, initialLocale }: Investments
       <div className="flex flex-col gap-3">
         <h1 className="text-xl font-semibold text-white">{t("title")}</h1>
         <div className="flex bg-axiom-hover rounded-lg p-1 gap-1 w-fit">
-        {(["entries", "portfolio", "intelligence"] as const).map((key) => (
+        {(["entries", "portfolio", "proventos", "intelligence"] as const).map((key) => (
           <button
             key={key}
             onClick={() => handleTabChange(key)}
@@ -145,6 +146,12 @@ export function InvestmentsShell({ initialCurrency, initialLocale }: Investments
             onEntryCreated={triggerPortfolioRefresh}
             onNewAsset={handleNewAsset}
           />
+        </div>
+      )}
+
+      {activeTab === "proventos" && (
+        <div className="mt-6">
+          <ProventosTab currency={initialCurrency} locale={initialLocale} />
         </div>
       )}
 
