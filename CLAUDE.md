@@ -191,6 +191,7 @@ src/
     ├── prisma.ts        # Singleton PrismaClient (server-only, adapter PrismaPg)
     ├── utils.ts         # cn(), formatCurrency(value, locale, currency), formatDate()
     ├── email.ts         # Resend lazy init + templates de email (senha, perfil)
+    ├── crypto.ts        # fetchCryptoPrice(), fetchCryptoPrices(), searchCryptoBySymbol() — CoinGecko, cache 5min/30min
     └── import/
         ├── types.ts           # ParsedRow, ReviewedRow interfaces
         ├── parseFile.ts       # Dispatcher por extensão
@@ -257,6 +258,7 @@ WealthItem
 - `src/lib/cache.ts` — `MemCache` singleton, TTL por entrada, função `cached(key, ttlMs, fetcher)`
 - `src/lib/quotes.ts` — `fetchQuotes(tickers[])` → `Record<ticker, price>`, cache 1h, brapi.dev (1 req/ticker)
 - `src/lib/benchmarks.ts` — `fetchBenchmarks()` → `BenchmarkData`, cache 1h, BCB SGS + AwesomeAPI
+- `src/lib/crypto.ts` — `fetchCryptoPrices(ids[])` → `Record<id, price>` em BRL, cache 5min; `searchCryptoBySymbol(q)` → `[{id,name,symbol}]`, cache 30min; CoinGecko API
 - `src/lib/healthSnapshot.ts` — `getHealthSnapshot(userId)` → `HealthSnapshot` (max 90pts, pilar 4 omitido intencionalmente)
 
 ### Auth
@@ -385,6 +387,7 @@ A moeda padrão do usuário vem de `UserCurrency` com `isDefault: true`. O dashb
 | v1.8 | FIRE: Plano Real de Independência | ✅ concluída — release v1.8.1 |
 | v1.9 | Investimentos: Entrada Simplificada | ✅ concluída — release v1.9.0 |
 | v2.0 | Painel de Proventos | ✅ concluída — release v2.0.0 |
+| v2.1 | Rendimentos de Renda Fixa, Cripto e EntryDialog Aprimorado | ✅ concluída — release v2.1.0 |
 
 ---
 
