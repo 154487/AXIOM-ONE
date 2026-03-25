@@ -16,7 +16,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   const body = await req.json();
-  const { name, ticker, type, currency, currentPrice } = body;
+  const { name, ticker, type, currency, currentPrice, indexer, rate } = body;
 
   if (name !== undefined && (typeof name !== "string" || name.trim().length === 0)) {
     return NextResponse.json({ error: "Nome inválido" }, { status: 400 });
@@ -33,12 +33,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       ...(type !== undefined && { type }),
       ...(currency !== undefined && { currency }),
       ...(currentPrice !== undefined && { currentPrice: currentPrice != null ? currentPrice : null }),
+      ...(indexer !== undefined && { indexer }),
+      ...(rate !== undefined && { rate: rate != null ? rate : null }),
     },
   });
 
   return NextResponse.json({
     ...updated,
     currentPrice: updated.currentPrice ? parseFloat(String(updated.currentPrice)) : null,
+    rate: updated.rate ? parseFloat(String(updated.rate)) : null,
   });
 }
 
