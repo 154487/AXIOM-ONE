@@ -30,7 +30,7 @@ interface AssetRaw {
   type: AssetType;
   currency: string;
   currentPrice: number | null;
-  createdAt: string;
+  createdAt?: string;
 }
 
 interface InvestmentsShellProps {
@@ -40,7 +40,7 @@ interface InvestmentsShellProps {
 
 export function InvestmentsShell({ initialCurrency, initialLocale }: InvestmentsShellProps) {
   const t = useTranslations("Investments");
-  const [activeTab, setActiveTab] = useState<"portfolio" | "entries" | "intelligence">("portfolio");
+  const [activeTab, setActiveTab] = useState<"portfolio" | "entries" | "intelligence">("entries");
   const [portfolioKey, setPortfolioKey] = useState(0);
   const [portfolioData, setPortfolioData] = useState<PortfolioData | null>(null);
   const [portfolioLoading, setPortfolioLoading] = useState(false);
@@ -49,6 +49,16 @@ export function InvestmentsShell({ initialCurrency, initialLocale }: Investments
   const [benchmarksLoading, setBenchmarksLoading] = useState(true);
 
   const triggerPortfolioRefresh = useCallback(() => setPortfolioKey((k) => k + 1), []);
+
+  function handleTabChange(tab: "entries" | "portfolio" | "intelligence") {
+    setActiveTab(tab);
+    // Ao entrar na aba Carteira, recarregar para incluir ativos criados inline
+    if (tab === "portfolio") triggerPortfolioRefresh();
+  }
+
+  function handleNewAsset(asset: AssetRaw) {
+    setAssets((prev) => [...prev, asset]);
+  }
 
   const fetchPortfolio = useCallback(async () => {
     setPortfolioLoading(true);
@@ -83,10 +93,10 @@ export function InvestmentsShell({ initialCurrency, initialLocale }: Investments
       <div className="flex flex-col gap-3">
         <h1 className="text-xl font-semibold text-white">{t("title")}</h1>
         <div className="flex bg-axiom-hover rounded-lg p-1 gap-1 w-fit">
-        {(["portfolio", "entries", "intelligence"] as const).map((key) => (
+        {(["entries", "portfolio", "intelligence"] as const).map((key) => (
           <button
             key={key}
-            onClick={() => setActiveTab(key)}
+            onClick={() => handleTabChange(key)}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               activeTab === key ? "bg-axiom-primary text-white" : "text-axiom-muted hover:text-white"
             }`}
@@ -134,6 +144,7 @@ export function InvestmentsShell({ initialCurrency, initialLocale }: Investments
             currency={initialCurrency}
             locale={initialLocale}
             onEntryCreated={triggerPortfolioRefresh}
+            onNewAsset={handleNewAsset}
           />
         </div>
       )}

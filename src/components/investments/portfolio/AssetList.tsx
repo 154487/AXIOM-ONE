@@ -18,7 +18,7 @@ interface AssetRaw {
   type: AssetType;
   currency: string;
   currentPrice: number | null;
-  createdAt: string;
+  createdAt?: string;
 }
 
 interface AssetListProps {
