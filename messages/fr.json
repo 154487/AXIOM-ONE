@@ -262,6 +262,7 @@
     "tabs": {
       "portfolio": "Portefeuille",
       "entries": "Opérations",
+      "proventos": "Dividendes",
       "intelligence": "Intelligence"
     },
     "summary": {
@@ -284,6 +285,24 @@
       "LCA": "LCA",
       "TESOURO": "Trésor Direct",
       "POUPANCA": "Épargne"
+    },
+    "proventos": {
+      "totalReceived": "Total Reçu",
+      "last6m": "6 derniers mois",
+      "last12m": "12 derniers mois",
+      "last24m": "24 derniers mois",
+      "monthlyChart": "Dividendes Mensuels",
+      "byCategoryChart": "Par Catégorie",
+      "tableTitle": "Dividendes par Actif",
+      "col": {
+        "asset": "Actif",
+        "qty": "Qté",
+        "avgCost": "P.M.",
+        "yoc": "YoC",
+        "dy": "RD",
+        "lastDividend": "Dernier",
+        "total": "Total Reçu"
+      }
     },
     "entryTypes": {
       "PURCHASE": "Achat",

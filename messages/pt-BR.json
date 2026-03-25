@@ -263,6 +263,7 @@
     "tabs": {
       "portfolio": "Carteira",
       "entries": "Lançamentos",
+      "proventos": "Proventos",
       "intelligence": "Inteligência"
     },
     "summary": {
@@ -285,6 +286,24 @@
       "LCA": "LCA",
       "TESOURO": "Tesouro Direto",
       "POUPANCA": "Poupança"
+    },
+    "proventos": {
+      "totalReceived": "Total Recebido",
+      "last6m": "Últimos 6 meses",
+      "last12m": "Últimos 12 meses",
+      "last24m": "Últimos 24 meses",
+      "monthlyChart": "Proventos Mensais",
+      "byCategoryChart": "Por Categoria",
+      "tableTitle": "Proventos por Ativo",
+      "col": {
+        "asset": "Ativo",
+        "qty": "Qtd",
+        "avgCost": "P.M.",
+        "yoc": "YoC",
+        "dy": "DY",
+        "lastDividend": "Último",
+        "total": "Total Acumulado"
+      }
     },
     "entryTypes": {
       "PURCHASE": "Compra",
