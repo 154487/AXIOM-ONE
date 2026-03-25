@@ -112,6 +112,12 @@ enum AssetType {
   FIXED_INCOME
   STOCK_INT
   OTHER
+  CDB
+  RDB
+  LCI
+  LCA
+  TESOURO
+  POUPANCA
 }
 
 enum EntryType {
