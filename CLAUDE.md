@@ -383,6 +383,8 @@ A moeda padrão do usuário vem de `UserCurrency` com `isDefault: true`. O dashb
 | v1.6 | FIRE Dashboard: Independência Financeira | ✅ concluída — release v1.6.0 |
 | v1.7 | Independência Financeira Evoluída | ✅ concluída |
 | v1.8 | FIRE: Plano Real de Independência | ✅ concluída — release v1.8.1 |
+| v1.9 | Investimentos: Entrada Simplificada | ✅ concluída — release v1.9.0 |
+| v2.0 | Painel de Proventos | ✅ concluída — release v2.0.0 |
 
 ---
 
