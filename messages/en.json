@@ -277,7 +277,13 @@
       "CRYPTO": "Crypto",
       "FIXED_INCOME": "Fixed Income",
       "STOCK_INT": "International Stocks",
-      "OTHER": "Other"
+      "OTHER": "Other",
+      "CDB": "CDB",
+      "RDB": "RDB",
+      "LCI": "LCI",
+      "LCA": "LCA",
+      "TESOURO": "Treasury Direct",
+      "POUPANCA": "Savings"
     },
     "entryTypes": {
       "PURCHASE": "Purchase",
@@ -308,6 +314,8 @@
       "currentPrice": "Current Price (optional)",
       "currency": "Currency"
     },
+    "tickerSearchToggle": "Search by ticker",
+    "cancelTickerSearch": "Cancel search",
     "empty": "No assets registered",
     "emptyEntries": "No entries recorded",
     "deleteConfirm": "Are you sure? This action cannot be undone.",

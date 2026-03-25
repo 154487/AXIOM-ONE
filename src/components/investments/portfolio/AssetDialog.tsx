@@ -10,7 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, Loader2 } from "lucide-react";
 import type { AssetType } from "@/generated/prisma/client";
 
-const ASSET_TYPES: AssetType[] = ["STOCK", "FII", "ETF", "BDR", "CRYPTO", "FIXED_INCOME", "STOCK_INT", "OTHER"];
+const ASSET_TYPES: AssetType[] = [
+  "CDB", "RDB", "LCI", "LCA", "TESOURO", "POUPANCA", "FIXED_INCOME",
+  "STOCK", "FII", "ETF", "BDR", "STOCK_INT", "CRYPTO", "OTHER",
+];
 
 interface TickerSuggestion {
   ticker: string;

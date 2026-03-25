@@ -277,7 +277,13 @@
       "CRYPTO": "Crypto",
       "FIXED_INCOME": "Revenu Fixe",
       "STOCK_INT": "Actions Internationales",
-      "OTHER": "Autres"
+      "OTHER": "Autres",
+      "CDB": "CDB",
+      "RDB": "RDB",
+      "LCI": "LCI",
+      "LCA": "LCA",
+      "TESOURO": "Trésor Direct",
+      "POUPANCA": "Épargne"
     },
     "entryTypes": {
       "PURCHASE": "Achat",
@@ -308,6 +314,8 @@
       "currentPrice": "Prix Actuel (optionnel)",
       "currency": "Devise"
     },
+    "tickerSearchToggle": "Rechercher par ticker",
+    "cancelTickerSearch": "Annuler la recherche",
     "empty": "Aucun actif enregistré",
     "emptyEntries": "Aucune opération enregistrée",
     "deleteConfirm": "Êtes-vous sûr ? Cette action est irréversible.",

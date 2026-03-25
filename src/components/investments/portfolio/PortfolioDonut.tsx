@@ -19,14 +19,22 @@ import type { AssetType } from "@/generated/prisma/client";
 ChartJS.register(ArcElement, Tooltip, Legend, BarElement, CategoryScale, LinearScale);
 
 const TYPE_COLORS: Partial<Record<AssetType, string>> = {
+  // Renda Variável
   STOCK: "#FF6B35",
   FII: "#F7931E",
   ETF: "#FFB347",
   BDR: "#FF8C42",
   CRYPTO: "#A78BFA",
-  FIXED_INCOME: "#10B981",
   STOCK_INT: "#3B82F6",
   OTHER: "#6B7280",
+  // Renda Fixa
+  CDB: "#10B981",
+  RDB: "#059669",
+  LCI: "#34D399",
+  LCA: "#6EE7B7",
+  TESOURO: "#0EA5E9",
+  POUPANCA: "#94A3B8",
+  FIXED_INCOME: "#2DD4BF",
 };
 
 interface PortfolioDonutProps {

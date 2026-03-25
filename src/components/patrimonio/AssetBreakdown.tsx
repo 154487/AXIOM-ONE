@@ -8,6 +8,12 @@ import { formatCurrency } from "@/lib/utils";
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 const TYPE_LABELS: Record<string, string> = {
+  CDB: "CDB",
+  RDB: "RDB",
+  LCI: "LCI",
+  LCA: "LCA",
+  TESOURO: "Tesouro Direto",
+  POUPANCA: "Poupança",
   FIXED_INCOME: "Renda Fixa",
   FII: "Fundos Imobiliários",
   STOCK: "Ações BR",
