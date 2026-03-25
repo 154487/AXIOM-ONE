@@ -7,7 +7,10 @@ import { Plus } from "lucide-react";
 import { TransactionFilters } from "./TransactionFilters";
 import { TransactionTable, type Transaction } from "./TransactionTable";
 import { TransactionDialog } from "./TransactionDialog";
+import { CategoriesManager } from "@/components/settings/CategoriesManager";
 import type { Category } from "@/generated/prisma/client";
+
+type ActiveTab = "transactions" | "categories";
 
 type FilterType = "ALL" | "INCOME" | "EXPENSE";
 
@@ -27,9 +30,11 @@ interface TransactionListProps {
   categories: Category[];
 }
 
-export function TransactionList({ transactions: initial, categories }: TransactionListProps) {
+export function TransactionList({ transactions: initial, categories: initialCategories }: TransactionListProps) {
   const t = useTranslations("Transactions");
+  const [activeTab, setActiveTab] = useState<ActiveTab>("transactions");
   const [transactions, setTransactions] = useState<Transaction[]>(initial);
+  const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [filters, setFilters] = useState<Filters>({ type: "ALL", categoryId: null, month: null });
   const [dialog, setDialog] = useState<DialogState>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -65,38 +70,70 @@ export function TransactionList({ transactions: initial, categories }: Transacti
     setDialog(null);
   }
 
+  const TABS: { key: ActiveTab; label: string }[] = [
+    { key: "transactions", label: "Transações" },
+    { key: "categories", label: "Categorias" },
+  ];
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <TransactionFilters
-          filters={filters}
-          onFilterChange={setFilters}
-          categories={categories}
-        />
-        <Button
-          onClick={() => setDialog({ mode: "create" })}
-          className="bg-axiom-primary hover:bg-axiom-primary/90 text-white gap-1.5 h-9 text-sm shrink-0"
-        >
-          <Plus size={15} />
-          {t("newButton")}
-        </Button>
+      <div className="flex bg-axiom-hover rounded-lg p-1 gap-1 w-fit">
+        {TABS.map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => setActiveTab(key)}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              activeTab === key ? "bg-axiom-primary text-white" : "text-axiom-muted hover:text-white"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
-      <TransactionTable
-        transactions={filtered}
-        onEdit={(tx) => setDialog({ mode: "edit", transaction: tx })}
-        onDelete={handleDelete}
-        deletingId={deletingId}
-      />
+      {activeTab === "transactions" && (
+        <>
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <TransactionFilters
+              filters={filters}
+              onFilterChange={setFilters}
+              categories={categories}
+            />
+            <Button
+              onClick={() => setDialog({ mode: "create" })}
+              className="bg-axiom-primary hover:bg-axiom-primary/90 text-white gap-1.5 h-9 text-sm shrink-0"
+            >
+              <Plus size={15} />
+              {t("newButton")}
+            </Button>
+          </div>
 
-      {dialog && (
-        <TransactionDialog
-          mode={dialog.mode}
-          transaction={dialog.mode === "edit" ? dialog.transaction : undefined}
-          categories={categories}
-          onSuccess={handleSuccess}
-          onClose={() => setDialog(null)}
-        />
+          <TransactionTable
+            transactions={filtered}
+            onEdit={(tx) => setDialog({ mode: "edit", transaction: tx })}
+            onDelete={handleDelete}
+            deletingId={deletingId}
+          />
+
+          {dialog && (
+            <TransactionDialog
+              mode={dialog.mode}
+              transaction={dialog.mode === "edit" ? dialog.transaction : undefined}
+              categories={categories}
+              onSuccess={handleSuccess}
+              onClose={() => setDialog(null)}
+            />
+          )}
+        </>
+      )}
+
+      {activeTab === "categories" && (
+        <div className="bg-axiom-card border border-axiom-border rounded-xl p-6">
+          <CategoriesManager
+            initialCategories={categories}
+            onCategoriesChange={setCategories}
+          />
+        </div>
       )}
     </div>
   );

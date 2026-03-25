@@ -12,7 +12,7 @@ export default async function Page() {
   const currentTheme = (cookieStore.get("AXIOM_THEME")?.value ?? "dark") as "dark" | "light";
   const currentLocale = cookieStore.get("NEXT_LOCALE")?.value ?? "en";
 
-  const [user, categories, currencies] = await Promise.all([
+  const [user, currencies] = await Promise.all([
     prisma.user.findUnique({
       where: { id: session.user.id },
       select: {
@@ -25,10 +25,6 @@ export default async function Page() {
         notifMonthlyReport: true,
       },
     }),
-    prisma.category.findMany({
-      where: { userId: session.user.id },
-      orderBy: { name: "asc" },
-    }),
     prisma.userCurrency.findMany({
       where: { userId: session.user.id },
       orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }],
@@ -40,7 +36,6 @@ export default async function Page() {
   return (
     <SettingsPage
       user={user}
-      categories={categories}
       currencies={currencies}
       currentTheme={currentTheme}
       currentLocale={currentLocale}

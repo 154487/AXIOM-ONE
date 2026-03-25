@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PortfolioSummaryCards } from "./portfolio/PortfolioSummaryCards";
 import { PortfolioDonut } from "./portfolio/PortfolioDonut";
 import { AssetList } from "./portfolio/AssetList";
@@ -81,24 +80,27 @@ export function InvestmentsShell({ initialCurrency, initialLocale }: Investments
 
   return (
     <div className="flex flex-col gap-6 p-6">
-      <h1 className="text-xl font-semibold text-white">{t("title")}</h1>
+      <div className="flex flex-col gap-3">
+        <h1 className="text-xl font-semibold text-white">{t("title")}</h1>
+        <div className="flex bg-axiom-hover rounded-lg p-1 gap-1 w-fit">
+        {(["portfolio", "entries", "intelligence"] as const).map((key) => (
+          <button
+            key={key}
+            onClick={() => setActiveTab(key)}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              activeTab === key ? "bg-axiom-primary text-white" : "text-axiom-muted hover:text-white"
+            }`}
+          >
+            {t(`tabs.${key}`)}
+          </button>
+        ))}
+        </div>
+      </div>
 
       <BenchmarkBar data={benchmarks} loading={benchmarksLoading} />
 
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "portfolio" | "entries" | "intelligence")}>
-        <TabsList className="bg-axiom-card border border-axiom-border">
-          <TabsTrigger value="portfolio" className="data-[state=active]:bg-axiom-primary data-[state=active]:text-white">
-            {t("tabs.portfolio")}
-          </TabsTrigger>
-          <TabsTrigger value="entries" className="data-[state=active]:bg-axiom-primary data-[state=active]:text-white">
-            {t("tabs.entries")}
-          </TabsTrigger>
-          <TabsTrigger value="intelligence" className="data-[state=active]:bg-axiom-primary data-[state=active]:text-white">
-            {t("tabs.intelligence")}
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="portfolio" className="mt-6 flex flex-col gap-6">
+      {activeTab === "portfolio" && (
+        <div className="mt-6 flex flex-col gap-6">
           <PortfolioSummaryCards
             totals={portfolioData?.totals ?? null}
             loading={portfolioLoading}
@@ -122,24 +124,28 @@ export function InvestmentsShell({ initialCurrency, initialLocale }: Investments
               locale={initialLocale}
             />
           )}
-        </TabsContent>
+        </div>
+      )}
 
-        <TabsContent value="entries" className="mt-6">
+      {activeTab === "entries" && (
+        <div className="mt-6">
           <EntryList
             assets={assets}
             currency={initialCurrency}
             locale={initialLocale}
             onEntryCreated={triggerPortfolioRefresh}
           />
-        </TabsContent>
+        </div>
+      )}
 
-        <TabsContent value="intelligence" className="mt-6">
+      {activeTab === "intelligence" && (
+        <div className="mt-6">
           <IntelligenceTab
             portfolioTotalValue={portfolioData?.totals.totalCurrentValue ?? 0}
             currency={initialCurrency}
           />
-        </TabsContent>
-      </Tabs>
+        </div>
+      )}
     </div>
   );
 }

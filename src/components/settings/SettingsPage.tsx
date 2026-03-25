@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { CategoriesManager } from "./CategoriesManager";
 import { CurrencyManager } from "./CurrencyManager";
 import { toast } from "@/lib/toast";
 import {
@@ -23,7 +22,6 @@ import {
   Globe,
   DollarSign,
   Bell,
-  Tag,
   Download,
   Upload,
   Trash2,
@@ -31,7 +29,7 @@ import {
   ChevronRight,
   Camera,
 } from "lucide-react";
-import type { Category, UserCurrency } from "@/generated/prisma/client";
+import type { UserCurrency } from "@/generated/prisma/client";
 
 const LANGUAGE_OPTIONS = [
   { code: "en", label: "English", flag: "🇺🇸" },
@@ -51,7 +49,6 @@ interface NotifPrefs {
 
 interface SettingsPageProps {
   user: { id: string; name: string | null; email: string; image: string | null };
-  categories: Category[];
   currencies: UserCurrency[];
   currentTheme: "dark" | "light";
   currentLocale: string;
@@ -60,7 +57,6 @@ interface SettingsPageProps {
 
 export function SettingsPage({
   user,
-  categories,
   currencies,
   currentTheme,
   currentLocale,
@@ -409,15 +405,6 @@ export function SettingsPage({
             />
           </div>
         </div>
-      </section>
-
-      {/* ── Category Management ── */}
-      <section className="bg-axiom-card border border-axiom-border rounded-xl p-6">
-        <div className="flex items-center gap-2 mb-1">
-          <Tag size={16} className="text-axiom-muted" />
-          <h2 className="text-white font-semibold text-base">{t("categoriesTitle")}</h2>
-        </div>
-        <CategoriesManager initialCategories={categories} />
       </section>
 
       {/* ── Data & Backup ── */}

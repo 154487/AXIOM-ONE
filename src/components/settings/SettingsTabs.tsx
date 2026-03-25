@@ -16,16 +16,16 @@ export function SettingsTabs({ user, categories }: SettingsTabsProps) {
 
   return (
     <Tabs defaultValue="profile" className="w-full">
-      <TabsList className="bg-axiom-card border border-axiom-border mb-6">
+      <TabsList className="bg-axiom-hover rounded-lg p-1 gap-1 mb-6">
         <TabsTrigger
           value="profile"
-          className="data-[state=active]:bg-axiom-primary data-[state=active]:text-white text-axiom-muted"
+          className="data-active:bg-axiom-primary data-active:text-white text-axiom-muted"
         >
           {t("tabProfile")}
         </TabsTrigger>
         <TabsTrigger
           value="categories"
-          className="data-[state=active]:bg-axiom-primary data-[state=active]:text-white text-axiom-muted"
+          className="data-active:bg-axiom-primary data-active:text-white text-axiom-muted"
         >
           {t("tabCategories")}
         </TabsTrigger>

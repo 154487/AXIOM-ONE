@@ -12,9 +12,10 @@ import type { Category } from "@/generated/prisma/client";
 
 interface CategoriesManagerProps {
   initialCategories: Category[];
+  onCategoriesChange?: (categories: Category[]) => void;
 }
 
-export function CategoriesManager({ initialCategories }: CategoriesManagerProps) {
+export function CategoriesManager({ initialCategories, onCategoriesChange }: CategoriesManagerProps) {
   const t = useTranslations("Settings");
   const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [dialog, setDialog] = useState<{ mode: "create" | "edit"; category?: Category } | null>(null);
@@ -22,11 +23,12 @@ export function CategoriesManager({ initialCategories }: CategoriesManagerProps)
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
   function handleSuccess(updated: Category) {
-    setCategories((prev) => {
-      const exists = prev.find((c) => c.id === updated.id);
-      if (exists) return prev.map((c) => (c.id === updated.id ? updated : c));
-      return [...prev, updated].sort((a, b) => a.name.localeCompare(b.name));
-    });
+    const exists = categories.find((c) => c.id === updated.id);
+    const next = exists
+      ? categories.map((c) => (c.id === updated.id ? updated : c))
+      : [...categories, updated].sort((a, b) => a.name.localeCompare(b.name));
+    setCategories(next);
+    onCategoriesChange?.(next);
     toast.success("Sucesso!", t("categorySaved"));
     setDialog(null);
   }
@@ -40,7 +42,9 @@ export function CategoriesManager({ initialCategories }: CategoriesManagerProps)
         body: JSON.stringify({ isEssential: value }),
       });
       if (res.ok) {
-        setCategories((prev) => prev.map((c) => (c.id === id ? { ...c, isEssential: value } : c)));
+        const next = categories.map((c) => (c.id === id ? { ...c, isEssential: value } : c));
+        setCategories(next);
+        onCategoriesChange?.(next);
       }
     } catch {
       // silent
@@ -55,7 +59,9 @@ export function CategoriesManager({ initialCategories }: CategoriesManagerProps)
       const res = await fetch(`/api/categories/${id}`, { method: "DELETE" });
       const data = await res.json();
       if (res.ok) {
-        setCategories((prev) => prev.filter((c) => c.id !== id));
+        const next = categories.filter((c) => c.id !== id);
+        setCategories(next);
+        onCategoriesChange?.(next);
         toast.success("Sucesso!", t("categoryDeleted"));
       } else {
         toast.error("Erro", data.error ?? t("deleteError"));
