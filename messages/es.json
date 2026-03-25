@@ -262,6 +262,7 @@
     "tabs": {
       "portfolio": "Cartera",
       "entries": "Movimientos",
+      "proventos": "Dividendos",
       "intelligence": "Inteligencia"
     },
     "summary": {
@@ -284,6 +285,24 @@
       "LCA": "LCA",
       "TESOURO": "Tesoro Directo",
       "POUPANCA": "Ahorro"
+    },
+    "proventos": {
+      "totalReceived": "Total Recibido",
+      "last6m": "Últimos 6 meses",
+      "last12m": "Últimos 12 meses",
+      "last24m": "Últimos 24 meses",
+      "monthlyChart": "Dividendos Mensuales",
+      "byCategoryChart": "Por Categoría",
+      "tableTitle": "Dividendos por Activo",
+      "col": {
+        "asset": "Activo",
+        "qty": "Cant.",
+        "avgCost": "C.M.",
+        "yoc": "YoC",
+        "dy": "DY",
+        "lastDividend": "Último",
+        "total": "Total Recibido"
+      }
     },
     "entryTypes": {
       "PURCHASE": "Compra",

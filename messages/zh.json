@@ -262,6 +262,7 @@
     "tabs": {
       "portfolio": "投资组合",
       "entries": "交易记录",
+      "proventos": "股息",
       "intelligence": "智能分析"
     },
     "summary": {
@@ -284,6 +285,24 @@
       "LCA": "LCA",
       "TESOURO": "国库直购",
       "POUPANCA": "储蓄"
+    },
+    "proventos": {
+      "totalReceived": "累计收益",
+      "last6m": "近6个月",
+      "last12m": "近12个月",
+      "last24m": "近24个月",
+      "monthlyChart": "月度股息",
+      "byCategoryChart": "按类别",
+      "tableTitle": "按资产划分股息",
+      "col": {
+        "asset": "资产",
+        "qty": "数量",
+        "avgCost": "均价",
+        "yoc": "持股收益率",
+        "dy": "股息率",
+        "lastDividend": "最近",
+        "total": "累计"
+      }
     },
     "entryTypes": {
       "PURCHASE": "买入",

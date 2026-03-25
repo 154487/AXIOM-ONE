@@ -262,6 +262,7 @@
     "tabs": {
       "portfolio": "المحفظة",
       "entries": "العمليات",
+      "proventos": "الأرباح",
       "intelligence": "الذكاء"
     },
     "summary": {
@@ -284,6 +285,24 @@
       "LCA": "LCA",
       "TESOURO": "الخزينة المباشرة",
       "POUPANCA": "مدخرات"
+    },
+    "proventos": {
+      "totalReceived": "المجموع المستلم",
+      "last6m": "آخر 6 أشهر",
+      "last12m": "آخر 12 شهرًا",
+      "last24m": "آخر 24 شهرًا",
+      "monthlyChart": "الأرباح الشهرية",
+      "byCategoryChart": "حسب الفئة",
+      "tableTitle": "الأرباح حسب الأصل",
+      "col": {
+        "asset": "الأصل",
+        "qty": "الكمية",
+        "avgCost": "متوسط التكلفة",
+        "yoc": "العائد على التكلفة",
+        "dy": "عائد الأرباح",
+        "lastDividend": "الأخير",
+        "total": "المجموع"
+      }
     },
     "entryTypes": {
       "PURCHASE": "شراء",

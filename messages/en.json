@@ -262,6 +262,7 @@
     "tabs": {
       "portfolio": "Portfolio",
       "entries": "Transactions",
+      "proventos": "Dividends",
       "intelligence": "Intelligence"
     },
     "summary": {
@@ -284,6 +285,24 @@
       "LCA": "LCA",
       "TESOURO": "Treasury Direct",
       "POUPANCA": "Savings"
+    },
+    "proventos": {
+      "totalReceived": "Total Received",
+      "last6m": "Last 6 months",
+      "last12m": "Last 12 months",
+      "last24m": "Last 24 months",
+      "monthlyChart": "Monthly Dividends",
+      "byCategoryChart": "By Category",
+      "tableTitle": "Dividends by Asset",
+      "col": {
+        "asset": "Asset",
+        "qty": "Qty",
+        "avgCost": "Avg Cost",
+        "yoc": "YoC",
+        "dy": "DY",
+        "lastDividend": "Last",
+        "total": "Total Received"
+      }
     },
     "entryTypes": {
       "PURCHASE": "Purchase",

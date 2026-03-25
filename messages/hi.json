@@ -262,6 +262,7 @@
     "tabs": {
       "portfolio": "पोर्टफोलियो",
       "entries": "लेनदेन",
+      "proventos": "लाभांश",
       "intelligence": "बुद्धिमत्ता"
     },
     "summary": {
@@ -284,6 +285,24 @@
       "LCA": "LCA",
       "TESOURO": "ट्रेजरी डायरेक्ट",
       "POUPANCA": "बचत"
+    },
+    "proventos": {
+      "totalReceived": "कुल प्राप्त",
+      "last6m": "पिछले 6 महीने",
+      "last12m": "पिछले 12 महीने",
+      "last24m": "पिछले 24 महीने",
+      "monthlyChart": "मासिक लाभांश",
+      "byCategoryChart": "श्रेणी अनुसार",
+      "tableTitle": "संपत्ति अनुसार लाभांश",
+      "col": {
+        "asset": "संपत्ति",
+        "qty": "मात्रा",
+        "avgCost": "औसत लागत",
+        "yoc": "YoC",
+        "dy": "DY",
+        "lastDividend": "अंतिम",
+        "total": "कुल"
+      }
     },
     "entryTypes": {
       "PURCHASE": "खरीद",
