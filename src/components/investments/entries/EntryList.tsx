@@ -36,6 +36,7 @@ interface EntryListProps {
   currency: string;
   locale: string;
   onEntryCreated: () => void;
+  onNewAsset?: (asset: AssetRaw) => void;
 }
 
 const ENTRY_BADGE_COLORS: Record<EntryType, string> = {
@@ -45,7 +46,7 @@ const ENTRY_BADGE_COLORS: Record<EntryType, string> = {
   SPLIT: "border-axiom-border text-axiom-muted",
 };
 
-export function EntryList({ assets, currency, locale, onEntryCreated }: EntryListProps) {
+export function EntryList({ assets, currency, locale, onEntryCreated, onNewAsset }: EntryListProps) {
   const t = useTranslations("Investments");
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -89,6 +90,17 @@ export function EntryList({ assets, currency, locale, onEntryCreated }: EntryLis
     } else {
       setEntries((prev) => [saved, ...prev]);
       onEntryCreated();
+      // Propagar novo ativo ao shell se foi criado inline
+      if (saved.asset && !assets.find((a) => a.id === saved.asset.id)) {
+        onNewAsset?.({
+          id: saved.asset.id,
+          name: saved.asset.name,
+          ticker: saved.asset.ticker,
+          type: saved.asset.type as AssetRaw["type"],
+          currency: saved.asset.currency,
+          currentPrice: null,
+        });
+      }
     }
   }
 
@@ -96,7 +108,7 @@ export function EntryList({ assets, currency, locale, onEntryCreated }: EntryLis
     <div className="bg-axiom-card border border-axiom-border rounded-xl p-5">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-medium text-axiom-muted">{t("tabs.entries")}</h3>
-        <Button size="sm" onClick={handleNew} disabled={assets.length === 0} className="bg-axiom-primary text-white hover:opacity-90 gap-1">
+        <Button size="sm" onClick={handleNew} className="bg-axiom-primary text-white hover:opacity-90 gap-1">
           <Plus size={14} /> {t("dialog.newEntry")}
         </Button>
       </div>
@@ -161,6 +173,7 @@ export function EntryList({ assets, currency, locale, onEntryCreated }: EntryLis
         entry={selectedEntry}
         assets={assets}
         onSave={handleSave}
+        onNewAsset={onNewAsset}
       />
     </div>
   );
