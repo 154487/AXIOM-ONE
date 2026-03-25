@@ -4,8 +4,9 @@ import { useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { Trash2, ChevronDown, ChevronUp, Plus } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import { EntryDialog } from "../entries/EntryDialog";
 import type { AssetPosition } from "@/app/api/investments/portfolio/route";
 import type { AssetType } from "@/generated/prisma/client";
 
@@ -26,18 +27,30 @@ const TYPE_COLORS: Partial<Record<AssetType, string>> = {
   FIXED_INCOME: "#2DD4BF",
 };
 
+interface AssetRaw {
+  id: string;
+  name: string;
+  ticker: string | null;
+  type: AssetType;
+  currency: string;
+  currentPrice: number | null;
+}
+
 interface AssetListProps {
   positions: AssetPosition[];
+  assets: AssetRaw[];
   loading: boolean;
   currency: string;
   locale: string;
   onRefresh: () => void;
+  onNewAsset?: (asset: AssetRaw) => void;
 }
 
-export function AssetList({ positions, loading, currency, locale, onRefresh }: AssetListProps) {
+export function AssetList({ positions, assets, loading, currency, locale, onRefresh, onNewAsset }: AssetListProps) {
   const t = useTranslations("Investments");
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const [entryDialogOpen, setEntryDialogOpen] = useState(false);
 
   const totalPortfolioValue = positions.reduce((acc, p) => acc + p.currentValue, 0);
 
@@ -86,8 +99,19 @@ export function AssetList({ positions, loading, currency, locale, onRefresh }: A
 
   if (positions.length === 0) {
     return (
-      <div className="bg-axiom-card border border-axiom-border rounded-xl p-8 text-center">
+      <div className="bg-axiom-card border border-axiom-border rounded-xl p-8 text-center flex flex-col items-center gap-3">
         <p className="text-axiom-muted text-sm">{t("empty")}</p>
+        <Button size="sm" onClick={() => setEntryDialogOpen(true)} className="bg-axiom-primary text-white hover:opacity-90 gap-1">
+          <Plus size={14} /> {t("dialog.newEntry")}
+        </Button>
+        <EntryDialog
+          open={entryDialogOpen}
+          onClose={() => setEntryDialogOpen(false)}
+          entry={null}
+          assets={assets}
+          onSave={() => { setEntryDialogOpen(false); onRefresh(); }}
+          onNewAsset={onNewAsset}
+        />
       </div>
     );
   }
@@ -95,6 +119,21 @@ export function AssetList({ positions, loading, currency, locale, onRefresh }: A
   return (
     <div className="flex flex-col gap-3">
       {deleteError && <p className="text-axiom-expense text-sm">{deleteError}</p>}
+
+      <div className="flex justify-end">
+        <Button size="sm" onClick={() => setEntryDialogOpen(true)} className="bg-axiom-primary text-white hover:opacity-90 gap-1">
+          <Plus size={14} /> {t("dialog.newEntry")}
+        </Button>
+      </div>
+
+      <EntryDialog
+        open={entryDialogOpen}
+        onClose={() => setEntryDialogOpen(false)}
+        entry={null}
+        assets={assets}
+        onSave={() => { setEntryDialogOpen(false); onRefresh(); }}
+        onNewAsset={onNewAsset}
+      />
 
       {groups.map(([type, groupPositions]) => {
         const groupValue = groupPositions.reduce((s, p) => s + p.currentValue, 0);

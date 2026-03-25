@@ -119,10 +119,12 @@ export function InvestmentsShell({ initialCurrency, initialLocale }: Investments
           />
           <AssetList
             positions={portfolioData?.assets ?? []}
+            assets={assets}
             loading={portfolioLoading}
             currency={initialCurrency}
             locale={initialLocale}
             onRefresh={triggerPortfolioRefresh}
+            onNewAsset={handleNewAsset}
           />
           {(portfolioData?.assets ?? []).length > 0 && (
             <PortfolioDonut
