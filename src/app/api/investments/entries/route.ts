@@ -87,13 +87,16 @@ export async function POST(req: NextRequest) {
   let resolvedAssetId = assetId as string;
 
   if (!assetId && newAsset) {
+    const inlineTicker = newAsset.ticker ? String(newAsset.ticker).trim().toUpperCase() : null;
     const created = await prisma.asset.create({
       data: {
         userId: session.user.id,
         name: String(newAsset.name).trim(),
         type: newAsset.type as AssetType,
-        ticker: null,
+        ticker: inlineTicker,
         currentPrice: price ? Number(price) : null,
+        indexer: newAsset.indexer ?? null,
+        rate: newAsset.rate != null ? newAsset.rate : null,
       },
     });
     resolvedAssetId = created.id;
